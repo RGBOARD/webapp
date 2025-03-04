@@ -34,7 +34,7 @@ cur.execute("CREATE TABLE IF NOT EXISTS "
             "scheduled_at datetime)")
 
 cur.execute("CREATE TABLE IF NOT EXISTS "
-            "admin_action(action_id serial primary key,"
+            "admin_action(action_id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id varchar references user(user_id),"
             "target_user_id varchar references design(user_id),"
             "target_design_id varchar references design(design_id),"
