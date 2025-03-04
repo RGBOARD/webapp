@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import sqlite3
 from controller.admin_action import AdminAction
+from controller.display_panel import DisplayPanel
+
 app = Flask(__name__)
 
 # Database connection function
@@ -87,6 +89,58 @@ def handleAdminActionById(action_id):
             return jsonify("Cannot delete record because it is referenced by other records"), 404
 
 
+# Display Panel
+@app.route("/display_panel", methods=['GET', 'POST'])
+def handleDisplayPanel():
+    if request.method == 'GET':
+        handler = DisplayPanel()
+        return handler.getAllDisplayPanel()
+    else:  # POST
+        try:
+            data = request.json
+            if not data:
+                return jsonify("No data provided"), 404
+
+            valid_keys = {'location', 'status'}
+            if not all(key in data for key in valid_keys):
+                return jsonify("Missing a key"), 404
+
+            handler = DisplayPanel()
+            return handler.addNewDisplayPanel(data)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Invalid JSON data provided"), 404
+
+@app.route("/display_panel/<int:panel_id>", methods=['GET', 'PUT', 'DELETE'])
+def handleDisplayPanelById(panel_id):
+    if request.method == 'GET':
+        handler = DisplayPanel()
+        return handler.getDisplayPanelById(panel_id)
+    elif request.method == 'PUT':
+        try:
+            data = request.json
+            if not data:
+                return jsonify("No data provided"), 404
+
+            # We only have 'location' & 'status', but let's do a soft check:
+            valid_keys = {'location', 'status'}
+            # If you want partial updates, you can remove this check
+            # or adapt it as needed.
+            if not any(key in data for key in valid_keys):
+                return jsonify("Missing a key"), 404
+
+            handler = DisplayPanel()
+            return handler.updateDisplayPanelById(panel_id, data)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Invalid data provided"), 404
+    else:  # DELETE
+        try:
+            handler = DisplayPanel()
+            return handler.deleteDisplayPanelById(panel_id)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Cannot delete record because it is referenced by other records"), 404
 
 
 if __name__ == '__main__':
