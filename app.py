@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import sqlite3
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
-
+from controller.upload_history import UploadHistory
 app = Flask(__name__)
 
 # Database connection function
@@ -143,6 +143,55 @@ def handleDisplayPanelById(panel_id):
             return jsonify("Cannot delete record because it is referenced by other records"), 404
 
 # UploadHistory
+@app.route("/upload_history", methods=['GET', 'POST'])
+def handleUploadHistory():
+    if request.method == 'GET':
+        handler = UploadHistory()
+        return handler.getAllUploadHistory()
+    else:  # POST
+        try:
+            data = request.json
+            if not data:
+                return jsonify("No data provided"), 404
+
+            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
+            if not all(key in data for key in valid_keys):
+                return jsonify("Missing a key"), 404
+
+            handler = UploadHistory()
+            return handler.addNewUploadHistory(data)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Invalid JSON data provided"), 404
+
+@app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
+def handleUploadHistoryById(history_id):
+    if request.method == 'GET':
+        handler = UploadHistory()
+        return handler.getUploadHistoryById(history_id)
+    elif request.method == 'PUT':
+        try:
+            data = request.json
+            if not data:
+                return jsonify("No data provided"), 404
+
+            # For partial updates, you might remove this check or adapt it
+            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
+            if not any(key in data for key in valid_keys):
+                return jsonify("Missing a key"), 404
+
+            handler = UploadHistory()
+            return handler.updateUploadHistoryById(history_id, data)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Invalid data provided"), 404
+    else:  # DELETE
+        try:
+            handler = UploadHistory()
+            return handler.deleteUploadHistoryById(history_id)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Cannot delete record because it is referenced by other records"), 404
 
 
 if __name__ == '__main__':
