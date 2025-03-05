@@ -2,8 +2,6 @@ from flask import Flask, request, jsonify
 import sqlite3
 from controller.user import User
 from controller.design import Design
-
-
 app = Flask(__name__)
 
 # Database connection function
