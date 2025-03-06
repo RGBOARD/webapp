@@ -1,0 +1,31 @@
+  .main-header {
+    background-color: #e6e6e6;
+    padding: 10px 0;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .menu-icon, .action-icon {
+    cursor: pointer;
+  }
+  
+  .logo {
+    text-align: center;
+  }
+  
+  .logo img {
+    height: 100px; 
+    width: 180px;
+  }
+  
