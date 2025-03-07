@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import sqlite3
+from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
 from controller.upload_history import UploadHistory
@@ -28,17 +29,17 @@ def handleUser():
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
-            valid_keys = {'email','is_admin', 'is_verified', 'created_at', 'username', 'password'}
+            valid_keys = {'email', 'username', 'password'}
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = User()
             return handler.addNewUser(data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 404
+            return jsonify("Invalid JSON data provided:"), 400
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
@@ -50,24 +51,24 @@ def handleUserById(user_id):
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {'email','is_admin', 'is_verified', 'created_at', 'username', 'password'}
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = User()
             return handler.updateUserById(user_id, data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 404
+            return jsonify("Invalid data provided"), 400
     else:
         try:
             handler = User()
             return handler.deleteUserById(user_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 404
+            return jsonify("Can not delete record because it is referenced by other records"), 400
 
 # Design-----------------------------------------------------------------------------------------------------------
 @app.route("/design", methods=['GET', 'POST'])
@@ -79,17 +80,17 @@ def handleDesign():
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {'user_id', 'title', 'image_path', 'created_at', 'is_approved', 'status'}
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = Design()
             return handler.addNewDesign(data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 404
+            return jsonify("Invalid JSON data provided:"), 400
 
 
 @app.route("/design/<int:design_id>", methods=['GET', 'PUT', 'DELETE'])
@@ -101,30 +102,26 @@ def handleDesignById(design_id):
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {'user_id', 'title', 'image_path', 'created_at', 'is_approved', 'status'}
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = Design()
             return handler.updateDesignById(design_id, data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 404
+            return jsonify("Invalid data provided"), 400
     else:
         try:
             handler = Design()
             return handler.deleteDesignById(design_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 404
+            return jsonify("Can not delete record because it is referenced by other records"), 400
 
-
-
-
-
-# AdminAction
+#AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
 def handleAdminAction():
     if request.method == 'GET':
@@ -136,7 +133,7 @@ def handleAdminAction():
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {
                 'user_id',
@@ -148,13 +145,13 @@ def handleAdminAction():
                 'timestamp'
             }
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = AdminAction()
             return handler.addNewAdminAction(data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 404
+            return jsonify("Invalid JSON data provided"), 400
 
 @app.route("/admin_action/<int:action_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleAdminActionById(action_id):
@@ -168,7 +165,7 @@ def handleAdminActionById(action_id):
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {
                 'user_id',
@@ -180,13 +177,13 @@ def handleAdminActionById(action_id):
                 'timestamp'
             }
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = AdminAction()
             return handler.updateAdminActionById(action_id, data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 404
+            return jsonify("Invalid data provided"), 400
 
     elif request.method == 'DELETE':
         # DELETE
@@ -195,10 +192,62 @@ def handleAdminActionById(action_id):
             return handler.deleteAdminActionById(action_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Cannot delete record because it is referenced by other records"), 404
+            return jsonify("Cannot delete record because it is referenced by other records"), 400
 
 
-# Display Panel
+# QueueItem-----------------------------------------------------------------------------------------------------------
+@app.route("/queue_item", methods=['GET', 'POST'])
+def handleQueueItem():
+    if request.method == 'GET':
+        handler = QueueItem()
+        return handler.getAllQueueItem()
+    else:
+        try:
+            data = request.json
+            if not data:
+                return jsonify("No data provided"), 400
+
+            valid_keys = {'design_id','panel_id', 'start_time', 'end_time', 'display_duration', 'display_order', 'scheduled', 'scheduled_at'}
+            if not all(key in data for key in valid_keys):
+                return jsonify("Missing a key"), 400
+
+            handler = QueueItem()
+            return handler.addNewQueueItem(data)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Invalid JSON data provided:"), 400
+
+
+@app.route("/queue_item/<int:queue_id>", methods=['GET', 'PUT', 'DELETE'])
+def handleQueueItemById(queue_id):
+    if request.method == 'GET':
+        handler = QueueItem()
+        return handler.getQueueItemById(queue_id)
+    elif request.method == 'PUT':
+        try:
+            data = request.json
+            if not data:
+                return jsonify("No data provided"), 400
+
+            valid_keys = {'design_id','panel_id', 'start_time', 'end_time', 'display_duration', 'display_order', 'scheduled', 'scheduled_at'}
+            if not all(key in data for key in valid_keys):
+                return jsonify("Missing a key"), 400
+
+            handler = QueueItem()
+            return handler.updateQueueItemById(queue_id, data)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Invalid data provided"), 400
+    else:
+        try:
+            handler = QueueItem()
+            return handler.deleteQueueItemById(queue_id)
+        except Exception as e:
+            print("Error processing request:", e)
+            return jsonify("Can not delete record because it is referenced by other records"), 400
+
+
+# Display Panel-----------------------------------------------------------------------------------------------------------
 @app.route("/display_panel", methods=['GET', 'POST'])
 def handleDisplayPanel():
     if request.method == 'GET':
@@ -208,17 +257,17 @@ def handleDisplayPanel():
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {'location', 'status'}
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = DisplayPanel()
             return handler.addNewDisplayPanel(data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 404
+            return jsonify("Invalid JSON data provided"), 400
 
 @app.route("/display_panel/<int:panel_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleDisplayPanelById(panel_id):
@@ -229,29 +278,29 @@ def handleDisplayPanelById(panel_id):
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             # We only have 'location' & 'status', but let's do a soft check:
             valid_keys = {'location', 'status'}
             # If you want partial updates, you can remove this check
             # or adapt it as needed.
             if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = DisplayPanel()
             return handler.updateDisplayPanelById(panel_id, data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 404
+            return jsonify("Invalid data provided"), 400
     else:  # DELETE
         try:
             handler = DisplayPanel()
             return handler.deleteDisplayPanelById(panel_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Cannot delete record because it is referenced by other records"), 404
+            return jsonify("Cannot delete record because it is referenced by other records"), 400
 
-# UploadHistory
+# UploadHistory-----------------------------------------------------------------------------------------------------------
 @app.route("/upload_history", methods=['GET', 'POST'])
 def handleUploadHistory():
     if request.method == 'GET':
@@ -261,17 +310,17 @@ def handleUploadHistory():
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
             if not all(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = UploadHistory()
             return handler.addNewUploadHistory(data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 404
+            return jsonify("Invalid JSON data provided"), 400
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):
@@ -282,25 +331,25 @@ def handleUploadHistoryById(history_id):
         try:
             data = request.json
             if not data:
-                return jsonify("No data provided"), 404
+                return jsonify("No data provided"), 400
 
             # For partial updates, you might remove this check or adapt it
             valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
             if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 404
+                return jsonify("Missing a key"), 400
 
             handler = UploadHistory()
             return handler.updateUploadHistoryById(history_id, data)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 404
+            return jsonify("Invalid data provided"), 400
     else:  # DELETE
         try:
             handler = UploadHistory()
             return handler.deleteUploadHistoryById(history_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Cannot delete record because it is referenced by other records"), 404
+            return jsonify("Cannot delete record because it is referenced by other records"), 400
 
 
 if __name__ == '__main__':
