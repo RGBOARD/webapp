@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-import sqlite3
 from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
@@ -8,12 +7,6 @@ from controller.user import User
 from controller.design import Design
 
 app = Flask(__name__)
-
-# Database connection function
-def get_db_connection():
-    conn = sqlite3.connect('data.db')  # Ensure this is the correct path
-    conn.row_factory = sqlite3.Row  # Enables fetching data as dictionaries
-    return conn
 
 @app.route('/')
 def hello_world():  # put application's code here
