@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import sqlite3
 from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
@@ -31,7 +32,7 @@ def handleUser():
                 return jsonify("No data provided"), 400
 
             valid_keys = {'email', 'username', 'password'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = User()
@@ -53,7 +54,7 @@ def handleUserById(user_id):
                 return jsonify("No data provided"), 400
 
             valid_keys = {'email','is_admin', 'is_verified', 'created_at', 'username', 'password'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = User()
@@ -82,7 +83,7 @@ def handleDesign():
                 return jsonify("No data provided"), 400
 
             valid_keys = {'user_id', 'title', 'image_path', 'created_at', 'is_approved', 'status'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = Design()
@@ -104,7 +105,7 @@ def handleDesignById(design_id):
                 return jsonify("No data provided"), 400
 
             valid_keys = {'user_id', 'title', 'image_path', 'created_at', 'is_approved', 'status'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = Design()
@@ -143,7 +144,7 @@ def handleAdminAction():
                 'action_details',
                 'timestamp'
             }
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = AdminAction()
@@ -175,7 +176,7 @@ def handleAdminActionById(action_id):
                 'action_details',
                 'timestamp'
             }
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = AdminAction()
@@ -207,7 +208,7 @@ def handleQueueItem():
                 return jsonify("No data provided"), 400
 
             valid_keys = {'design_id','panel_id', 'start_time', 'end_time', 'display_duration', 'display_order', 'scheduled', 'scheduled_at'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = QueueItem()
@@ -229,7 +230,7 @@ def handleQueueItemById(queue_id):
                 return jsonify("No data provided"), 400
 
             valid_keys = {'design_id','panel_id', 'start_time', 'end_time', 'display_duration', 'display_order', 'scheduled', 'scheduled_at'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = QueueItem()
@@ -259,7 +260,7 @@ def handleDisplayPanel():
                 return jsonify("No data provided"), 400
 
             valid_keys = {'location', 'status'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = DisplayPanel()
@@ -312,7 +313,7 @@ def handleUploadHistory():
                 return jsonify("No data provided"), 400
 
             valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
-            if not all(key in data for key in valid_keys):
+            if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
             handler = UploadHistory()
