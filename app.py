@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-import sqlite3
 from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
