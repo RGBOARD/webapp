@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 
 class UserDAO:
 
@@ -27,7 +28,11 @@ class UserDAO:
         cursor.close()
         return result
 
-    def addNewUser(self, email, is_admin, is_verified, created_at, username, password):
+    def addNewUser(self, email, username, password):
+
+        is_admin = False
+        is_verified = False
+        created_at = datetime.datetime.utcnow().isoformat()
 
         cursor = self.conn.cursor()
         query = "insert into user (email, is_admin, is_verified, created_at, username, password) values (?, ?, ?, ?, ?, ?);"

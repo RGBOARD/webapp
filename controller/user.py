@@ -38,14 +38,12 @@ class User:
             return answer
 
         def addNewUser(self, data):
+
             email = data['email']
-            is_admin = data['is_admin']
-            is_verified = data['is_verified']
-            created_at = data['created_at']
             username = data['username']
             password = data['password']
             dao = UserDAO()
-            user = dao.addNewUser(email, is_admin, is_verified, created_at, username, password)
+            user = dao.addNewUser(email, username, password)
             result = self.make_json_one(user)
             return result
 
