@@ -2,18 +2,13 @@ import React from 'react';
 import './styles/Header.css'
 import logoImage from '../assets/RGB-Icon.png';
 import { Menu, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 
-function Header({ onLogout }) {
-  const navigate = useNavigate();
+function Header() {
+  const { isAuthenticated, logout } = useAuth0();
   
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
-
-    localStorage.removeItem('userRole');
-    navigate('/login');
+    logout({ returnTo: window.location.origin + '/login' });
   };
 
   return (
@@ -27,9 +22,11 @@ function Header({ onLogout }) {
           <img src={logoImage} alt="RGB Board" />
         </div>
         
-        <div className="action-icon" onClick={handleLogout}>
-          <LogOut/>
-        </div>
+        {isAuthenticated && (
+          <div className="action-icon" onClick={handleLogout}>
+            <LogOut/>
+          </div>
+        )}
       </div>
     </header>
   )

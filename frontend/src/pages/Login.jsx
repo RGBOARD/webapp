@@ -1,38 +1,22 @@
 import React from 'react';
-import { useState } from 'react'
+import { useAuth0 } from '@auth0/auth0-react';
 
-function Login({ onLogin }) {
-  const [selectedRole, setSelectedRole] = useState('user')
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onLogin(selectedRole)
-  }
+function Login() {
+  const { loginWithRedirect } = useAuth0();
 
   return (
     <div className="login-container">
       <div className="login-card">
         <h1>Login</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>
-              Select Role:
-              <select 
-                value={selectedRole} 
-                onChange={(e) => setSelectedRole(e.target.value)}
-              >
-                <option value="user">Regular User</option>
-                <option value="admin">Administrator</option>
-              </select>
-            </label>
-          </div>
-          <button type="submit" className="login-button">
-            Log In
-          </button>
-        </form>
+        <button 
+          onClick={() => loginWithRedirect()} 
+          className="login-button"
+        >
+          Log In with Auth0
+        </button>
       </div>
     </div>
-  )
+  );
 }
 
 export default Login;
