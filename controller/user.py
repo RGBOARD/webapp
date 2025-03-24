@@ -1,9 +1,6 @@
-from typing import Any
-
-from flask import jsonify, abort
-import bcrypt
 import re
-
+import bcrypt
+from flask import jsonify
 from flask_jwt_extended import create_access_token
 
 from model.user import UserDAO
@@ -80,24 +77,24 @@ class User:
 
         # check for missing attributes
         if self.name is None:
-            return jsonify("Username not provided"), 400
+            return jsonify(error="No username provided"), 400
         if self.email is None:
-            return jsonify("Email not provided"), 400
+            return jsonify(error="No email provided"), 400
         if self.password is None:
-            return jsonify("Password not provided"), 400
+            return jsonify(error="No password provided"), 400
 
         # enforce rules with regular expressions
         name_rule = r'^(?!.*[_.]{2})[a-z][a-z0-9._]{2,15}(?<![_.])$'
         if not bool(re.match(name_rule, self.name)):
-            return jsonify("Username not valid"), 400
+            return jsonify(error="Invalid username"), 400
 
         email_rule = r'^[a-zA-Z0-9._%+-]+@upr\.edu$'
         if not bool(re.match(email_rule, self.email)):
-            return jsonify("Email not valid"), 400
+            return jsonify(error="Invalid email"), 400
 
         password_rule = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]).{8,32}$'
         if not bool(re.match(password_rule, self.password)):
-            return jsonify("Password not valid"), 400
+            return jsonify(error="Invalid password"), 400
 
         # encode password into an array of bytes
         password_encoded = self.password.encode("utf-8")
@@ -116,24 +113,24 @@ class User:
             case 0:
                 return jsonify("User created"), 201
             case 2:
-                return jsonify("Username already exists"), 400
+                return jsonify(error="Username already exists"), 400
 
-        return jsonify("Couldn't create user"), 500
+        return jsonify(error="Couldn't create user"), 500
 
     def login_user(self):
         # check for missing attributes
         if self.name is None:
-            return jsonify("Username not provided"), 400
+            return jsonify(error="Username not provided"), 400
 
         if self.password is None:
-            return jsonify("Password not provided"), 400
+            return jsonify(error="Password not provided"), 400
 
         # get password from user
         dao = UserDAO()
         response = dao.get_password_by_name(self.name)
 
         if response is None:
-            return jsonify("Coundn't find user"), 400
+            return jsonify(error="Couldn't find user"), 400
 
         hashed_password = response[0]
 
@@ -143,8 +140,7 @@ class User:
             access_token = create_access_token(identity=self.name)
             return jsonify(access_token=access_token), 200
         else:
-            abort(jsonify(message="Unauthorized"), 401)
-
+            return jsonify(error="Wrong password"), 400
 
     def getUserById(self, user_id):
         dao = UserDAO()
