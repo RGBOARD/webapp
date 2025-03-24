@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import {useState} from 'react';
+import {NavLink} from "react-router-dom";
 
 import '../App.css';
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
@@ -17,9 +18,15 @@ export default function Navbar() {
 
         {/* Desktop Menu */}
         <ul className="hidden md:flex space-x-6 text-lg">
-          <li className="hover:text-red-300 cursor-pointer" >Home</li>
-          <li className="hover:text-green-300 cursor-pointer">Sign Up</li>
-          <li className="hover:text-blue-300 cursor-pointer">Login</li>
+          <li className="hover:text-red-300 cursor-pointer" >
+            <NavLink to="/" end>Home</NavLink>
+          </li>
+          <li className="hover:text-green-300 cursor-pointer">
+            <NavLink to="/signup" end>Sign Up</NavLink>
+          </li>
+          <li className="hover:text-blue-300 cursor-pointer">
+            <NavLink to="/login" end>Login</NavLink>
+          </li>
         </ul>
 
         {/* Mobile Menu Button */}
