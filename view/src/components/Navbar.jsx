@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import '../App.css';
-import '../assets/fonts/PixelifySans-VariableFont_wght.ttf'
+import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
 
 import rgbLogo from '/images/logo.png';
 
@@ -13,11 +13,11 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow-md" style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
       <div className="container mx-auto flex items-center justify-between py-4 px-4">
-        <img src={rgbLogo} alt="logo" className="h-12 w-auto mr-3" />
+        <img src={rgbLogo} alt="logo" className="h-20 w-auto mr-3" />
 
         {/* Desktop Menu */}
-        <ul className="hidden md:flex space-x-6">
-          <li className="hover:text-red-300 cursor-pointer">Home</li>
+        <ul className="hidden md:flex space-x-6 text-lg">
+          <li className="hover:text-red-300 cursor-pointer" >Home</li>
           <li className="hover:text-green-300 cursor-pointer">Sign Up</li>
           <li className="hover:text-blue-300 cursor-pointer">Login</li>
         </ul>
