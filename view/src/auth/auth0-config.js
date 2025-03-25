@@ -1,4 +1,4 @@
-import config from "../config";
+import config from "../../../frontend/src/config.js";
 
 export const auth0Config = {
     domain: config.auth0_domain,

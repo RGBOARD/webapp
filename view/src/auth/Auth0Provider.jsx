@@ -1,6 +1,6 @@
 import React from 'react';
 import { Auth0Provider } from '@auth0/auth0-react';
-import { auth0Config } from './auth0-config';
+import { auth0Config } from './auth0-config.js';
 
 const Auth0ProviderWithHistory = ({ children }) => {
   return (

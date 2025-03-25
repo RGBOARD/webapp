@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import config from "../config";
+import config from "../../../frontend/src/config";
 
 export const useUserRoles = () => {
   const { user, isAuthenticated } = useAuth0();
