@@ -3,17 +3,16 @@ import axios from '../api/axios.jsx'
 import '../App.css'
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
 
-const SIGNUP_URL = '/user'
+const LOGIN_URL = '/login'
 
-export default function SignUpForm() {
+export default function LoginForm() {
   const [formData, setFormData] = useState({
     username: '',
-    email: '',
     password: ''
   });
 
-  const [message, setMessage] = useState(null); // for feedback
-  const [isError, setIsError] = useState(false); // for styling feedback
+  const [message, setMessage] = useState(null);
+  const [isError, setIsError] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,25 +26,23 @@ export default function SignUpForm() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(SIGNUP_URL, formData, {
+      const response = await axios.post(LOGIN_URL, formData, {
         headers: { 'Content-Type': 'application/json' },
-        withCredentials: false // keep it false here
+        withCredentials: false
       });
 
-      setMessage(response.data.message || "Signup successful!");
+      setMessage(response.data.message || "Login successful!");
       setIsError(false);
 
-      // Optionally clear the form
-      setFormData({ username: '', email: '', password: '' });
+      // Clear fields if desired
+      setFormData({username: '', password: '' });
 
-
-      // TODO: Change the view for verification instructions
-
+      // Optionally redirect or store auth state here
     } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {
         setMessage(err.response.data.error);
       } else {
-        setMessage("Something went wrong. Please try again.");
+        setMessage("Login failed. Please check your credentials.");
       }
       setIsError(true);
     }
@@ -55,9 +52,9 @@ export default function SignUpForm() {
     <form
       onSubmit={handleSubmit}
       className="max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md space-y-5"
-      style={{fontFamily: '"Pixelify Sans", sans-serif'}}
+      style={{ fontFamily: '"Pixelify Sans", sans-serif' }}
     >
-      <h2 className="text-2xl font-bold text-center text-gray-800">Sign Up</h2>
+      <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
 
       {message && (
         <div className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
@@ -67,30 +64,15 @@ export default function SignUpForm() {
 
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-          Username
+          Email
         </label>
         <input
           id="username"
           name="username"
           type="text"
-          value={formData.username}
-          onChange={handleChange}
-          placeholder="Enter username"
-          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
           value={formData.email}
           onChange={handleChange}
-          placeholder="Enter upr email"
+          placeholder="Enter your username"
           className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
         />
       </div>
@@ -105,7 +87,7 @@ export default function SignUpForm() {
           type="password"
           value={formData.password}
           onChange={handleChange}
-          placeholder="Enter password"
+          placeholder="Enter your password"
           className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
         />
       </div>
@@ -114,7 +96,7 @@ export default function SignUpForm() {
         type="submit"
         className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        Sign Up
+        Login
       </button>
     </form>
   );

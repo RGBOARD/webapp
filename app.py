@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import JWTManager
 
@@ -10,6 +12,7 @@ from controller.user import User
 from controller.design import Design
 
 app = Flask(__name__)
+CORS(app)
 
 app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this
 jwt = JWTManager(app)

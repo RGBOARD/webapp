@@ -113,7 +113,7 @@ class User:
             case 0:
                 return jsonify("User created"), 201
             case 2:
-                return jsonify(error="Username already exists"), 400
+                return jsonify(error="Username already exists"), 409
 
         return jsonify(error="Couldn't create user"), 500
 
