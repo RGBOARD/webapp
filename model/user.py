@@ -1,14 +1,13 @@
 import sqlite3
+import datetime
 
 class UserDAO:
 
     def __init__(self):
         database_path = 'data.db'
-        print("Connecting to SQLite database at:", database_path)
-
         self.conn = sqlite3.connect(database_path)
 
-    def getAllUser(self):
+    def get_all_users(self):
         cursor = self.conn.cursor()
         query = "select * from user;"
         cursor.execute(query)
@@ -18,26 +17,61 @@ class UserDAO:
         cursor.close()
         return result
 
-    def getUserById(self, user_id):
+    def get_user_by_id(self, user_id):
         cursor = self.conn.cursor()
-
         query = "select * from user where user_id = ?;"
         cursor.execute(query, (user_id,))
         result = cursor.fetchone()
         cursor.close()
         return result
 
-    def addNewUser(self, email, is_admin, is_verified, created_at, username, password):
+    def get_password_by_name(self, username):
+        cursor = self.conn.cursor()
+        query = "SELECT password FROM user WHERE username = ?;"
+
+        try:
+            cursor.execute(query, (username, ))
+            return cursor.fetchone()
+
+        except sqlite3.Error:
+            return None
+
+        finally:
+            cursor.close()
+
+    def get_admin_by_name(self, username):
+        cursor = self.conn.cursor()
+        query = "SELECT is_admin FROM user WHERE username = ?;"
+
+        try:
+            cursor.execute(query, (username, ))
+            return cursor.fetchone()
+
+        except sqlite3.Error:
+            return None
+
+        finally:
+            cursor.close()
+
+    def add_new_user(self,username, email, password):
 
         cursor = self.conn.cursor()
-        query = "insert into user (email, is_admin, is_verified, created_at, username, password) values (?, ?, ?, ?, ?, ?);"
-        cursor.execute(query, (email, is_admin, is_verified, created_at, username, password))
-        self.conn.commit()
-        query = "select * from user order by user_id desc limit 1"
-        cursor.execute(query)
-        result = cursor.fetchone()
-        cursor.close()
-        return result
+        query = "INSERT INTO user (username, email, password) VALUES (?, ?, ?);"
+
+        try:
+            cursor.execute(query, (username, email, password))
+            self.conn.commit()
+            return 0
+
+        except sqlite3.IntegrityError:
+            return 2
+
+        except sqlite3.Error:
+            return 1
+
+        finally:
+            cursor.close()
+
 
     def updateUserById(self, user_id, data):
         cursor = self.conn.cursor()
