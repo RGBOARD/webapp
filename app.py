@@ -1,4 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager
+
 from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
@@ -7,32 +12,33 @@ from controller.user import User
 from controller.design import Design
 
 app = Flask(__name__)
+CORS(app)
+
+app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this
+jwt = JWTManager(app)
+
 
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello RGBOARD'
 
+
 # User-----------------------------------------------------------------------------------------------------------
-@app.route("/user", methods=['GET', 'POST'])
-def handleUser():
-    if request.method == 'GET':
-        handler = User()
-        return handler.getAllUser()
-    else:
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
+@app.route("/user", methods=['GET'])
+@jwt_required()
+def get_all_users():
+    handler = User(jwt=get_jwt_identity())
+    return handler.get_all_users()
 
-            valid_keys = {'email', 'username', 'password'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
+@app.route("/user", methods=['POST'])
+def create_user():
+    handler = User(json = request.json)
+    return handler.add_new_user()
 
-            handler = User()
-            return handler.addNewUser(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 400
+@app.route("/login", methods=['post'])
+def login_user():
+    handler = User(json = request.json)
+    return handler.login_user()
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
@@ -46,7 +52,7 @@ def handleUserById(user_id):
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'email','is_admin', 'is_verified', 'created_at', 'username', 'password'}
+            valid_keys = {'email', 'is_admin', 'is_verified', 'created_at', 'username', 'password'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
@@ -62,6 +68,7 @@ def handleUserById(user_id):
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Can not delete record because it is referenced by other records"), 400
+
 
 # Design-----------------------------------------------------------------------------------------------------------
 @app.route("/design", methods=['GET', 'POST'])
@@ -114,6 +121,7 @@ def handleDesignById(design_id):
             print("Error processing request:", e)
             return jsonify("Can not delete record because it is referenced by other records"), 400
 
+
 #AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
 def handleAdminAction():
@@ -145,6 +153,7 @@ def handleAdminAction():
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Invalid JSON data provided"), 400
+
 
 @app.route("/admin_action/<int:action_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleAdminActionById(action_id):
@@ -200,7 +209,8 @@ def handleQueueItem():
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id','panel_id', 'start_time', 'end_time', 'display_duration', 'display_order', 'scheduled', 'scheduled_at'}
+            valid_keys = {'design_id', 'panel_id', 'start_time', 'end_time', 'display_duration', 'display_order',
+                          'scheduled', 'scheduled_at'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
@@ -222,7 +232,8 @@ def handleQueueItemById(queue_id):
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id','panel_id', 'start_time', 'end_time', 'display_duration', 'display_order', 'scheduled', 'scheduled_at'}
+            valid_keys = {'design_id', 'panel_id', 'start_time', 'end_time', 'display_duration', 'display_order',
+                          'scheduled', 'scheduled_at'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
@@ -262,6 +273,7 @@ def handleDisplayPanel():
             print("Error processing request:", e)
             return jsonify("Invalid JSON data provided"), 400
 
+
 @app.route("/display_panel/<int:panel_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleDisplayPanelById(panel_id):
     if request.method == 'GET':
@@ -293,6 +305,7 @@ def handleDisplayPanelById(panel_id):
             print("Error processing request:", e)
             return jsonify("Cannot delete record because it is referenced by other records"), 400
 
+
 # UploadHistory-----------------------------------------------------------------------------------------------------------
 @app.route("/upload_history", methods=['GET', 'POST'])
 def handleUploadHistory():
@@ -314,6 +327,7 @@ def handleUploadHistory():
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Invalid JSON data provided"), 400
+
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):
@@ -347,4 +361,3 @@ def handleUploadHistoryById(history_id):
 
 if __name__ == '__main__':
     app.run()
-
