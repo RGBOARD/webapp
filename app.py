@@ -78,19 +78,47 @@ def handleDesign():
         return handler.getAllDesign()
     else:
         try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
+            # Check if the image file is included in the request
+            if 'image' not in request.files:
+                return jsonify({"error": "No image file provided"}), 400
 
-            valid_keys = {'user_id', 'title', 'image_path', 'created_at', 'is_approved', 'status'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
+            image_file = request.files['image']
+
+            if not image_file:
+                return jsonify({"error": "No image file provided"}), 400
+
+            # Get other form data
+            user_id = request.form.get('user_id')
+            title = request.form.get('title')
+            created_at = request.form.get('created_at')
+            is_approved = request.form.get('is_approved')
+            status = request.form.get('status')
+            description = request.form.get('description')  # New field
+            category = request.form.get('category')  # New field
+
+            # Validate the required fields
+            if not user_id or not title or not created_at or not is_approved or not status:
+                return jsonify({"error": "Missing required fields"}), 400
+
+            # Convert the image to binary data (BLOB)
+            image = image_file.read()
+
+            # Prepare the data and call the handler to add the new design
+            data = {
+                "user_id": user_id,
+                "title": title,
+                "image": image,  # Pass the binary image data
+                "created_at": created_at,
+                "is_approved": is_approved,
+                "status": status,
+                "description": description,  # New field
+                "category": category,  # New field
+            }
 
             handler = Design()
-            return handler.addNewDesign(data)
+            return handler.addNewDesign(data)   # Return the newly created design
         except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 400
+            return jsonify({"error": str(e)}), 400
 
 
 @app.route("/design/<int:design_id>", methods=['GET', 'PUT', 'DELETE'])
@@ -98,21 +126,45 @@ def handleDesignById(design_id):
     if request.method == 'GET':
         handler = Design()
         return handler.getDesignById(design_id)
+
     elif request.method == 'PUT':
         try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
-
-            valid_keys = {'user_id', 'title', 'image_path', 'created_at', 'is_approved', 'status'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
-
+            # Get the design by ID
             handler = Design()
+            existing_design = handler.getDesignById(design_id)
+            if not existing_design:
+                return jsonify({"error": "Design not found"}), 404
+
+            # Check if the image file is included in the request
+            image = None
+            if 'image' in request.files:
+                image_file = request.files['image']
+                if image_file:
+                    image = image_file.read()  # Convert the image to binary data
+
+            # Get other form data (use existing design values if not provided in the request)
+            user_id = request.form.get('user_id', existing_design['user_id'])
+            title = request.form.get('title', existing_design['title'])
+            created_at = request.form.get('created_at', existing_design['created_at'])
+            is_approved = request.form.get('is_approved', existing_design['is_approved'])
+            status = request.form.get('status', existing_design['status'])
+
+            # Prepare the data to update
+            data = {
+                "user_id": user_id,
+                "title": title,
+                "created_at": created_at,
+                "is_approved": is_approved,
+                "status": status,
+                "image": image  # Image may be None if not provided
+            }
+
             return handler.updateDesignById(design_id, data)
+
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 400
+            return jsonify({"error": "Invalid request data"}), 400
+
     else:
         try:
             handler = Design()

@@ -27,11 +27,11 @@ class DesignDAO:
         cursor.close()
         return result
 
-    def addNewDesign(self, user_id, title, image_path, created_at, is_approved, status):
+    def addNewDesign(self, user_id, title, image, created_at, is_approved, status):
 
         cursor = self.conn.cursor()
-        query = "insert into design (user_id, title, image_path, created_at, is_approved, status) values (?, ?, ?, ?, ?, ?);"
-        cursor.execute(query, (user_id, title, image_path, created_at, is_approved, status))
+        query = "insert into design (user_id, title, image, created_at, is_approved, status) values (?, ?, ?, ?, ?, ?);"
+        cursor.execute(query, (user_id, title, image, created_at, is_approved, status))
         self.conn.commit()
         query = "select * from design order by design_id desc limit 1"
         cursor.execute(query)
@@ -49,8 +49,8 @@ class DesignDAO:
                 query += " user_id = ? where design_id = ?;"
             elif key == "title":
                 query += " title = ? where design_id = ?;"
-            elif key == "image_path":
-                query += " image_path = ? where design_id = ?;"
+            elif key == "image" and data['image'] is not None:
+                query += " image = ? where design_id = ?;"
             elif key == "created_at":
                 query += " created_at = ? where design_id = ?;"
             elif key == "is_approved":
