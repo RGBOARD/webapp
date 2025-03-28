@@ -7,3 +7,23 @@
     font-style: normal;
     font-display: swap;
 }
+
+/* Make sure pages within content area use full height */
+.content > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Your existing button menu styles */
+.button-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  padding: 0.75rem; /* Slightly reduced padding */
+}
