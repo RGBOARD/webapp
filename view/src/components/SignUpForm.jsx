@@ -1,9 +1,8 @@
-import { useState } from 'react'
-import axios from '../api/axios.jsx'
+import { useState, useEffect } from 'react'
 import '../App.css'
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
-
-const SIGNUP_URL = '/user'
+import { useAuth } from '../auth/authContext.js'
+import { useNavigate } from 'react-router-dom'
 
 export default function SignUpForm() {
   const [formData, setFormData] = useState({
@@ -12,8 +11,92 @@ export default function SignUpForm() {
     password: ''
   });
 
-  const [message, setMessage] = useState(null); // for feedback
-  const [isError, setIsError] = useState(false); // for styling feedback
+  const [errors, setErrors] = useState({
+    username: '',
+    email: '',
+    password: ''
+  });
+
+  const [touched, setTouched] = useState({
+    username: false,
+    email: false,
+    password: false
+  });
+
+  const [message, setMessage] = useState(null);
+  const [isError, setIsError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
+  
+  const { signup } = useAuth();
+  const navigate = useNavigate();
+
+  // Validation functions
+  const validateUsername = (username) => {
+    // Must start with lowercase letter, allowed chars: a-z, 0-9, . and _
+    // Length: 3-16 chars, no consecutive . or _, can't end with . or _
+    const nameRule = /^[a-z0-9._]{3,16}$/;
+    if (!username) return 'Username is required';
+    if (!nameRule.test(username)) {
+      return (
+        <ul>
+          <li>Username must be:</li>
+          <li>• 3-16 characters long</li>
+          <li>• Must be only lowercase letters</li>
+          <li>• Optional: numbers, dots, and underscores</li>
+        </ul>
+      );
+    }
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    // Must be a valid email format and end with @upr.edu
+    const emailRule = /^[a-zA-Z0-9._%+-]+@upr\.edu$/;
+    if (!email) return 'Email is required';
+    if (!emailRule.test(email)) {
+      return 'Email must be a valid @upr.edu address';
+    }
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    // Must contain at least: 1 uppercase, 1 lowercase, 1 digit, 1 special char
+    // Length: 8-32 chars
+    const passwordRule = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]).{8,32}$/;
+    if (!password) return 'Password is required';
+    if (!passwordRule.test(password)) {
+      return (
+        <>
+          Password must be: 
+          <ul>
+            <li>• 8-32 characters long</li>
+            <li>• At least one uppercase letter</li>
+            <li>• At least one lowercase letter</li>
+            <li>• At least one number</li>
+            <li>• At least one special character</li>
+          </ul>
+        </>
+        )
+    }
+    return '';
+  };
+
+  // Validate form on input change
+  useEffect(() => {
+    const newErrors = {
+      username: touched.username ? validateUsername(formData.username) : '',
+      email: touched.email ? validateEmail(formData.email) : '',
+      password: touched.password ? validatePassword(formData.password) : ''
+    };
+    
+    setErrors(newErrors);
+    
+    // Form is valid if all fields are touched and have no errors
+    const valid = touched.username && touched.email && touched.password && 
+                  !newErrors.username && !newErrors.email && !newErrors.password;
+    setIsFormValid(valid);
+  }, [formData, touched]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,31 +106,64 @@ export default function SignUpForm() {
     }));
   };
 
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Mark all fields as touched to show validation errors
+    setTouched({
+      username: true,
+      email: true,
+      password: true
+    });
+    
+    // Check if form is valid
+    const usernameError = validateUsername(formData.username);
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    
+    if (usernameError || emailError || passwordError) {
+      setErrors({
+        username: usernameError,
+        email: emailError,
+        password: passwordError
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    setMessage(null);
 
     try {
-      const response = await axios.post(SIGNUP_URL, formData, {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: false // keep it false here
-      });
-
-      setMessage(response.data.message || "Signup successful!");
-      setIsError(false);
-
-      // Optionally clear the form
-      setFormData({ username: '', email: '', password: '' });
-
-
-      // TODO: Change the view for verification instructions
-
-    } catch (err) {
-      if (err.response && err.response.data && err.response.data.error) {
-        setMessage(err.response.data.error);
+      const result = await signup(formData);
+      
+      if (result.success) {
+        setMessage("Signup successful! Please login.");
+        setIsError(false);
+        setFormData({ username: '', email: '', password: '' });
+        setTouched({ username: false, email: false, password: false });
+        
+        // Navigate to login after a delay
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       } else {
-        setMessage("Something went wrong. Please try again.");
+        setMessage(result.error || "Registration failed. Please try again.");
+        setIsError(true);
       }
+    } catch (err) {
+      setMessage("An unexpected error occurred. Please try again.");
       setIsError(true);
+      console.error('Signup error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,9 +191,14 @@ export default function SignUpForm() {
           type="text"
           value={formData.username}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="Enter username"
-          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+          className={`mt-1 w-full px-4 py-2 border ${errors.username ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.username ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+          disabled={isLoading}
         />
+        {errors.username && (
+          <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+        )}
       </div>
 
       <div>
@@ -90,9 +211,14 @@ export default function SignUpForm() {
           type="email"
           value={formData.email}
           onChange={handleChange}
-          placeholder="Enter upr email"
-          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+          onBlur={handleBlur}
+          placeholder="Enter email (@upr.edu)"
+          className={`mt-1 w-full px-4 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.email ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+          disabled={isLoading}
         />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+        )}
       </div>
 
       <div>
@@ -105,17 +231,35 @@ export default function SignUpForm() {
           type="password"
           value={formData.password}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="Enter password"
-          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
+          className={`mt-1 w-full px-4 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.password ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+          disabled={isLoading}
         />
+        {errors.password && (
+          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+        )}
       </div>
 
       <button
         type="submit"
-        className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-300 cursor-not-allowed'}`}
+        disabled={isLoading || !isFormValid}
       >
-        Sign Up
+        {isLoading ? 'Signing up...' : 'Sign Up'}
       </button>
+      
+      <div className="text-center mt-4">
+        <p className="text-gray-600">
+          Already have an account?{' '}
+          <span 
+            className="text-blue-600 cursor-pointer hover:underline"
+            onClick={() => navigate('/login')}
+          >
+            Login
+          </span>
+        </p>
+      </div>
     </form>
   );
 }

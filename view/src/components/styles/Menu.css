@@ -1,0 +1,74 @@
+/* Menu.css - Content area styles */
+.homepage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.menu-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 2rem;
+  flex: 1; /* Take available space */
+  overflow: hidden;
+}
+
+.welcome-column {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.menu-column {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.welcome-text {
+  text-align: center;
+  margin-bottom: 1rem; /* Reduced from 2rem */
+}
+
+.welcome-text h1 {
+  font-size: 1.75rem; /* Slightly smaller */
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-text p {
+  font-size: 1.1rem; /* Slightly smaller */
+  color: #4b5563;
+}
+
+/* Make action buttons more compact */
+.action-button {
+  margin: 0.35rem 0; /* Reduced from 0.5rem */
+}
+
+/* Media query for smaller screens */
+@media (max-height: 700px) {
+  .welcome-text h1 {
+    font-size: 1.5rem;
+  }
+  
+  .welcome-text p {
+    font-size: 1rem;
+  }
+  
+  .menu-wrapper {
+    padding: 0.5rem 1.5rem;
+  }
+  
+  .action-button {
+    padding: 0.5rem 1.25rem;
+    margin: 0.25rem 0;
+  }
+}

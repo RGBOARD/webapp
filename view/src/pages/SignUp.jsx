@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import Navbar from '../components/Navbar.jsx'
-import SignUpForm from '../components/SignUpForm.jsx'
-import '../App.css'
+import React from 'react';
+import SignUpForm from '../components/SignUpForm';
 
-export default function SignUp(){
-
-    return(<>
-        <Navbar/>
-        <SignUpForm/>
-        </>)
+function SignUp() {
+  return (
+    <div className="signup-container">
+      <SignUpForm />
+    </div>
+  );
 }
+
+export default SignUp;
