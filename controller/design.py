@@ -1,5 +1,5 @@
-from flask import jsonify
-
+from flask import jsonify, request
+import base64
 from model.design import DesignDAO
 
 class Design:
@@ -11,7 +11,7 @@ class Design:
                 D['design_id'] = t[0]
                 D['user_id'] = t[1]
                 D['title'] = t[2]
-                D['image_path'] = t[3]
+                D['image'] = base64.b64encode(t[3]).decode('utf-8') if t[3] else None
                 D['created_at'] = t[4]
                 D['is_approved'] = t[5]
                 D['status'] = t[6]
@@ -24,7 +24,7 @@ class Design:
             result['design_id'] = design[0]
             result['user_id'] = design[1]
             result['title'] = design[2]
-            result['image_path'] = design[3]
+            result['image'] = base64.b64encode(design[3]).decode('utf-8') if design[3] else None
             result['created_at'] = design[4]
             result['is_approved'] = design[5]
             result['status'] = design[6]
@@ -39,12 +39,12 @@ class Design:
         def addNewDesign(self, data):
             user_id = data['user_id']
             title = data['title']
-            image_path = data['image_path']
             created_at = data['created_at']
             is_approved = data['is_approved']
             status = data['status']
+            image = data['image']  # Get the image binary from the passed data
             dao = DesignDAO()
-            design = dao.addNewDesign(user_id, title, image_path, created_at, is_approved, status)
+            design = dao.addNewDesign(user_id, title, image, created_at, is_approved, status)
             result = self.make_json_one(design)
             return result
 
