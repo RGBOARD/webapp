@@ -444,7 +444,7 @@ def authorize():
     return authorize_mail()
 
 
-@app.route("/settings//mail/oauth2callback")
+@app.route("/settings/mail/oauth2callback")
 def callback():
     return authorize_callback()
 
