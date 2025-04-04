@@ -49,17 +49,22 @@ def login_user():
     return handler.login_user()
 
 
-@app.route("/verify", methods=['POST'])
+@app.route("/verify-email", methods=['POST'])
 @jwt_required()
 def verify_user():
     handler = User(jwt=get_jwt_identity())
-    return handler.verify_user(json_data=request.json)
+    return handler.verify_email(json_data=request.json)
 
-@app.route("/isverified", methods=['GET'])
+@app.route("/is-email-verified", methods=['GET'])
 @jwt_required()
 def is_verified():
     handler = User(jwt=get_jwt_identity())
-    return handler.get_user_verification_status()
+    return handler.get_user_email_verification_status()
+@app.route("/code", methods=['POST'])
+@jwt_required()
+def get_verification_code():
+    handler = User(jwt=get_jwt_identity())
+    return handler.get_new_verification_code()
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
@@ -435,6 +440,7 @@ def handleUploadHistoryById(history_id):
 # Settings-----------------------------------------------------------------------------------------------------------
 @app.route("/settings/mail")
 def authorize():
+    #TODO: Check that an user is admin to set the email system.
     return authorize_mail()
 
 

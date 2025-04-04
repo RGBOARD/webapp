@@ -138,6 +138,7 @@ export default function LogInForm() {
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           Email
         </label>
+
         <input
           id="email"
           name="email"

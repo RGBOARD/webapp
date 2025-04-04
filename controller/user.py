@@ -1,9 +1,8 @@
 import re
-from http.client import responses
-
 import bcrypt
 import json
 import random
+from datetime import datetime, timedelta, timezone
 from flask import jsonify
 from flask_jwt_extended import create_access_token
 
@@ -17,7 +16,7 @@ from googleapiclient.errors import HttpError
 from model.user import UserDAO
 from model.verification_code import VerificationCodeDAO
 
-
+# File with credentials for sending emails via Gmail API
 CREDENTIALS_FILE = "stored_credentials.json"
 
 
@@ -63,6 +62,7 @@ class User:
     def __init__(self, jwt = None, json_data = None):
         if jwt:
             self.jwt_identity = jwt
+            self.email = jwt
         else:
             self.name = json_data.get("username", None)
             self.password = json_data.get("password", None)
@@ -80,9 +80,9 @@ class User:
 
         return False
 
-    def is_verified(self) -> bool:
+    def is_email_verified(self) -> bool:
         dao = UserDAO()
-        response = dao.get_verification_by_email(email = self.jwt_identity)
+        response = dao.get_email_verification_by_email(email = self.jwt_identity)
 
         if response is None:  # User was not found
             return False
@@ -106,9 +106,9 @@ class User:
         else:
             return jsonify(error="Unauthorized. No token."), 401
 
-    def get_user_verification_status(self):
+    def get_user_email_verification_status(self):
         if self.jwt_identity is not None:
-            if self.is_verified():
+            if self.is_email_verified():
                 return jsonify(message = "User is verified."), 200
             else:
                 return jsonify(error = "User is not verified."), 403
@@ -150,7 +150,7 @@ class User:
         response = dao.add_new_user(self.email, password_hash)
 
         match response:
-            case 0: #TODO: This could be better
+            case 0: #TODO: This could be better written
                 verification_code = self.generate_verification_code()
                 if verification_code is not None:
                     self.send_verification_email(verification_code)
@@ -222,7 +222,54 @@ class User:
                 return verification_code
         return None
 
-    def verify_user(self, json_data):
+    def get_new_verification_code(self):
+        if self.is_email_verified():
+            return jsonify(error = "User is already verified."), 400
+
+        user_dao = UserDAO()
+        user_id = user_dao.get_userid_by_email(self.jwt_identity)
+
+        verification_code_dao = VerificationCodeDAO()
+
+        time_since_str = verification_code_dao.get_verification_code_time(user_id)
+
+        if time_since_str:
+            try:
+                time_since = datetime.strptime(time_since_str, "%Y-%m-%d %H:%M:%S")
+                time_since = time_since.replace(tzinfo=timezone.utc)
+            except ValueError:
+                return jsonify(error = "Invalid timestamp format."), 500
+
+            now = datetime.now(timezone.utc)
+            cooldown = timedelta(seconds=60)
+
+            if now - time_since < cooldown:
+                seconds_remaining = int((cooldown - (now - time_since)).total_seconds())
+                return jsonify(error = f"Please wait {seconds_remaining} seconds before requesting a new code."),  429
+
+            is_deleted = verification_code_dao.delete_verification_code(user_id)
+
+            if is_deleted != 0:
+                return jsonify(error="Couldn't remove previous code"), 500
+
+            verification_code = self.generate_verification_code()
+
+            if verification_code is None:
+                return jsonify(error="Couldn't create new code"), 500
+
+            self.send_verification_email(verification_code)
+            return jsonify(message="New verification code created."), 201
+
+        else:
+            verification_code = self.generate_verification_code()
+            if verification_code is not None:
+                self.send_verification_email(verification_code)
+                return jsonify(message="New verification code created."), 201
+
+        return jsonify(error="Couldn't create new code"), 500
+
+
+    def verify_email(self, json_data):
         user_dao = UserDAO()
         user_id = user_dao.get_userid_by_email(self.jwt_identity)
 
@@ -241,13 +288,14 @@ class User:
             return jsonify(error="A code was not given."), 400
 
         if verification_code == given_code:
-            response = user_dao.set_user_verified_by_id(user_id, 1)
+            response = user_dao.set_user_email_verified_by_id(user_id, 1)
             if response == 0:
+                verification_code_dao.delete_verification_code(user_id)
                 return jsonify("User has been verified."), 200
             else:
-                return jsonify("Could not verify user"), 500
+                return jsonify(error = "Could not verify user"), 500
 
-        return jsonify("Incorrect verification code."), 400
+        return jsonify(error = "Incorrect verification code."), 400
 
 
     def send_verification_email(self, verification_code):

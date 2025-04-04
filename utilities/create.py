@@ -9,6 +9,7 @@ cur.execute("""
         password TEXT NOT NULL,
         is_admin BOOLEAN NOT NULL DEFAULT 0,
         is_verified BOOLEAN NOT NULL DEFAULT 0,
+        is_email_verified BOOLEAN NOT NULL DEFAULT 0, 
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );

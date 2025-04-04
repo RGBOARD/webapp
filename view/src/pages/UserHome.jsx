@@ -1,14 +1,17 @@
 import ActionButton from "../components/ActionButton.jsx";
 import Carousel from '../components/Carousel.jsx'
-import "../components/styles/Menu.css";
+import "../components/styles/Menu.css"
+import VerifyForm from '../components/VerifyForm.jsx'
 import { useAuth } from '../auth/authContext.js'
+import { useLocation } from 'react-router-dom';
+
 
 import axios from '../api/axios';
 import {useEffect, useState} from "react";
 
 
 async function checkVerification() {
-  const response = await axios.get('isverified');
+  const response = await axios.get('/is-email-verified');
   return response.status === 200;
 }
 
@@ -19,17 +22,21 @@ function UserHome() {
 
   const [isVerified, setIsVerified] = useState(null)
 
+  const location = useLocation();
+
   useEffect(() => {
   async function fetchVerification() {
     const verified = await checkVerification();
     setIsVerified(verified);
   }
 
-  fetchVerification().catch(error => {
-    console.error("Verification check failed:", error);
-    setIsVerified(false); // or null or some error state
-  });
-}, []);
+  if (isVerified === null || location.state?.justVerified) {
+    fetchVerification().catch(error => {
+      console.error("Verification check failed:", error);
+      setIsVerified(false);
+    });
+  }
+}, [location.state]);
 
 
   if (isVerified) {
@@ -66,9 +73,8 @@ function UserHome() {
     </div>
   );
   }else{
-    console.log("bRUH")
     return(
-        <div>You not verified.</div>
+        <VerifyForm></VerifyForm>
     );
   }
 

@@ -1,5 +1,5 @@
 import sqlite3
-import datetime
+
 
 class UserDAO:
 
@@ -70,10 +70,10 @@ class UserDAO:
         finally:
             cursor.close()
 
-    def get_verification_by_email(self, email):
+    def get_email_verification_by_email(self, email):
         status = 1
         cursor = self.conn.cursor()
-        query = "SELECT is_verified FROM user WHERE email = ?;"
+        query = "SELECT is_email_verified FROM user WHERE email = ?;"
 
         try:
             cursor.execute(query, (email,))
@@ -86,10 +86,10 @@ class UserDAO:
         finally:
             cursor.close()
 
-    def set_user_verified_by_id(self, user_id: int, is_verified: int):
+    def set_user_email_verified_by_id(self, user_id: int, is_verified: int):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE user SET is_verified = ? WHERE user_id = ?;"
+        query = "UPDATE user SET is_email_verified = ? WHERE user_id = ?;"
 
         try:
             cursor.execute(query, (is_verified, user_id))
