@@ -5,9 +5,8 @@ cur = con.cursor()
 cur.execute("""
     CREATE TABLE IF NOT EXISTS user (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        email TEXT NOT NULL,
         is_admin BOOLEAN NOT NULL DEFAULT 0,
         is_verified BOOLEAN NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

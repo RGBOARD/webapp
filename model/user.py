@@ -25,12 +25,12 @@ class UserDAO:
         cursor.close()
         return result
 
-    def get_password_by_name(self, username):
+    def get_password_by_email(self, email):
         cursor = self.conn.cursor()
-        query = "SELECT password FROM user WHERE username = ?;"
+        query = "SELECT password FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (username, ))
+            cursor.execute(query, (email, ))
             password = cursor.fetchone()
             return password[0]
 
@@ -40,12 +40,12 @@ class UserDAO:
         finally:
             cursor.close()
 
-    def get_admin_by_name(self, username):
+    def get_admin_by_email(self, email):
         cursor = self.conn.cursor()
-        query = "SELECT is_admin FROM user WHERE username = ?;"
+        query = "SELECT is_admin FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (username, ))
+            cursor.execute(query, (email, ))
             is_admin = cursor.fetchone()
             return is_admin[0]
 
@@ -55,14 +55,30 @@ class UserDAO:
         finally:
             cursor.close()
 
-    def get_userid_by_name(self, username):
+    def get_userid_by_email(self, email):
         cursor = self.conn.cursor()
-        query = "SELECT user_id FROM user WHERE username = ?;"
+        query = "SELECT user_id FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (username, ))
+            cursor.execute(query, (email, ))
             user_id = cursor.fetchone()
             return user_id[0]
+
+        except sqlite3.Error:
+            return None
+
+        finally:
+            cursor.close()
+
+    def get_verification_by_email(self, email):
+        status = 1
+        cursor = self.conn.cursor()
+        query = "SELECT is_verified FROM user WHERE email = ?;"
+
+        try:
+            cursor.execute(query, (email,))
+            is_verified = cursor.fetchone()
+            return is_verified[0]
 
         except sqlite3.Error:
             return None
@@ -88,13 +104,13 @@ class UserDAO:
             return status
 
 
-    def add_new_user(self,username, email, password):
+    def add_new_user(self, email, password):
 
         cursor = self.conn.cursor()
-        query = "INSERT INTO user (username, email, password) VALUES (?, ?, ?);"
+        query = "INSERT INTO user (email, password) VALUES (?, ?);"
 
         try:
-            cursor.execute(query, (username, email, password))
+            cursor.execute(query, (email, password))
             self.conn.commit()
             return 0
 

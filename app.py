@@ -39,13 +39,13 @@ def get_all_users():
 
 @app.route("/user", methods=['POST'])
 def create_user():
-    handler = User(json=request.json)
+    handler = User(json_data=request.json)
     return handler.add_new_user()
 
 
 @app.route("/login", methods=['POST'])
 def login_user():
-    handler = User(json=request.json)
+    handler = User(json_data=request.json)
     return handler.login_user()
 
 
@@ -54,6 +54,12 @@ def login_user():
 def verify_user():
     handler = User(jwt=get_jwt_identity())
     return handler.verify_user(json_data=request.json)
+
+@app.route("/isverified", methods=['GET'])
+@jwt_required()
+def is_verified():
+    handler = User(jwt=get_jwt_identity())
+    return handler.get_user_verification_status()
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])

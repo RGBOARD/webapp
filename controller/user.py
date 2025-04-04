@@ -24,12 +24,11 @@ CREDENTIALS_FILE = "stored_credentials.json"
 def make_json_one(user):
     result = {}
     result['user_id'] = user[0]
-    result['username'] = user[1]
-    result['email'] = user[3]
-    result['is_admin'] = user[4]
-    result['is_verified'] = user[5]
-    result['created_at'] = user[6]
-    result['updated_at'] = user[7]
+    result['email'] = user[1]
+    result['is_admin'] = user[3]
+    result['is_verified'] = user[4]
+    result['created_at'] = user[5]
+    result['updated_at'] = user[6]
 
     return result
 
@@ -38,12 +37,11 @@ def make_json(tuples):
     for t in tuples:
         D = {}
         D['user_id'] = t[0]
-        D['username'] = t[1]
-        D['email'] = t[3]
-        D['is_admin'] = t[4]
-        D['is_verified'] = t[5]
-        D['created_at'] = t[6]
-        D['updated_at'] = t[7]
+        D['email'] = t[1]
+        D['is_admin'] = t[3]
+        D['is_verified'] = t[4]
+        D['created_at'] = t[5]
+        D['updated_at'] = t[6]
         result.append(D)
 
     return result
@@ -61,32 +59,43 @@ def load_credentials():
         )
     return creds
 
-
-def is_admin(username: str) -> bool:
-    dao = UserDAO()
-    response = dao.get_admin_by_name(username = username)
-
-    if response is None: # User was not found
-        return False
-
-    if response == 1:
-        return True
-
-    return False
-
 class User:
-    def __init__(self, jwt = None, json = None):
+    def __init__(self, jwt = None, json_data = None):
         if jwt:
             self.jwt_identity = jwt
         else:
-            self.name = json.get("username", None)
-            self.password = json.get("password", None)
-            self.email = json.get("email", None)
+            self.name = json_data.get("username", None)
+            self.password = json_data.get("password", None)
+            self.email = json_data.get("email", None)
+
+    def is_admin(self) -> bool:
+        dao = UserDAO()
+        response = dao.get_admin_by_email(email = self.jwt_identity)
+
+        if response is None:  # User was not found
+            return False
+
+        if response == 1:
+            return True
+
+        return False
+
+    def is_verified(self) -> bool:
+        dao = UserDAO()
+        response = dao.get_verification_by_email(email = self.jwt_identity)
+
+        if response is None:  # User was not found
+            return False
+
+        if response == 1:
+            return True
+
+        return False
 
 
     def get_all_users(self):
         if self.jwt_identity is not None:
-            if is_admin(self.jwt_identity):
+            if self.is_admin():
                 model = UserDAO()
                 response = model.get_all_users()
                 body = make_json(response)
@@ -97,24 +106,27 @@ class User:
         else:
             return jsonify(error="Unauthorized. No token."), 401
 
+    def get_user_verification_status(self):
+        if self.jwt_identity is not None:
+            if self.is_verified():
+                return jsonify(message = "User is verified."), 200
+            else:
+                return jsonify(error = "User is not verified."), 403
+        else:
+            return jsonify(error="Missing authentication."), 401
+
+
     def add_new_user(self):
         """
 
         :return:
         """
 
-        # check for missing attributes
-        if self.name is None:
-            return jsonify(error="No username provided"), 400
+        # check for missing attributes00
         if self.email is None:
             return jsonify(error="No email provided"), 400
         if self.password is None:
             return jsonify(error="No password provided"), 400
-
-        # enforce rules with regular expressions
-        name_rule = r'^(?!.*[_.]{2})[a-z][a-z0-9._]{2,15}(?<![_.])$'
-        if not bool(re.match(name_rule, self.name)):
-            return jsonify(error="Invalid username"), 400
 
         email_rule = r'^[a-zA-Z0-9._%+-]+@upr\.edu$'
         if not bool(re.match(email_rule, self.email)):
@@ -135,7 +147,7 @@ class User:
 
         dao = UserDAO()
 
-        response = dao.add_new_user(self.name, self.email, password_hash)
+        response = dao.add_new_user(self.email, password_hash)
 
         match response:
             case 0: #TODO: This could be better
@@ -144,21 +156,21 @@ class User:
                     self.send_verification_email(verification_code)
                 return jsonify("User created"), 201
             case 2:
-                return jsonify(error="Username already exists"), 409
+                return jsonify(error="Email already in use."), 409
 
         return jsonify(error="Couldn't create user"), 500
 
     def login_user(self):
         # check for missing attributes
-        if self.name is None:
-            return jsonify(error="Username not provided"), 400
+        if self.email is None:
+            return jsonify(error="Email not provided"), 400
 
         if self.password is None:
             return jsonify(error="Password not provided"), 400
 
         # get password from user
         dao = UserDAO()
-        response = dao.get_password_by_name(self.name)
+        response = dao.get_password_by_email(self.email)
 
         if response is None:
             return jsonify(error="Couldn't find user"), 400
@@ -168,14 +180,14 @@ class User:
         password_encoded = self.password.encode("utf-8")
 
         if bcrypt.checkpw(password_encoded, hashed_password):
-            access_token = create_access_token(identity=self.name)
+            access_token = create_access_token(identity=self.email)
             return jsonify(access_token=access_token), 200
         else:
             return jsonify(error="Wrong password"), 400
 
-    def getUserById(self, user_id):
+    def get_user_by_id(self, user_id):
         dao = UserDAO()
-        user = dao.getUserById(user_id)
+        user = dao.get_user_by_id(user_id)
         if not user:
             return jsonify("Not Found"), 404
         else:
@@ -202,7 +214,7 @@ class User:
     def generate_verification_code(self):
         verification_code = str(random.randint(100000, 999999))
         user_dao = UserDAO()
-        user_id = user_dao.get_userid_by_name(self.name)
+        user_id = user_dao.get_userid_by_email(self.email)
         if user_id is not None:
             verification_code_dao = VerificationCodeDAO()
             response = verification_code_dao.add_new_verification_code(user_id, verification_code)
@@ -212,7 +224,7 @@ class User:
 
     def verify_user(self, json_data):
         user_dao = UserDAO()
-        user_id = user_dao.get_userid_by_name(self.jwt_identity)
+        user_id = user_dao.get_userid_by_email(self.jwt_identity)
 
         if user_id is None:
             return jsonify(error = "Not a valid user."), 404
