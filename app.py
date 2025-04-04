@@ -4,6 +4,8 @@ from flask_cors import CORS
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import JWTManager
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.display_panel import DisplayPanel
@@ -11,7 +13,11 @@ from controller.upload_history import UploadHistory
 from controller.user import User
 from controller.design import Design
 
+from controller.setting import authorize_mail, authorize_callback
+
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+app.secret_key = "super-secret"  # Change this
 CORS(app)
 
 app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this
@@ -30,15 +36,24 @@ def get_all_users():
     handler = User(jwt=get_jwt_identity())
     return handler.get_all_users()
 
+
 @app.route("/user", methods=['POST'])
 def create_user():
-    handler = User(json = request.json)
+    handler = User(json=request.json)
     return handler.add_new_user()
 
-@app.route("/login", methods=['post'])
+
+@app.route("/login", methods=['POST'])
 def login_user():
-    handler = User(json = request.json)
+    handler = User(json=request.json)
     return handler.login_user()
+
+
+@app.route("/verify", methods=['POST'])
+@jwt_required()
+def verify_user():
+    handler = User(jwt=get_jwt_identity())
+    return handler.verify_user(json_data=request.json)
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
@@ -116,7 +131,7 @@ def handleDesign():
             }
 
             handler = Design()
-            return handler.addNewDesign(data)   # Return the newly created design
+            return handler.addNewDesign(data)  # Return the newly created design
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
@@ -409,6 +424,17 @@ def handleUploadHistoryById(history_id):
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Cannot delete record because it is referenced by other records"), 400
+
+
+# Settings-----------------------------------------------------------------------------------------------------------
+@app.route("/settings/mail")
+def authorize():
+    return authorize_mail()
+
+
+@app.route("/settings//mail/oauth2callback")
+def callback():
+    return authorize_callback()
 
 
 if __name__ == '__main__':

@@ -31,7 +31,8 @@ class UserDAO:
 
         try:
             cursor.execute(query, (username, ))
-            return cursor.fetchone()
+            password = cursor.fetchone()
+            return password[0]
 
         except sqlite3.Error:
             return None
@@ -45,13 +46,47 @@ class UserDAO:
 
         try:
             cursor.execute(query, (username, ))
-            return cursor.fetchone()
+            is_admin = cursor.fetchone()
+            return is_admin[0]
 
         except sqlite3.Error:
             return None
 
         finally:
             cursor.close()
+
+    def get_userid_by_name(self, username):
+        cursor = self.conn.cursor()
+        query = "SELECT user_id FROM user WHERE username = ?;"
+
+        try:
+            cursor.execute(query, (username, ))
+            user_id = cursor.fetchone()
+            return user_id[0]
+
+        except sqlite3.Error:
+            return None
+
+        finally:
+            cursor.close()
+
+    def set_user_verified_by_id(self, user_id: int, is_verified: int):
+        status = 1
+        cursor = self.conn.cursor()
+        query = "UPDATE user SET is_verified = ? WHERE user_id = ?;"
+
+        try:
+            cursor.execute(query, (is_verified, user_id))
+            self.conn.commit()
+            status = 0
+
+        except sqlite3.Error:
+            status = 1
+
+        finally:
+            cursor.close()
+            return status
+
 
     def add_new_user(self,username, email, password):
 

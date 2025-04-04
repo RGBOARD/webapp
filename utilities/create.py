@@ -1,5 +1,5 @@
 import sqlite3
-con = sqlite3.connect('data.db')
+con = sqlite3.connect('../data.db')
 cur = con.cursor()
 
 cur.execute("""
@@ -12,6 +12,16 @@ cur.execute("""
         is_verified BOOLEAN NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+""")
+
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS verification_code(
+            code_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            code TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES  user(user_id) ON DELETE CASCADE
     );
 """)
 
