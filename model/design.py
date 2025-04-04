@@ -27,17 +27,25 @@ class DesignDAO:
         cursor.close()
         return result
 
-    def addNewDesign(self, user_id, title, image, created_at, is_approved, status):
+    def addNewDesign(self, user_id, title, image):
 
         cursor = self.conn.cursor()
-        query = "insert into design (user_id, title, image, created_at, is_approved, status) values (?, ?, ?, ?, ?, ?);"
-        cursor.execute(query, (user_id, title, image, created_at, is_approved, status))
-        self.conn.commit()
-        query = "select * from design order by design_id desc limit 1"
-        cursor.execute(query)
-        result = cursor.fetchone()
-        cursor.close()
-        return result
+        query = "insert into design (user_id, title, image) values (?, ?, ?);"
+
+
+        try:
+            cursor.execute(query, (user_id, title, image))
+            self.conn.commit()
+            return 0
+
+        except sqlite3.IntegrityError:
+            return 2
+
+        except sqlite3.Error:
+            return 1
+
+        finally:
+            cursor.close()
 
     def updateDesignById(self, design_id, data):
         cursor = self.conn.cursor()

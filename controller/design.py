@@ -37,16 +37,22 @@ class Design:
             return answer
 
         def addNewDesign(self, data):
+
             user_id = data['user_id']
             title = data['title']
-            created_at = data['created_at']
-            is_approved = data['is_approved']
-            status = data['status']
-            image = data['image']  # Get the image binary from the passed data
+            image = data['image']
+
             dao = DesignDAO()
-            design = dao.addNewDesign(user_id, title, image, created_at, is_approved, status)
-            result = self.make_json_one(design)
-            return result
+            response = dao.addNewDesign(user_id, title, image)
+
+            match response:
+                case 0:
+                    return jsonify("Design created"), 201
+                case 2:
+                    return jsonify(error="Design already exists"), 409
+
+            return jsonify(error="Couldn't create design"), 500
+
 
         def getDesignById(self, design_id):
             dao = DesignDAO()
