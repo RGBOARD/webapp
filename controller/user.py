@@ -55,7 +55,6 @@ class User:
             self.password = json.get("password", None)
             self.email = json.get("email", None)
 
-
     def get_all_users(self):
         if self.jwt_identity is not None:
             if is_admin(self.jwt_identity):
@@ -68,6 +67,17 @@ class User:
 
         else:
             return jsonify(error="Unauthorized. No token."), 401
+
+    def get_user_by_username(self):
+        dao = UserDAO
+        user = dao.get_user_by_username(self.name)
+        if not user:
+            return jsonify("Not Found"), 404
+        else:
+            result = make_json_one(user)
+            return result
+
+
 
     def add_new_user(self):
         """
@@ -136,8 +146,10 @@ class User:
 
         password_encoded = self.password.encode("utf-8")
 
+        user_id = dao.get_user_by_username(self.name)[0]
+
         if bcrypt.checkpw(password_encoded, hashed_password):
-            access_token = create_access_token(identity=self.name)
+            access_token = create_access_token(identity=self.name, additional_claims={"user_id":user_id})
             return jsonify(access_token=access_token), 200
         else:
             return jsonify(error="Wrong password"), 400

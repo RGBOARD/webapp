@@ -53,7 +53,8 @@
     // but we'll check for common user identifier fields
     return {
       ...decoded,
-      username: decoded.name || decoded.username || decoded.sub || decoded.identity
+      username: decoded.name || decoded.username || decoded.sub || decoded.identity,
+      user_id: decoded.user_id || decoded.id
     };
   };
   

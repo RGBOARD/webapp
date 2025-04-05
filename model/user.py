@@ -25,6 +25,14 @@ class UserDAO:
         cursor.close()
         return result
 
+    def get_user_by_username(self, username):
+        cursor = self.conn.cursor()
+        query = "select * from user where username = ?;"
+        cursor.execute(query, (username,))
+        result = cursor.fetchone()
+        cursor.close()
+        return result
+
     def get_password_by_name(self, username):
         cursor = self.conn.cursor()
         query = "SELECT password FROM user WHERE username = ?;"

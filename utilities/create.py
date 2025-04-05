@@ -1,5 +1,5 @@
 import sqlite3
-con = sqlite3.connect('data.db')
+con = sqlite3.connect('../data.db')
 cur = con.cursor()
 
 cur.execute("""
@@ -20,8 +20,8 @@ cur.execute("""
         design_id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         title TEXT NOT NULL,
-        image_path TEXT NOT NULL,
-        created_at DATETIME NOT NULL,
+        image BLOB NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         is_approved BOOLEAN NOT NULL DEFAULT 0,
         status BOOLEAN NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE
