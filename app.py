@@ -33,8 +33,9 @@ def hello_world():  # put application's code here
 @app.route("/user", methods=['GET'])
 @jwt_required()
 def get_all_users():
-    handler = User(jwt=get_jwt_identity())
+    handler = User(email=get_jwt_identity())
     return handler.get_all_users()
+
 
 @app.route("/user", methods=['POST'])
 def create_user():
@@ -51,18 +52,21 @@ def login_user():
 @app.route("/verify-email", methods=['POST'])
 @jwt_required()
 def verify_user():
-    handler = User(jwt=get_jwt_identity())
+    handler = User(email=get_jwt_identity())
     return handler.verify_email(json_data=request.json)
+
 
 @app.route("/is-email-verified", methods=['GET'])
 @jwt_required()
 def is_verified():
-    handler = User(jwt=get_jwt_identity())
+    handler = User(email=get_jwt_identity())
     return handler.get_user_email_verification_status()
+
+
 @app.route("/code", methods=['POST'])
 @jwt_required()
 def get_verification_code():
-    handler = User(jwt=get_jwt_identity())
+    handler = User(email=get_jwt_identity())
     return handler.get_new_verification_code()
 
 
@@ -96,43 +100,14 @@ def handleUserById(user_id):
 
 
 # Design-----------------------------------------------------------------------------------------------------------
-@app.route("/design", methods=['GET', 'POST'])
-def handleDesign():
-    if request.method == 'GET':
-        handler = Design()
-        return handler.getAllDesign()
-    else:
-        try:
-            # Check if the image file is included in the request
-            if 'image' not in request.files:
-                return jsonify({"error": "No image file provided"}), 400
-
-            image_file = request.files['image']
-
-            if not image_file:
-                return jsonify({"error": "No image file provided"}), 400
-
-            # Get other form data
-            user_id = request.form.get('user_id')
-            title = request.form.get('title')
-
-            if not user_id or not title:
-                return jsonify({"error": "Missing required fields"}), 400
-
-            image = image_file.read()
-
-            data = {
-                "user_id": user_id,
-                "title": title,
-                "image": image,
-            }
-
-            handler = Design()
-            return handler.addNewDesign(data)
-        except Exception as e:
-            return jsonify({"error": str(e)}), 400
+@app.route("/design", methods=['POST'])
+@jwt_required()
+def upload_design():
+    handler = Design(email=get_jwt_identity())
+    return handler.add_new_design(title=request.form.get('title'), files=request.files)
 
 
+# TODO: These routes must be protected with JWT. Require it and check if user is allowed.
 @app.route("/design/<int:design_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleDesignById(design_id):
     if request.method == 'GET':
@@ -186,7 +161,7 @@ def handleDesignById(design_id):
             return jsonify("Can not delete record because it is referenced by other records"), 400
 
 
-#AdminAction-----------------------------------------------------------------------------------------------------------
+# AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
 def handleAdminAction():
     if request.method == 'GET':
@@ -426,7 +401,7 @@ def handleUploadHistoryById(history_id):
 # Settings-----------------------------------------------------------------------------------------------------------
 @app.route("/settings/mail")
 def authorize():
-    #TODO: Check that an user is admin to set the email system.
+    # TODO: Check that an user is admin to set the email system.
     return authorize_mail()
 
 

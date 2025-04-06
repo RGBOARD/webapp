@@ -59,18 +59,16 @@ def load_credentials():
     return creds
 
 class User:
-    def __init__(self, jwt = None, json_data = None):
-        if jwt:
-            self.jwt_identity = jwt
-            self.email = jwt
+    def __init__(self, email = None, json_data = None):
+        if email:
+            self.email = email
         else:
-            self.name = json_data.get("username", None)
-            self.password = json_data.get("password", None)
             self.email = json_data.get("email", None)
+            self.password = json_data.get("password", None)
 
     def is_admin(self) -> bool:
         dao = UserDAO()
-        response = dao.get_admin_by_email(email = self.jwt_identity)
+        response = dao.get_admin_by_email(email = self.email)
 
         if response is None:  # User was not found
             return False
@@ -82,7 +80,7 @@ class User:
 
     def is_email_verified(self) -> bool:
         dao = UserDAO()
-        response = dao.get_email_verification_by_email(email = self.jwt_identity)
+        response = dao.get_email_verification_by_email(email = self.email)
 
         if response is None:  # User was not found
             return False
@@ -94,7 +92,7 @@ class User:
 
 
     def get_all_users(self):
-        if self.jwt_identity is not None:
+        if self.email is not None:
             if self.is_admin():
                 model = UserDAO()
                 response = model.get_all_users()
@@ -107,7 +105,7 @@ class User:
             return jsonify(error="Unauthorized. No token."), 401
 
     def get_user_email_verification_status(self):
-        if self.jwt_identity is not None:
+        if self.email is not None:
             if self.is_email_verified():
                 return jsonify(message = "User is verified."), 200
             else:
@@ -115,6 +113,15 @@ class User:
         else:
             return jsonify(error="Missing authentication."), 401
 
+    ## INTERNAL USE ##
+    def get_user_id(self):
+        if self.email is not None:
+            model = UserDAO()
+            user_id = model.get_userid_by_email(self.email)
+            if user_id is not None:
+                return user_id
+            else:
+                return None
 
     def add_new_user(self):
         """
@@ -227,7 +234,7 @@ class User:
             return jsonify(error = "User is already verified."), 400
 
         user_dao = UserDAO()
-        user_id = user_dao.get_userid_by_email(self.jwt_identity)
+        user_id = user_dao.get_userid_by_email(self.email)
 
         verification_code_dao = VerificationCodeDAO()
 
@@ -271,7 +278,7 @@ class User:
 
     def verify_email(self, json_data):
         user_dao = UserDAO()
-        user_id = user_dao.get_userid_by_email(self.jwt_identity)
+        user_id = user_dao.get_userid_by_email(self.email)
 
         if user_id is None:
             return jsonify(error = "Not a valid user."), 404
@@ -299,7 +306,11 @@ class User:
 
 
     def send_verification_email(self, verification_code):
-        creds = load_credentials()
+        try:
+            creds = load_credentials()
+        except FileNotFoundError:
+            # Credentials missing. Don't do anything
+            return
 
         try:
             service = build("gmail", "v1", credentials=creds)

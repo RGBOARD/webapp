@@ -4,7 +4,6 @@ class DesignDAO:
 
     def __init__(self):
         database_path = 'data.db'
-        print("Connecting to SQLite database at:", database_path)
 
         self.conn = sqlite3.connect(database_path)
 
@@ -27,7 +26,7 @@ class DesignDAO:
         cursor.close()
         return result
 
-    def addNewDesign(self, user_id, title, image):
+    def add_new_design(self, user_id, title, image):
 
         cursor = self.conn.cursor()
         query = "insert into design (user_id, title, image) values (?, ?, ?);"
