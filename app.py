@@ -36,7 +36,6 @@ def get_all_users():
     handler = User(jwt=get_jwt_identity())
     return handler.get_all_users()
 
-
 @app.route("/user", methods=['POST'])
 def create_user():
     handler = User(json_data=request.json)
@@ -116,33 +115,20 @@ def handleDesign():
             # Get other form data
             user_id = request.form.get('user_id')
             title = request.form.get('title')
-            created_at = request.form.get('created_at')
-            is_approved = request.form.get('is_approved')
-            status = request.form.get('status')
-            description = request.form.get('description')  # New field
-            category = request.form.get('category')  # New field
 
-            # Validate the required fields
-            if not user_id or not title or not created_at or not is_approved or not status:
+            if not user_id or not title:
                 return jsonify({"error": "Missing required fields"}), 400
 
-            # Convert the image to binary data (BLOB)
             image = image_file.read()
 
-            # Prepare the data and call the handler to add the new design
             data = {
                 "user_id": user_id,
                 "title": title,
-                "image": image,  # Pass the binary image data
-                "created_at": created_at,
-                "is_approved": is_approved,
-                "status": status,
-                "description": description,  # New field
-                "category": category,  # New field
+                "image": image,
             }
 
             handler = Design()
-            return handler.addNewDesign(data)  # Return the newly created design
+            return handler.addNewDesign(data)
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 

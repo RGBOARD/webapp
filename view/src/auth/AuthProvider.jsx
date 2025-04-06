@@ -87,6 +87,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Design Upload function
+const upload = async (imageData) => {
+  try {
+    const response = await axios.post('/design', imageData);
+    return response;
+  } catch (error) {
+    console.error('Upload error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Image Upload failed'
+    };
+  }
+};
+
   // Logout function
   const logout = () => {
     removeToken();
@@ -101,6 +115,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     signup,
+    upload,
     logout,
     hasRole, 
     hasAnyRole
