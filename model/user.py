@@ -32,7 +32,7 @@ class UserDAO:
         try:
             cursor.execute(query, (email, ))
             password = cursor.fetchone()
-            return password[0]
+            return password[0] if password else None
 
         except sqlite3.Error:
             return None

@@ -107,58 +107,40 @@ def upload_design():
     return handler.add_new_design(title=request.form.get('title'), files=request.files)
 
 
-# TODO: These routes must be protected with JWT. Require it and check if user is allowed.
-@app.route("/design/<int:design_id>", methods=['GET', 'PUT', 'DELETE'])
-def handleDesignById(design_id):
-    if request.method == 'GET':
-        handler = Design()
-        return handler.getDesignById(design_id)
+@app.route("/design/<int:design_id>", methods=['GET'])
+@jwt_required()
+def get_design():
+    handler = Design(email=get_jwt_identity())
+    return handler.get_design(design_id=request.form.get('design_id'))
 
-    elif request.method == 'PUT':
-        try:
-            # Get the design by ID
-            handler = Design()
-            existing_design = handler.getDesignById(design_id)
-            if not existing_design:
-                return jsonify({"error": "Design not found"}), 404
 
-            # Check if the image file is included in the request
-            image = None
-            if 'image' in request.files:
-                image_file = request.files['image']
-                if image_file:
-                    image = image_file.read()  # Convert the image to binary data
+@app.route("/design/<int>:design_id/title", methods=['PUT'])
+@jwt_required()
+def update_design_title():
+    handler = Design(email=get_jwt_identity())
+    return handler.update_design_title(design_id=request.form.get('design_id'), title=request.form.get('title'))
 
-            # Get other form data (use existing design values if not provided in the request)
-            user_id = request.form.get('user_id', existing_design['user_id'])
-            title = request.form.get('title', existing_design['title'])
-            created_at = request.form.get('created_at', existing_design['created_at'])
-            is_approved = request.form.get('is_approved', existing_design['is_approved'])
-            status = request.form.get('status', existing_design['status'])
 
-            # Prepare the data to update
-            data = {
-                "user_id": user_id,
-                "title": title,
-                "created_at": created_at,
-                "is_approved": is_approved,
-                "status": status,
-                "image": image  # Image may be None if not provided
-            }
+@app.route("/design/<int>:design_id/image", methods=['PUT'])
+@jwt_required()
+def update_design_image():
+    handler = Design(email=get_jwt_identity())
+    return handler.update_design_image(design_id=request.form.get('design_id'), image=request.files.get('image'))
 
-            return handler.updateDesignById(design_id, data)
 
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify({"error": "Invalid request data"}), 400
+@app.route("/design/<int>:design_id/approval", methods=['PUT'])
+@jwt_required()
+def update_design_approval():
+    handler = Design(email=get_jwt_identity())
+    return handler.update_design_approval(design_id=request.form.get('design_id'),
+                                          approval=request.form.get('approval'))
 
-    else:
-        try:
-            handler = Design()
-            return handler.deleteDesignById(design_id)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 400
+
+@app.route("/design/<int>:design_id/status", methods=['PUT'])
+@jwt_required()
+def update_design_status():
+    handler = Design(email=get_jwt_identity())
+    return handler.update_design_status(design_id=request.form.get('design_id'), status=request.form.get('status'))
 
 
 # AdminAction-----------------------------------------------------------------------------------------------------------

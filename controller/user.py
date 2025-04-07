@@ -122,6 +122,8 @@ class User:
                 return user_id
             else:
                 return None
+        else:
+            return None
 
     def add_new_user(self):
         """
