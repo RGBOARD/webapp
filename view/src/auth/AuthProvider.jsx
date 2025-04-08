@@ -35,9 +35,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function - compatible with Flask-JWT-Extended
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     try {
-      const response = await axios.post('/login', { username, password });
+      const response = await axios.post('/login', { email, password });
       
       // Extract token from various possible response formats
       let token = null;

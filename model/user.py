@@ -1,5 +1,5 @@
 import sqlite3
-import datetime
+
 
 class UserDAO:
 
@@ -25,21 +25,14 @@ class UserDAO:
         cursor.close()
         return result
 
-    def get_user_by_username(self, username):
+    def get_password_by_email(self, email):
         cursor = self.conn.cursor()
-        query = "select * from user where username = ?;"
-        cursor.execute(query, (username,))
-        result = cursor.fetchone()
-        cursor.close()
-        return result
-
-    def get_password_by_name(self, username):
-        cursor = self.conn.cursor()
-        query = "SELECT password FROM user WHERE username = ?;"
+        query = "SELECT password FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (username, ))
-            return cursor.fetchone()
+            cursor.execute(query, (email, ))
+            password = cursor.fetchone()
+            return password[0] if password else None
 
         except sqlite3.Error:
             return None
@@ -47,13 +40,14 @@ class UserDAO:
         finally:
             cursor.close()
 
-    def get_admin_by_name(self, username):
+    def get_admin_by_email(self, email):
         cursor = self.conn.cursor()
-        query = "SELECT is_admin FROM user WHERE username = ?;"
+        query = "SELECT is_admin FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (username, ))
-            return cursor.fetchone()
+            cursor.execute(query, (email, ))
+            is_admin = cursor.fetchone()
+            return is_admin[0]
 
         except sqlite3.Error:
             return None
@@ -61,13 +55,62 @@ class UserDAO:
         finally:
             cursor.close()
 
-    def add_new_user(self,username, email, password):
-
+    def get_userid_by_email(self, email):
         cursor = self.conn.cursor()
-        query = "INSERT INTO user (username, email, password) VALUES (?, ?, ?);"
+        query = "SELECT user_id FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (username, email, password))
+            cursor.execute(query, (email, ))
+            user_id = cursor.fetchone()
+            return user_id[0]
+
+        except sqlite3.Error:
+            return None
+
+        finally:
+            cursor.close()
+
+    def get_email_verification_by_email(self, email):
+        status = 1
+        cursor = self.conn.cursor()
+        query = "SELECT is_email_verified FROM user WHERE email = ?;"
+
+        try:
+            cursor.execute(query, (email,))
+            is_verified = cursor.fetchone()
+            return is_verified[0]
+
+        except sqlite3.Error:
+            return None
+
+        finally:
+            cursor.close()
+
+    def set_user_email_verified_by_id(self, user_id: int, is_verified: int):
+        status = 1
+        cursor = self.conn.cursor()
+        query = "UPDATE user SET is_email_verified = ? WHERE user_id = ?;"
+
+        try:
+            cursor.execute(query, (is_verified, user_id))
+            self.conn.commit()
+            status = 0
+
+        except sqlite3.Error:
+            status = 1
+
+        finally:
+            cursor.close()
+            return status
+
+
+    def add_new_user(self, email, password):
+
+        cursor = self.conn.cursor()
+        query = "INSERT INTO user (email, password) VALUES (?, ?);"
+
+        try:
+            cursor.execute(query, (email, password))
             self.conn.commit()
             return 0
 
