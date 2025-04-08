@@ -79,3 +79,10 @@ class Design:
                 return jsonify("Not Found"), 404
             else:
                 return jsonify("Successfully deleted Design with ID " + str(design) + "!"), 200
+
+        def getApprovedDesigns(self):
+            dao = DesignDAO()
+            approved_records = dao.getApprovedDesigns()
+            # Reuse your existing make_json to encode images and structure the result
+            answer = self.make_json(approved_records)
+            return answer  # Or `jsonify(answer)` if you want a direct JSON response

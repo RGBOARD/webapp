@@ -158,6 +158,11 @@ def handleDesignById(design_id):
             print("Error processing request:", e)
             return jsonify("Can not delete record because it is referenced by other records"), 400
 
+@app.route("/design/approved", methods=['GET'])
+def get_approved_designs():
+    handler = Design()
+    approved = handler.getApprovedDesigns()
+    return jsonify(approved), 200
 
 #AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
@@ -394,6 +399,8 @@ def handleUploadHistoryById(history_id):
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Cannot delete record because it is referenced by other records"), 400
+
+
 
 
 if __name__ == '__main__':

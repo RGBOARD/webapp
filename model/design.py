@@ -89,3 +89,13 @@ class DesignDAO:
             result = design_id
             cursor.close()
             return result
+
+    def getApprovedDesigns(self):
+        cursor = self.conn.cursor()
+        query = "SELECT * FROM design WHERE is_approved = 1;"
+        cursor.execute(query)
+        result = []
+        for row in cursor:
+            result.append(row)
+        cursor.close()
+        return result

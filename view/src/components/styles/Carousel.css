@@ -48,6 +48,14 @@
   scroll-snap-align: start;
 }
 
+
+/* Force images to 178x142 and crop them if needed */
+.carousel-item img {
+  width: 178px;
+  height: 142px;
+  object-fit: cover;
+}
+
 .carousel-button {
   position: absolute;
   z-index: 10;
