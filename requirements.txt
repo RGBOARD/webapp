@@ -10,5 +10,6 @@ Flask-Cors~=5.0.0
 Flask-JWT-Extended~=4.7.1
 bcrypt~=4.3.0
 protobuf~=6.30.2
+google-auth==2.28.1
 google-api-python-client~=2.166.0
 google-auth-oauthlib~=1.2.1

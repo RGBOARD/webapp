@@ -161,3 +161,4 @@ cython_debug/
 
 # Local DB file 
 data.db
+view/package-lock.json

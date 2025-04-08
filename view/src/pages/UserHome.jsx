@@ -1,8 +1,8 @@
-import ActionButton from "../components/ActionButton.jsx";
-import Carousel from '../components/Carousel.jsx'
+import ActionButton from "../components/ActionButton";
+import Carousel from '../components/Carousel'
 import "../components/styles/Menu.css"
-import VerifyForm from '../components/VerifyForm.jsx'
-import { useAuth } from '../auth/authContext.js'
+import VerifyForm from '../components/VerifyForm'
+import { useAuth } from '../auth/authContext'
 import { useLocation } from 'react-router-dom';
 
 

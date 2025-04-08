@@ -1,6 +1,6 @@
 import React from 'react';
 import './styles/Footer.css'
-import SimpleIcon from './SimpleIcon.jsx'
+import SimpleIcon from './SimpleIcon'
 import { Linkedin } from 'lucide-react';
 const Footer = () => {
   return (
