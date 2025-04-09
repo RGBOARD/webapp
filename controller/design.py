@@ -161,12 +161,12 @@ class Design:
             if user_bytes is None:
                 return jsonify(error="Couldn't get user memory"), 500
 
-            im, im_bytes = transform_image(image_file)
+            im, n_bytes = transform_image(image_file)
 
             if im is None:
                 return jsonify(error="Couldn't transform image"), 500
 
-            if self.get_num_bytes() + im_bytes > MAX_USER_CAPACITY_BYTES:
+            if self.get_num_bytes() + n_bytes > MAX_USER_CAPACITY_BYTES:
                 return jsonify(error="User exceeds the storage limit"), 400
 
             response = design_dao.update_design_image(design_id, im)
