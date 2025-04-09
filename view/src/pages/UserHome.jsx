@@ -18,7 +18,7 @@ async function checkVerification() {
 function UserHome() {
   const { currentUser } = useAuth();
   const username = currentUser?.name || currentUser?.username || currentUser?.sub || "User";
-  const displayName = username.charAt(0).toUpperCase() + username.slice(1);
+  const displayName = username.charAt(0).toUpperCase() + username.slice(1).split(".")[0];
 
   const [isVerified, setIsVerified] = useState(null)
 
