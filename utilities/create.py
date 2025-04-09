@@ -22,7 +22,7 @@ cur.execute("""
         title TEXT NOT NULL,
         image BLOB NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        is_approved BOOLEAN NOT NULL DEFAULT 0,
+        is_approved BOOLEAN NOT NULL DEFAULT 1,
         status BOOLEAN NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE
     );

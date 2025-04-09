@@ -81,6 +81,5 @@ class Design:
         def getApprovedDesigns(self):
             dao = DesignDAO()
             approved_records = dao.getApprovedDesigns()
-            # Reuse your existing make_json to encode images and structure the result
             answer = self.make_json(approved_records)
-            return answer  # Or `jsonify(answer)` if you want a direct JSON response
+            return answer
