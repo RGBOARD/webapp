@@ -10,7 +10,9 @@ function ColorPickerPanel({
   handleRGBChange,
   handleHSVChange,
   colorSliderRef,
-  handleUpload
+  handleSave,
+  handleFileNameChange,
+  fileName
 }) {
   return (
     <div className="color-picker-column">
@@ -88,7 +90,15 @@ function ColorPickerPanel({
       <ColorPalette handleColorChange={handleColorChange} />
       
       <div className="action-buttons">
-        <button className="upload-button" onClick={handleUpload}>Upload to Queue</button>
+        <div className="hex-value">
+            <label>File Name</label>
+            <input
+              type="text"
+              value={fileName}
+              onChange={(e) => handleFileNameChange(e.target.value)}
+            />
+        </div>
+        <button className="save-button" onClick={handleSave}>Save Design</button>
       </div>
     </div>
   );

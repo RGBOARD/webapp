@@ -1,11 +1,13 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Rect, Line } from "react-konva";
+import { useAuth } from '../auth/authContext.js'
 import "../components/styles/Menu.css";
 import "./styles/CreatePage.css";
 
 // Import components
 import ToolPanel from "../components/ToolPanel";
 import ColorPickerPanel from "../components/ColorPickerPanel";
+import Modal from "../components/Modal";
 
 // Import custom hooks
 import useColorManagement from "../hooks/useColorManagement";
@@ -15,7 +17,17 @@ import useZoomPan from "../hooks/useZoomPan";
 function CreatePage() {
   const stageRef = useRef(null);
   const containerRef = useRef(null);
-  
+  const { upload } = useAuth();
+  const { currentUser } = useAuth();
+  const [fileName, setFileName] = useState('');
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null, // 'alert' or 'confirm'
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => {}
+  });
+
   // Force resize handling on component mount
   useEffect(() => {
     // Trigger a window resize event to ensure components calculate sizes correctly
@@ -63,13 +75,6 @@ function CreatePage() {
     setDragStart
   } = useZoomPan(containerRef);
   
-  const handleColorPick = (color) => {
-    if (color) {
-      // Update the color in useColorManagement
-      handleColorChange(color);
-    }
-  };
-
   // Initialize drawing functionality
   const {
     pixels,
@@ -82,7 +87,7 @@ function CreatePage() {
     handleUndo,
     handleRedo,
     handleClear
-  } = useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSize, handleColorPick);
+  } = useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSize);
   
   // Generate grid lines
   const gridLines = [];
@@ -110,13 +115,86 @@ function CreatePage() {
     );
   }
 
-  const handleUpload = () => {
-    const stage = stageRef.current;
-    if (stage) {
-      const dataURL = stage.toDataURL();
-      console.log("Ready to upload:", dataURL);
-      alert("Image ready to upload to queue!");
+  const handleFileNameChange = (value) => {
+    setFileName(value);
+  };
+
+  const showAlert = (message, callback = () => {}) => {
+    setModalState({
+      isOpen: true,
+      type: 'alert',
+      message,
+      onConfirm: () => {
+        setModalState(prev => ({...prev, isOpen: false}));
+        callback();
+      },
+      onCancel: () => setModalState(prev => ({...prev, isOpen: false}))
+    });
+  };
+
+  const showConfirm = (message, onConfirm, onCancel = () => {}) => {
+    setModalState({
+      isOpen: true,
+      type: 'confirm',
+      message: message.includes(fileName) ? message : `${message} "${fileName}"`,
+      onConfirm: () => {
+        setModalState(prev => ({...prev, isOpen: false}));
+        onConfirm();
+      },
+      onCancel: () => {
+        setModalState(prev => ({...prev, isOpen: false}));
+        onCancel();
+      }
+    });
+  };
+
+  const handleSave = async () => {
+    if (Object.keys(pixels).length === 0) {
+      showAlert('Please draw something on the canvas before saving');
+      return;
     }
+
+    if (!fileName.trim()) {
+      showAlert('Please enter a file name');
+      return;
+    }
+
+    showConfirm(
+      'Are you sure you want to save this design as',
+      async () => {
+        // Extract image from canvas
+        const dataURL = stageRef.current.toDataURL({ 
+          pixelRatio: 1,
+          mimeType: 'image/png'
+        });
+        
+        // Convert dataURL to blob
+        const fetchResponse = await fetch(dataURL);
+        const blob = await fetchResponse.blob();
+        
+        // Create a File object from the blob
+        const imageFile = new File([blob], `${fileName}.png`, { type: 'image/png' });
+
+        const form = new FormData();
+        form.append('user_id', currentUser?.user_id);
+        form.append('title', fileName);
+        form.append('image', imageFile);
+
+        try {
+          const response = await upload(form);
+          console.log(response);
+
+          if (response.status === 201) {
+            showAlert('Image uploaded successfully');
+          } else {
+            showAlert('Image upload failed');
+          }
+        } catch (error) {
+          console.error('Error during upload:', error);
+          showAlert(`Error during upload: ${error.message}`);
+        }
+      }
+    );
   };
 
   return (
@@ -211,9 +289,17 @@ function CreatePage() {
           handleRGBChange={handleRGBChange}
           handleHSVChange={handleHSVChange}
           colorSliderRef={colorSliderRef}
-          handleUpload={handleUpload}
+          handleSave={handleSave}
+          handleFileNameChange={handleFileNameChange}
         />
       </div>
+      <Modal 
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        message={modalState.message}
+        onConfirm={modalState.onConfirm}
+        onCancel={modalState.onCancel}
+      />
     </div>
   );
 }
