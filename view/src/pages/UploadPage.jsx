@@ -110,7 +110,7 @@ function UploadPage() {
         try {
             const queueData = {
                 design_id: newDesignId,
-                panel_id: 1, // Replace with your actual panel choice if needed
+                panel_id: 1,
                 start_time: scheduleData.start_time,
                 end_time: scheduleData.end_time,
                 display_duration: 60, // Default duration (adjust if needed)
