@@ -33,7 +33,6 @@ def make_json_one(user):
 
 def make_json(tuples):
     result = []
-    print(tuples)
     for t in tuples:
         D = {
             'user_id': t['user_id'],
@@ -224,21 +223,27 @@ class User:
             return result
 
     def updateUserById(self, user_id, data):
+
         dao = UserDAO()
-        user = dao.updateUserById(user_id, data)
+        response = dao.updateUserById(user_id, data)
         if not User:
             return jsonify("Not Found"), 404
         else:
-            result = make_json_one(user)
-            return result
+            match response:
+                case 0:
+                    return jsonify(message="User Updated"), 201
+                case 2:
+                    return jsonify(error="User Conflict"), 409
+
+            return jsonify(error="Couldn't update user"), 500
 
     def deleteUserById(self, user_id):
         dao = UserDAO()
         user = dao.deleteUserById(user_id)
-        if not user:
+        if user:
             return jsonify("Not Found"), 404
         else:
-            return jsonify("Successfully deleted User with ID " + str(user) + "!"), 200
+            return jsonify("Successfully deleted User!"), 200
 
     def generate_verification_code(self):
         verification_code = str(random.randint(100000, 999999))

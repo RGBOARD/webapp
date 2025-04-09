@@ -3,7 +3,7 @@ import "../components/styles/Upload.css";
 import "../components/styles/UserAdmin.css";
 import { useAuth } from '../auth/authContext.js'
 import {useState, useEffect} from "react";
-
+import { CircleUser } from 'lucide-react';
 
 function UserAdminPage() {
 
@@ -13,12 +13,10 @@ function UserAdminPage() {
   const [pages, setPages] = useState(1);
   const pageSize = 10;
   const { getpageusers, deleteuser, currentUser, toggleadmin } = useAuth();
-  console.log(currentUser?.role)
 
   const fetchUsers = async (pageNum) => {
     try {
       const res = await getpageusers(pageNum,pageSize);
-      console.log(res)
       setUsers(res.data.users);
       setPage(res.data.page);
       setPages(res.data.pages);
@@ -49,70 +47,77 @@ function UserAdminPage() {
     }
   };
 
-
-
   return (
-      <div className="useradminpage">
-          <div className="upload-wrapper">
-              <h1 className="upload-h1">Administer Users</h1>
-              <div className="upload-menu-wrapper p-4">
-                  <div className="user-container">
-                      <div className="user-grid">
-                          {users.map((user) => {
-                              const isCurrentUser = user.user_id === currentUser?.user_id;
-                              const cardClass = `user-card ${
-                                  isCurrentUser ? "current-user" : user.is_admin ? "admin" : ""
-                              }`;
+    <div className="useradminpage">
+      <div className="upload-wrapper">
+        <h1 className="upload-h1">Administer Users</h1>
+        <div className="upload-menu-wrapper p-4">
+          <div className="user-container">
+            <div className="user-grid">
+              {users.map((user) => {
+                const isCurrentUser = user.user_id === currentUser?.user_id;
+                const cardClass = `user-card ${
+                  isCurrentUser ? 'current-user' : user.is_admin ? 'admin' : ''
+                }`;
 
-                              return (
-                                  <div key={user.user_id} className={cardClass}>
-                                      <div><strong>User ID:</strong> {user.user_id}</div>
-                                      <div><strong>Email:</strong> {user.email}</div>
-                                      <div><strong>Is Admin:</strong> {user.is_admin ? "Yes" : "No"}</div>
-
-                                      <div className="user-buttons">
-                                          {!isCurrentUser ? (
-                                              <>
-                                                  <button
-                                                      className="delete-button"
-                                                      onClick={() => handleDelete(user.user_id)}
-                                                  >
-                                                      Delete
-                                                  </button>
-                                                  <button
-                                                      className="toggle-button"
-                                                      onClick={() => toggleAdmin(user.user_id, user.is_admin)}
-                                                  >
-                                                      {user.is_admin ? "Demote" : "Promote"}
-                                                  </button>
-                                              </>
-                                          ) : (
-                                              <span className="you-text">(You)</span>
-                                          )}
-                                      </div>
-                                  </div>
-                              );
-                          })}
+                return (
+                  <div key={user.user_id} className={cardClass}>
+                    <div className="user-info">
+                      {/* Place the icon beside the user information */}
+                      <CircleUser className="user-icon" />
+                      <div>
+                        <strong>User ID:</strong> {user.user_id}
                       </div>
-
-                      {/* Pagination container outside the scrollable area */}
-                      <div className="pagination-container">
-                          <div className="pagination">
-                              {[...Array(pages)].map((_, idx) => (
-                                  <button
-                                      key={idx}
-                                      onClick={() => setPage(idx + 1)}
-                                      className={`page-button ${page === idx + 1 ? "active" : ""}`}
-                                  >
-                                      {idx + 1}
-                                  </button>
-                              ))}
-                          </div>
+                      <div>
+                        <strong>Email:</strong> {user.email}
                       </div>
+                      <div>
+                        <strong>Is Admin:</strong> {user.is_admin ? 'Yes' : 'No'}
+                      </div>
+                    </div>
+                    <div className="user-buttons">
+                      {!isCurrentUser ? (
+                        <>
+                          <button
+                            className="delete-button"
+                            onClick={() => handleDelete(user.user_id)}
+                          >
+                            Delete
+                          </button>
+                          <button
+                            className="toggle-button"
+                            onClick={() => toggleAdmin(user.user_id, !user.is_admin)}
+                          >
+                            {user.is_admin ? 'Demote' : 'Promote'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="you-text">(You)</span>
+                      )}
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination container outside the scrollable area */}
+            <div className="pagination-container">
+              <div className="pagination">
+                {[...Array(pages)].map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPage(idx + 1)}
+                    className={`page-button ${page === idx + 1 ? 'active' : ''}`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
               </div>
+            </div>
           </div>
+        </div>
       </div>
+    </div>
   );
 }
 

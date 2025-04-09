@@ -138,9 +138,9 @@ const deleteuser = async (userId) => {
 };
 
 // Toggle admin status
-const toggleadmin = async (userId, makeAdmin) => {
+const toggleadmin = async (userId, is_admin) => {
   try {
-    await axios.put(`/user/${userId}`, { makeAdmin });
+    await axios.put(`/user/${userId}`, { is_admin });
     return { success: true };
   } catch (error) {
     console.error('Toggle admin error:', error);

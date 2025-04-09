@@ -85,9 +85,10 @@ def get_verification_code():
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
+@jwt_required()
 def handleUserById(user_id):
     if request.method == 'GET':
-        handler = User()
+        handler = User(email=get_jwt_identity())
         return handler.getUserById(user_id)
     elif request.method == 'PUT':
         try:
@@ -99,14 +100,14 @@ def handleUserById(user_id):
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
-            handler = User()
+            handler = User(email=get_jwt_identity())
             return handler.updateUserById(user_id, data)
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Invalid data provided"), 400
     else:
         try:
-            handler = User()
+            handler = User(email=get_jwt_identity())
             return handler.deleteUserById(user_id)
         except Exception as e:
             print("Error processing request:", e)
