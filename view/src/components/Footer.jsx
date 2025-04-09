@@ -11,16 +11,16 @@ const Footer = () => {
           Sponsor's Socials:
           </div>
           <div className="social-icons">
-            <a href="https://www.x.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://x.com/ComputerSociety" target="_blank" rel="noopener noreferrer">
               <SimpleIcon name="X" color="#000000"/>
             </a>
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.instagram.com/ieee_computer_society/" target="_blank" rel="noopener noreferrer">
               <SimpleIcon name="Instagram" color="#000000"/>
             </a>
-            <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.youtube.com/@IEEEComputerSociety" target="_blank" rel="noopener noreferrer">
               <SimpleIcon name="Youtube" color="#000000"/>
             </a>
-            <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.linkedin.com/company/ieee-computer-society/" target="_blank" rel="noopener noreferrer">
               <Linkedin/>
             </a>
           </div>

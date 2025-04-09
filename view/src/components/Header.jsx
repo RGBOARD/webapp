@@ -26,6 +26,10 @@ function Header() {
     logout();
     navigate('/login');
   };
+
+  const handleHome = () => {
+    navigate('/');
+  };
   
   const handleBack = () => {
     const prevPath = previousPaths.length > 1 
@@ -55,12 +59,9 @@ function Header() {
           <div className="action-icon back-button" onClick={handleBack}>
             <ArrowLeft />
           </div>
-          <div className="menu-icon">
-            <Menu/>
-          </div>
         </div>
         
-        <div className="logo">
+        <div className="logo" onClick={handleHome} style={{ cursor: 'pointer' }}>
           <img src={logoImage} alt="RGB Board" />
         </div>
         
