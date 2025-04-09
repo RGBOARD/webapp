@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import '../App.css'
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
-import { useAuth } from '../auth/authContext.js'
+import { useAuth } from '../auth/authContext'
 import { useNavigate } from 'react-router-dom'
 
 export default function SignUpForm() {

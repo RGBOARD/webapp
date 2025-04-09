@@ -1,4 +1,3 @@
-/* Carousel.css with role-based styling */
 .carousel-container {
   max-width: 100%;
   margin: 0 auto;
@@ -106,25 +105,21 @@
   background-color: rgba(0, 0, 0, 0.4);
 }
 
-/* Make sure hover works for both overlay types */
 .carousel-item:hover .edit-overlay,
 .carousel-item:hover .view-overlay {
   opacity: 1;
 }
 
-/* Visible class for both overlay types */
 .edit-overlay.visible,
 .view-overlay.visible {
   opacity: 1;
 }
 
-/* Hover effects */
 .carousel-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-/* Text styling for both overlay types */
 .edit-overlay span,
 .view-overlay span {
   display: flex;
@@ -137,13 +132,11 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* Edit icon styling */
 .edit-icon {
   margin-right: 4px;
   vertical-align: middle;
 }
 
-/* Media query for smaller screens */
 @media (max-height: 700px) {
   .carousel-container {
     height: 160px;
@@ -155,7 +148,6 @@
   }
 }
 
-/* Mobile touch support */
 @media (hover: none) {
   .carousel-item:active .edit-overlay,
   .carousel-item:active .view-overlay {

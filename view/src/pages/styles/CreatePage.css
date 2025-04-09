@@ -1,0 +1,45 @@
+.create-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 200px); /* Increased the subtraction to prevent footer overlap */
+}
+
+.create-content {
+  display: flex;
+  width: 95%;
+  max-width: 1400px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  margin: 0 auto;
+}
+
+.canvas-area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  overflow: auto;
+  position: relative;
+  min-height: 580px; /* Slightly reduced to prevent overflow */
+  padding: 15px; /* Added some padding */
+}
+
+@media (max-width: 900px) {
+  .create-content {
+    flex-direction: column;
+    width: 98%;
+  }
+ 
+  .canvas-area {
+    min-height: 430px; /* Slightly reduced to prevent overflow */
+  }
+  
+  .create-container {
+    min-height: calc(100vh - 220px); /* More space for mobile */
+    margin-bottom: 20px;
+  }
+}

@@ -1,0 +1,20 @@
+.color-palette {
+    margin-bottom: 20px;
+}
+
+.palette-row {
+    display: flex;
+    margin-bottom: 5px;
+}
+
+.palette-color {
+    width: 25px;
+    height: 25px;
+    border: 1px solid #ccc;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.palette-color:hover {
+    transform: scale(1.1);
+}

@@ -1,34 +1,33 @@
-/* ActionButton.css */
 .action-button {
-    background-color: white;
-    border-radius: 0.5rem;
-    border: 1px solid #d1d5db;
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    max-width: 300px;
-    margin: 0.5rem 0;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .action-button:hover {
-    background-color: #f9fafb;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1rem;
-  }
-  
-  .button-text {
-    font-size: 1rem;
-    font-weight: 500;
-    text-align: left;
-  }
-  
+  background-color: white;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 300px;
+  margin: 0.5rem 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button:hover {
+  background-color: #f9fafb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
+
+.button-text {
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+}
+
