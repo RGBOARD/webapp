@@ -28,22 +28,17 @@ class DesignDAO:
         return result
 
     def addNewDesign(self, user_id, title, image):
-
         cursor = self.conn.cursor()
-        query = "insert into design (user_id, title, image) values (?, ?, ?);"
-
-
+        query = "INSERT INTO design (user_id, title, image) VALUES (?, ?, ?);"
         try:
             cursor.execute(query, (user_id, title, image))
+            new_id = cursor.lastrowid  # Get the auto-generated design_id
             self.conn.commit()
-            return 0
-
+            return new_id
         except sqlite3.IntegrityError:
             return 2
-
         except sqlite3.Error:
             return 1
-
         finally:
             cursor.close()
 

@@ -292,6 +292,13 @@ def handleQueueItemById(queue_id):
             print("Error processing request:", e)
             return jsonify("Can not delete record because it is referenced by other records"), 400
 
+@app.route("/queue_item/<int:queue_id>/schedule", methods=['PUT'])
+def schedule_queue_item(queue_id):
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    handler = QueueItem()
+    return handler.scheduleQueueItem(queue_id, data)
 
 # Display Panel-----------------------------------------------------------------------------------------------------------
 @app.route("/display_panel", methods=['GET', 'POST'])
