@@ -59,7 +59,7 @@ class DesignDAO:
     def update_design_title(self, design_id: int, title: str):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE design SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?"
+        query = "UPDATE design SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?;"
 
         try:
             cursor.execute(query, (title, design_id))
@@ -74,7 +74,7 @@ class DesignDAO:
     def update_design_image(self, design_id: int, image):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE design SET image = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?"
+        query = "UPDATE design SET image = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?;"
 
         try:
             cursor.execute(query, (image, design_id))
@@ -89,7 +89,7 @@ class DesignDAO:
     def update_design_approval(self, design_id: int, is_approved: int):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE design SET is_approved = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?"
+        query = "UPDATE design SET is_approved = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?;"
 
         try:
             cursor.execute(query, (is_approved, design_id))
@@ -104,7 +104,7 @@ class DesignDAO:
     def update_design_status(self, design_id: int, design_status: int):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE design SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?"
+        query = "UPDATE design SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?;"
 
         try:
             cursor.execute(query, (design_status, design_id))
@@ -119,7 +119,7 @@ class DesignDAO:
     def delete_design(self, design_id):
         status = 1
         cursor = self.conn.cursor()
-        query = "DELETE FROM design WHERE design_id = ?"
+        query = "DELETE FROM design WHERE design_id = ?;"
 
         try:
             cursor.execute(query, (design_id,))
@@ -131,3 +131,17 @@ class DesignDAO:
         finally:
             cursor.close()
             return status
+
+    def get_user_bytes(self, user_id: int):
+        cursor = self.conn.cursor()
+        query = "SELECT SUM(LENGTH(image)) AS total_bytes FROM design WHERE user_id = ?;"
+
+        try:
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            return result[0] if result[0] is not None else 0
+
+        except sqlite3.Error:
+            return None
+        finally:
+            cursor.close()

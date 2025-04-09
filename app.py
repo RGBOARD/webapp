@@ -125,7 +125,7 @@ def update_design_title():
 @jwt_required()
 def update_design_image():
     handler = Design(email=get_jwt_identity())
-    return handler.update_design_image(design_id=request.form.get('design_id'), image=request.files.get('image'))
+    return handler.update_design_image(design_id=request.form.get('design_id'), files=request.files)
 
 
 @app.route("/design/<int>:design_id/approval", methods=['PUT'])
@@ -141,6 +141,14 @@ def update_design_approval():
 def update_design_status():
     handler = Design(email=get_jwt_identity())
     return handler.update_design_status(design_id=request.form.get('design_id'), status=request.form.get('status'))
+
+
+# Memory-----------------------------------------------------------------------------------------------------------
+@app.route("/memory", methods=['GET'])
+@jwt_required()
+def get_user_memory():
+    handler = Design(email=get_jwt_identity())
+    return handler.get_user_bytes()
 
 
 # AdminAction-----------------------------------------------------------------------------------------------------------

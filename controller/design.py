@@ -1,7 +1,19 @@
-from flask import jsonify, request
+from flask import jsonify
+from PIL import Image
 import base64
 from controller.user import User
 from model.design import DesignDAO
+
+MAX_USER_CAPACITY_MB = 2
+MAX_USER_CAPACITY_BYTES = MAX_USER_CAPACITY_MB * 1024 * 1024
+
+MAX_WIDTH = 64
+MAX_HEIGHT = 64
+
+
+# TODO: Check that user is verified to be uploading to the system
+## The user class already has methods for verification.
+### email verification + admin verification
 
 
 def serialize_design(t):
@@ -25,6 +37,19 @@ def make_json_one(t):
     return serialize_design(t)
 
 
+def transform_image(image):
+    # TODO: Try to transform images with respect to their aspect ratio.
+    try:
+        with Image.open(image) as im:
+            im = im.convert("RGB")  # Ensure 3-channel RGB
+            im = im.resize((64, 64))  # This is too static and doesn't respect the original image aspect ratio.
+            im_bytes = im.tobytes()  # raw bytes for the executable
+
+            return im_bytes, len(im_bytes)  # return the image object and its number of bytes
+    except OSError:
+        return None, None
+
+
 class Design:
 
     def __init__(self, email=None):
@@ -38,31 +63,27 @@ class Design:
 
         image_file = files['image']
 
-        if not image_file:
-            return jsonify(error="No image file provided"), 400
-
         user_id = self.user.get_user_id()
-
-        # TODO: Check that user is verified to be uploading to the system
-        ## The user class already has methods for verification.
-        ### email verification + admin verification
 
         if user_id is None:
             return jsonify(error='User not found'), 404
 
-        image = image_file.read()
+        user_bytes = self.get_num_bytes()
 
-        # TODO: Check that the user hasn't exceed capacity limits
-        ## Nothing stops the user from uploading a gamzillion bytes.
-        ## Sum up all images of the user in the system and make sure
-        ## it doesn't exceed some size, like 1MB of total images.
+        if user_bytes is None:
+            return jsonify(error="Couldn't get user memory"), 500
 
-        # TODO: Image Processing and Constraints
-        ## Transform the image to fit the board and return it to the user
-        ## once we get a 201. The view should show and ask if they like it.
+        im, n_bytes = transform_image(image_file)
 
-        dao = DesignDAO()
-        response = dao.add_new_design(user_id, title, image)
+        if im is None:
+            return jsonify(error="Couldn't transform image"), 500
+
+        if self.get_num_bytes() + n_bytes > MAX_USER_CAPACITY_BYTES:
+            return jsonify(error="User exceeds the storage limit"), 400
+
+        design_dao = DesignDAO()
+
+        response = design_dao.add_new_design(user_id, title, im)
 
         match response:
             case 0:
@@ -78,7 +99,7 @@ class Design:
 
         user_id = self.user.get_user_id()
         if user_id is None:
-            return jsonify(error="Couldn't verify user"), 500
+            return jsonify(error="Couldn't get user id"), 500
 
         design_dao = DesignDAO()
         response = design_dao.get_design_by_id(design_id)
@@ -103,7 +124,7 @@ class Design:
 
         user_id = self.user.get_user_id()
         if user_id is None:
-            return jsonify(error="Couldn't verify user"), 500
+            return jsonify(error="Couldn't get user id"), 500
 
         design_dao = DesignDAO()
         design_user_id = design_dao.get_user_id(design_id)
@@ -117,29 +138,39 @@ class Design:
         else:
             return jsonify(error="Unathorized."), 403
 
-    def update_design_image(self, design_id, image):
+    def update_design_image(self, design_id, files):
         if design_id is None:
             return jsonify(error="No id provided."), 400
 
         user_id = self.user.get_user_id()
         if user_id is None:
-            return jsonify(error="Couldn't verify user"), 500
+            return jsonify(error="Couldn't get user id"), 500
+
+        if 'image' not in files:
+            return jsonify(error="No image file provided"), 400
+
+        image_file = files['image']
 
         design_dao = DesignDAO()
         design_user_id = design_dao.get_user_id(design_id)
 
         if design_user_id == user_id or self.user.is_admin():
 
-            # TODO: Check that the user hasn't exceed capacity limits
-            ## Nothing stops the user from uploading a gamzillion bytes.
-            ## Sum up all images of the user in the system and make sure
-            ## it doesn't exceed some size, like 1MB of total images.
+            user_bytes = self.get_num_bytes()
 
-            # TODO: Image Processing and Constraints
-            ## Transform the image to fit the board and return it to the user
-            ## once we get a 201. The view should show and ask if they like it.
+            if user_bytes is None:
+                return jsonify(error="Couldn't get user memory"), 500
 
-            response = design_dao.update_design_image(design_id, image)
+            im, im_bytes = transform_image(image_file)
+
+            if im is None:
+                return jsonify(error="Couldn't transform image"), 500
+
+            if self.get_num_bytes() + im_bytes > MAX_USER_CAPACITY_BYTES:
+                return jsonify(error="User exceeds the storage limit"), 400
+
+            response = design_dao.update_design_image(design_id, im)
+
             if response == 0:
                 return jsonify(message="Title updated."), 200
             else:
@@ -173,7 +204,7 @@ class Design:
 
         user_id = self.user.get_user_id()
         if user_id is None:
-            return jsonify(error="Couldn't verify user"), 500
+            return jsonify(error="Couldn't get user id"), 500
 
         design_dao = DesignDAO()
         design_user_id = design_dao.get_user_id(design_id)
@@ -190,7 +221,7 @@ class Design:
     def delete_design(self, design_id):
         user_id = self.user.get_user_id()
         if user_id is None:
-            return jsonify(error="Couldn't verify user"), 500
+            return jsonify(error="Couldn't get user id"), 500
 
         design_dao = DesignDAO()
         design_user_id = design_dao.get_user_id(design_id)
@@ -203,3 +234,40 @@ class Design:
                 return jsonify(error="Couldn't delete"), 500
         else:
             return jsonify(error="Unauthorized."), 403
+
+    def get_user_bytes(self):
+        """
+        HTTP REQUEST VERSION
+        Gets the total number of bytes a user has used in storage and the maximum set in system. Use this to tell the user
+        how much memory has been used out of the maximum capacity.
+        :return:
+        """
+        user_id = self.user.get_user_id()
+        if user_id is None:
+            return jsonify(error="Couldn't get user id"), 500
+
+        design_dao = DesignDAO()
+        user_bytes = design_dao.get_user_bytes(user_id)
+
+        if user_bytes is None:
+            return jsonify(error="Couldn't get user memory usage"), 500
+
+        return jsonify({"bytes": user_bytes, "max": MAX_USER_CAPACITY_MB}), 200
+
+    def get_num_bytes(self):
+        """
+        INTERNAL USE
+        Gets the total number of bytes a user has used in storage. Use this to perform internal checks.
+        :return:
+        """
+        user_id = self.user.get_user_id()
+        if user_id is None:
+            return None
+
+        design_dao = DesignDAO()
+        user_bytes = design_dao.get_user_bytes(user_id)
+
+        if user_bytes is None:
+            return None
+
+        return user_bytes
