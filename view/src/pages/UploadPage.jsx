@@ -1,6 +1,6 @@
 import "../components/styles/Menu.css";
 import "../components/styles/Upload.css";
-import { useAuth } from '../auth/authContext.js'
+import { useAuth } from '../auth/authContext'
 import {useState, useRef, useEffect} from "react";
 
 function UploadPage() {

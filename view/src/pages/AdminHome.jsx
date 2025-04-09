@@ -1,7 +1,7 @@
-import ActionButton from '../components/ActionButton.jsx'
-import Carousel from '../components/Carousel.jsx'
+import ActionButton from '../components/ActionButton'
+import Carousel from '../components/Carousel'
 import '../components/styles/Menu.css'
-import { useAuth } from '../auth/authContext.js'
+import { useAuth } from '../auth/authContext'
 
 function AdminHome() {
   const { currentUser } = useAuth();
