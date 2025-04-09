@@ -3,18 +3,30 @@ import "../components/styles/Upload.css";
 import { useAuth } from '../auth/authContext'
 import {useState, useRef, useEffect} from "react";
 
+import Modal from "../components/Modal";
+
 function UploadPage() {
     const fileInputRef = useRef(null);
     const [formData, setFormData] = useState({
-    user_id: '',
-    title: '',
-    image: null,
+        user_id: '',
+        title: 'empty',
+        image: null,
+    });
+
+   const [modalState, setModalState] = useState({
+        isOpen: false,
+        type: null, // 'alert' or 'confirm'
+        message: '',
+        onConfirm: () => {},
+        onCancel: () => {}
   });
+
 
   const { currentUser } = useAuth();
   const { upload } = useAuth();
   const userid = currentUser?.user_id
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [queuedImage, setQueuedImage] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -57,12 +69,45 @@ function UploadPage() {
     }));
   };
 
+  const showAlert = (message, callback = () => {}) => {
+    setModalState({
+      isOpen: true,
+      type: 'alert',
+      message,
+      onConfirm: () => {
+        setModalState(prev => ({...prev, isOpen: false}));
+        callback();
+      },
+      onCancel: () => setModalState(prev => ({...prev, isOpen: false}))
+    });
+  };
+
+  const showConfirm = (message, onConfirm, onCancel = () => {}) => {
+    setModalState({
+      isOpen: true,
+      type: 'confirm',
+      message: message.includes(formData.image.name) ? message : `${message} "${formData.image.name}"`,
+      onConfirm: () => {
+        setModalState(prev => ({...prev, isOpen: false}));
+        onConfirm();
+      },
+      onCancel: () => {
+        setModalState(prev => ({...prev, isOpen: false}));
+        onCancel();
+      }
+    });
+  };
+
   const handleAddToQueue = () => {
-      console.log("Added to queue");
+    if (!queuedImage) {
+        showAlert("Please upload an image before adding it to the queue.");
+        return;
+    }
+    showAlert(`Image "${queuedImage.name}" added to queue.`);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+
 
     const form = new FormData();
 
@@ -70,19 +115,20 @@ function UploadPage() {
 
     if (formData.image) {
       form.append('title', formData.title);
-      form.append('image', formData.image); // Add the image file to FormData
+      form.append('image', formData.image);
     }
 
     try {
       const response = await upload(form)
 
       if (response.status === 201) {
-        console.log('Image uploaded successfully');
+        showAlert('Image uploaded successfully!');
       } else {
-        console.log('Image upload failed');
+        showAlert('Image upload failed.');
       }
     } catch (error) {
       console.error('Error during upload:', error);
+      showAlert('An error occurred during upload.');
     }
   };
 
@@ -93,11 +139,15 @@ function UploadPage() {
               <div className="upload-menu-wrapper">
                   <div className="upload-column">
                       <h2 className="upload-text text-2xl"> Select an Image File to Upload: </h2>
-                      <form onSubmit={handleSubmit}>
+                      <form onSubmit={(e) => {
+                          e.preventDefault();
+                          showConfirm("Upload this image to the database?", () => handleSubmit());
+                      }}>
                           <div className="upload-menu my-14">
                               <div>
                                   <input
                                       type="file"
+                                      accept="image/*"
                                       id="image"
                                       name="image"
                                       ref={fileInputRef}
@@ -138,6 +188,13 @@ function UploadPage() {
                   </div>
               </div>
           </div>
+                  <Modal
+          isOpen={modalState.isOpen}
+          type={modalState.type}
+          message={modalState.message}
+          onConfirm={modalState.onConfirm}
+          onCancel={modalState.onCancel}
+        />
       </div>
   );
 }
