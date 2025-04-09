@@ -75,7 +75,6 @@ function UploadPage() {
 
     try {
       const response = await upload(form)
-      console.log(response)
 
       if (response.status === 201) {
         console.log('Image uploaded successfully');

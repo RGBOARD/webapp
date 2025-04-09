@@ -36,6 +36,20 @@ def get_all_users():
     handler = User(email=get_jwt_identity())
     return handler.get_all_users()
 
+@app.route("/user/pagination", methods=['GET'])
+@jwt_required()
+def get_users_paginated():
+    try:
+
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('size', 10))
+        handler = User(email=get_jwt_identity())
+
+        result = handler.get_all_users_paginated(page, page_size)
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/user", methods=['POST'])
 def create_user():
@@ -96,7 +110,7 @@ def handleUserById(user_id):
             return handler.deleteUserById(user_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 400
+            return jsonify("Couldn't delete the requested record"), 400
 
 
 # Design-----------------------------------------------------------------------------------------------------------

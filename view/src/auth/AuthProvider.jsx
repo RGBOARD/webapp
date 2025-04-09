@@ -101,6 +101,56 @@ const upload = async (imageData) => {
   }
 };
 
+// Get paginated users (admin only)
+const getpageusers = async (pageNum, pageSize) => {
+  try {
+    const response = await axios.get('/user/pagination', {
+      params: {
+        page: pageNum,
+        pageSize: pageSize,
+      },
+    });
+    return {
+      success: true,
+      data: response.data // Make sure you return 'data' to match what you're trying to access in the component
+    };
+  } catch (error) {
+    console.error('Fetch users error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Failed to fetch users'
+    };
+  }
+};
+
+// Delete a user by ID
+const deleteuser = async (userId) => {
+  try {
+    await axios.delete(`/user/${userId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Failed to delete user'
+    };
+  }
+};
+
+// Toggle admin status
+const toggleadmin = async (userId, makeAdmin) => {
+  try {
+    await axios.put(`/user/${userId}`, { makeAdmin });
+    return { success: true };
+  } catch (error) {
+    console.error('Toggle admin error:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || 'Failed to update admin status'
+    };
+  }
+};
+
   // Logout function
   const logout = () => {
     removeToken();
@@ -116,6 +166,9 @@ const upload = async (imageData) => {
     login,
     signup,
     upload,
+    getpageusers,
+    deleteuser,
+    toggleadmin,
     logout,
     hasRole, 
     hasAnyRole
