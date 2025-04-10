@@ -28,7 +28,7 @@ const Carousel = ({ userRole }) => {
 
   const fetchImages = async () => {
     try {
-      const response = await axios.get('/design/approved');
+      const response = await axios.get('/queue_item/scheduled');
       const data = response.data; // array of design objects
 
       // Convert each design record into an object with `id` and `url`

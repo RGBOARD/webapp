@@ -10,13 +10,20 @@ class QueueItemDAO:
 
     def getAllQueueItem(self):
         cursor = self.conn.cursor()
-        query = "select * from queue_item;"
-        cursor.execute(query)
-        result = []
-        for row in cursor:
-            result.append(row)
-        cursor.close()
-        return result
+        query = """
+            SELECT * FROM queue_item
+            ORDER BY 
+              CASE WHEN scheduled = 1 THEN start_time ELSE '9999-12-31 23:59:59' END ASC,
+              display_order ASC;
+        """
+        try:
+            cursor.execute(query)
+            result = [row for row in cursor]
+            return result
+        except sqlite3.Error:
+            return []
+        finally:
+            cursor.close()
 
     def getQueueItemById(self, queue_id):
         cursor = self.conn.cursor()
@@ -85,3 +92,36 @@ class QueueItemDAO:
             result = queue_id
             cursor.close()
             return result
+
+    def getScheduledDesigns(self):
+        cursor = self.conn.cursor()
+        # Join queue_item and design, only returning records where the design is approved.
+        query = """
+            SELECT q.queue_id,
+                   q.design_id,
+                   q.panel_id,
+                   q.start_time,
+                   q.end_time,
+                   q.display_duration,
+                   q.display_order,
+                   q.scheduled,
+                   q.scheduled_at,
+                   d.image,
+                   d.is_approved,
+                   d.created_at,
+                   d.updated_at
+            FROM queue_item q
+            JOIN design d ON q.design_id = d.design_id
+            WHERE d.is_approved = 1
+            ORDER BY 
+                CASE WHEN q.scheduled = 1 THEN q.start_time ELSE '9999-12-31 23:59:59' END ASC,
+                q.display_order ASC;
+        """
+        try:
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
+        except sqlite3.Error:
+            return []
+        finally:
+            cursor.close()

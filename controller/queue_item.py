@@ -1,4 +1,6 @@
 from flask import jsonify
+import base64
+
 
 from model.queue_item import QueueItemDAO
 
@@ -80,3 +82,27 @@ class QueueItem:
                 return jsonify("Not Found"), 404
             else:
                 return jsonify("Successfully deleted QueueItem with ID " + str(queue_item) + "!"), 200
+
+        def getScheduledDesigns(self):
+            dao = QueueItemDAO()
+            rows = dao.getScheduledDesigns()
+            # Build a list of dicts, merging fields from both tables
+            result = []
+            for row in rows:
+                item = {
+                    "queue_id": row[0],
+                    "design_id": row[1],
+                    "panel_id": row[2],
+                    "start_time": row[3],
+                    "end_time": row[4],
+                    "display_duration": row[5],
+                    "display_order": row[6],
+                    "scheduled": row[7],
+                    "scheduled_at": row[8],
+                    "image": base64.b64encode(row[9]).decode('utf-8') if row[9] else None,
+                    "is_approved": row[10],
+                    "design_created_at": row[11],
+                    "design_updated_at": row[12]
+                }
+                result.append(item)
+            return result

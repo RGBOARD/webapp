@@ -93,44 +93,59 @@ function UploadPage() {
     };
 
     // Add the uploaded design to the queue with scheduling data
+    // Add the uploaded design to the queue with scheduling data
     const handleAddToQueue = async () => {
-        // First, enforce the scheduling rule:
-        const start = new Date(scheduleData.start_time);
-        const end = new Date(scheduleData.end_time);
-        if (!(start < end)) {
-            setQueueMessage("Error: Start time must be before End time.");
-            return;
+        // Determine if scheduling data was provided
+        const isScheduled = scheduleData.start_time && scheduleData.end_time;
+
+        // If scheduling is intended, enforce that start is in the future and before end time
+        if (isScheduled) {
+            const now = new Date();
+            const start = new Date(scheduleData.start_time);
+            const end = new Date(scheduleData.end_time);
+            if (start < now) {
+                setQueueMessage("Error: Scheduled start time must be in the future.");
+                return;
+            }
+            if (start >= end) {
+                setQueueMessage("Error: Start time must be before end time.");
+                return;
+            }
         }
 
         if (!newDesignId) {
-            console.error("No design ID available. Please upload an image first.");
             setQueueMessage("Please upload an image first.");
             return;
         }
+
+        // For unscheduled images, assign default placeholder values for start_time and end_time.
+        // Here we use a far-future date so that in ordering scheduled items (with valid start_time)
+        // come before unscheduled ones.
+        const unscheduledDefault = "9999-12-31T23:59:59";
+
+        const queueData = {
+            design_id: newDesignId,
+            panel_id: 1, // adjust as needed
+            start_time: isScheduled ? scheduleData.start_time : unscheduledDefault,
+            end_time: isScheduled ? scheduleData.end_time : unscheduledDefault,
+            display_duration: isScheduled ? 60 : 0,  // scheduled images get a default duration; unscheduled can be 0
+            display_order: 1,   // adjust if you allow reordering, or compute based on existing items
+            scheduled: isScheduled ? 1 : 0,
+            scheduled_at: new Date().toISOString()
+        };
+
         try {
-            const queueData = {
-                design_id: newDesignId,
-                panel_id: 1,
-                start_time: scheduleData.start_time,
-                end_time: scheduleData.end_time,
-                display_duration: 60, // Default duration (adjust if needed)
-                display_order: 1,     // Default order
-                scheduled: 1,         // Mark as scheduled
-                scheduled_at: new Date().toISOString() // Current timestamp
-            };
             const response = await axios.post('/queue_item', queueData);
-            console.log("Added to queue:", response.data);
-            // Set the success message from the backend or fallback to a default message
             if (response.data.message) {
                 setQueueMessage(response.data.message);
             } else {
                 setQueueMessage("Image successfully added to queue.");
             }
         } catch (error) {
-            console.error("Error adding to queue:", error);
             setQueueMessage("Error adding image to queue.");
         }
     };
+
 
     return (
         <div className="uploadpage">

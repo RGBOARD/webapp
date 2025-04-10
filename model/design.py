@@ -130,12 +130,19 @@ class DesignDAO:
 
             return result
 
+    import logging
+
     def getApprovedDesigns(self):
         cursor = self.conn.cursor()
         query = "SELECT * FROM design WHERE is_approved = 1;"
-        cursor.execute(query)
-        result = []
-        for row in cursor:
-            result.append(row)
-        cursor.close()
-        return result
+        try:
+            cursor.execute(query)
+            result = []
+            for row in cursor:
+                result.append(row)
+            return result
+        except sqlite3.Error as e:
+            return []  # Return an empty list on error
+        finally:
+            cursor.close()
+

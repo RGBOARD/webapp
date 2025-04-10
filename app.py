@@ -138,8 +138,9 @@ def update_design_status():
     return handler.update_design_status(design_id=request.form.get('design_id'), status=request.form.get('status'))
 
 @app.route("/design/approved", methods=['GET'])
+@jwt_required()
 def get_approved_designs():
-    handler = Design()
+    handler = Design(email=get_jwt_identity())
     approved = handler.getApprovedDesigns()
     return jsonify(approved), 200
 
@@ -270,6 +271,18 @@ def handleQueueItemById(queue_id):
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Can not delete record because it is referenced by other records"), 400
+
+
+
+@app.route("/queue_item/scheduled", methods=['GET'])
+@jwt_required()
+def get_scheduled_designs():
+    # If needed, you can also pass the identity to restrict results
+    # For example: identity = get_jwt_identity()
+    handler = QueueItem()  # Assumes your QueueItem controller exists similarly to Design.
+    scheduled_items = handler.getScheduledDesigns()
+    return jsonify(scheduled_items), 200
+
 
 
 # Display Panel-----------------------------------------------------------------------------------------------------------
