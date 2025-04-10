@@ -3,7 +3,7 @@ import './styles/ActionButton.css';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Image, Eye, Archive, Users } from 'lucide-react';
 
-const ActionButton = ({ icon, text, route }) => {
+const ActionButton = ({ icon, text, route, action }) => {
   const navigate = useNavigate();
 
   const getIcon = (iconName) => {
@@ -26,6 +26,10 @@ const ActionButton = ({ icon, text, route }) => {
   const handleClick = () => {
     if (route) {
       navigate(route);
+    }
+    else if (action) {
+      // Do alternative action
+      console.log(action)
     }
   };
 

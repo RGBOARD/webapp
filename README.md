@@ -51,13 +51,9 @@ To run app.py:
 
 5. If you are on vscode, remember to set the python interpreter to the created environment's python version.
 
-6. After python env is ready, create the database: 
+6. After python env is ready, create the database in the root folder /backend: 
     ```sh
     python utilities/create.py 
-    ```
-7. Make sure that the api address in ```axios.jsx``` is the one from your device. Example:
-    ```sh
-    "http://127.0.0.1:5000"
     ```
 
 Now cd into the frontend:

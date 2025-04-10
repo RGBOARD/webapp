@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { getToken, removeToken } from '../auth/jwtUtils';
 
+const API_URL = `http://${window.location.hostname}:5000`; // Bye bye static ip
+
 const instance = axios.create({
-    baseURL: "http://127.0.0.1:5000"
+    baseURL: API_URL
 });
 
 // Request interceptor to add JWT token to headers

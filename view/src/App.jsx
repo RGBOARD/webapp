@@ -1,19 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import Header from './components/Header.jsx';
-import Footer from './components/Footer.jsx';
-import UserHome from './pages/UserHome.jsx';
-import AdminHome from './pages/AdminHome.jsx';
-import LogIn from './pages/Login.jsx';
-import SignUp from './pages/SignUp.jsx';
-import UploadPage from './pages/UploadPage.jsx';
-import CreatePage from './pages/CreatePage.jsx';
-import ViewPage from './pages/ViewPage.jsx';
-import QueueAdminPage from './pages/QueueAdminPage.jsx';
-import UserAdminPage from './pages/UserAdminPage.jsx';
-import LoadingPage from './pages/LoadingPage.jsx';
-import AuthProvider from './auth/AuthProvider.jsx';
-import { useAuth } from './auth/authContext.js';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import UserHome from './pages/UserHome';
+import AdminHome from './pages/AdminHome';
+import LogIn from './pages/Login';
+import SignUp from './pages/SignUp';
+import UploadPage from './pages/UploadPage';
+import CreatePage from './pages/CreatePage';
+import ViewPage from './pages/ViewPage';
+import QueueAdminPage from './pages/QueueAdminPage';
+import UserAdminPage from './pages/UserAdminPage';
+import LoadingPage from './pages/LoadingPage';
+import AuthProvider from './auth/AuthProvider';
+import { useAuth } from './auth/authContext';
 
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './styles/Header.css'
 import logoImage from '../assets/RGB-Icon.png';
 import { Menu, LogOut, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../auth/authContext.js';
+import { useAuth } from '../auth/authContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 function Header() {
@@ -25,6 +25,10 @@ function Header() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleHome = () => {
+    navigate('/');
   };
   
   const handleBack = () => {
@@ -55,12 +59,9 @@ function Header() {
           <div className="action-icon back-button" onClick={handleBack}>
             <ArrowLeft />
           </div>
-          <div className="menu-icon">
-            <Menu/>
-          </div>
         </div>
         
-        <div className="logo">
+        <div className="logo" onClick={handleHome} style={{ cursor: 'pointer' }}>
           <img src={logoImage} alt="RGB Board" />
         </div>
         

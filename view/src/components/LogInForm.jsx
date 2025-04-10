@@ -1,22 +1,22 @@
 import { useState, useEffect } from 'react'
 import '../App.css'
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
-import { useAuth } from '../auth/authContext.js'
+import { useAuth } from '../auth/authContext'
 import { useNavigate } from 'react-router-dom'
 
 export default function LogInForm() {
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
 
   const [errors, setErrors] = useState({
-    username: '',
+    email: '',
     password: ''
   });
 
   const [touched, setTouched] = useState({
-    username: false,
+    email: false,
     password: false
   });
 
@@ -29,10 +29,8 @@ export default function LogInForm() {
   const navigate = useNavigate();
 
   // Validation functions
-  const validateUsername = (username) => {
-    if (!username) return 'Username is required';
-    // For login, we'll just do a basic validation since the server will validate the actual credentials
-    if (username.trim().length < 3) return 'Username must be at least 3 characters';
+  const validateEmail = (email) => {
+    if (!email) return 'Email is required';
     return '';
   };
 
@@ -46,15 +44,15 @@ export default function LogInForm() {
   // Validate form on input change
   useEffect(() => {
     const newErrors = {
-      username: touched.username ? validateUsername(formData.username) : '',
+      email: touched.email ? validateEmail(formData.email) : '',
       password: touched.password ? validatePassword(formData.password) : ''
     };
     
     setErrors(newErrors);
     
     // Form is valid if all fields are touched and have no errors
-    const valid = touched.username && touched.password && 
-                  !newErrors.username && !newErrors.password;
+    const valid = touched.email && touched.password &&
+                  !newErrors.email && !newErrors.password;
     setIsFormValid(valid);
   }, [formData, touched]);
 
@@ -79,17 +77,17 @@ export default function LogInForm() {
     
     // Mark all fields as touched to show validation errors
     setTouched({
-      username: true,
+      email: true,
       password: true
     });
     
     // Check if form is valid
-    const usernameError = validateUsername(formData.username);
+    const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
     
-    if (usernameError || passwordError) {
+    if (emailError || passwordError) {
       setErrors({
-        username: usernameError,
+        email: emailError,
         password: passwordError
       });
       return;
@@ -99,14 +97,14 @@ export default function LogInForm() {
     setMessage(null);
 
     try {
-      const result = await login(formData.username, formData.password);
+      const result = await login(formData.email, formData.password);
       
       if (result.success) {
         setMessage("Login successful!");
         setIsError(false);
         // Clear form fields
-        setFormData({username: '', password: ''});
-        setTouched({ username: false, password: false });
+        setFormData({email: '', password: ''});
+        setTouched({email: false, password: false });
         // Redirect to home page
         navigate('/');
       } else {
@@ -137,22 +135,23 @@ export default function LogInForm() {
       )}
 
       <div>
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-          Username
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          Email
         </label>
+
         <input
-          id="username"
-          name="username"
-          type="text"
-          value={formData.username}
+          id="email"
+          name="email"
+          type="email"
+          value={formData.email}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Enter your username"
-          className={`mt-1 w-full px-4 py-2 border ${errors.username ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.username ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+          placeholder="Enter your email"
+          className={`mt-1 w-full px-4 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.email ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
           disabled={isLoading}
         />
-        {errors.username && (
-          <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
         )}
       </div>
 

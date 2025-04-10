@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react'
 import '../App.css'
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
-import { useAuth } from '../auth/authContext.js'
+import { useAuth } from '../auth/authContext'
 import { useNavigate } from 'react-router-dom'
 
 export default function SignUpForm() {
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: ''
   });
 
   const [errors, setErrors] = useState({
-    username: '',
     email: '',
     password: ''
   });
 
   const [touched, setTouched] = useState({
-    username: false,
     email: false,
     password: false
   });
@@ -32,23 +29,6 @@ export default function SignUpForm() {
   const navigate = useNavigate();
 
   // Validation functions
-  const validateUsername = (username) => {
-    // Must start with lowercase letter, allowed chars: a-z, 0-9, . and _
-    // Length: 3-16 chars, no consecutive . or _, can't end with . or _
-    const nameRule = /^[a-z0-9._]{3,16}$/;
-    if (!username) return 'Username is required';
-    if (!nameRule.test(username)) {
-      return (
-        <ul>
-          <li>Username must be:</li>
-          <li>• 3-16 characters long</li>
-          <li>• Must be only lowercase letters</li>
-          <li>• Optional: numbers, dots, and underscores</li>
-        </ul>
-      );
-    }
-    return '';
-  };
 
   const validateEmail = (email) => {
     // Must be a valid email format and end with @upr.edu
@@ -85,7 +65,6 @@ export default function SignUpForm() {
   // Validate form on input change
   useEffect(() => {
     const newErrors = {
-      username: touched.username ? validateUsername(formData.username) : '',
       email: touched.email ? validateEmail(formData.email) : '',
       password: touched.password ? validatePassword(formData.password) : ''
     };
@@ -93,9 +72,10 @@ export default function SignUpForm() {
     setErrors(newErrors);
     
     // Form is valid if all fields are touched and have no errors
-    const valid = touched.username && touched.email && touched.password && 
-                  !newErrors.username && !newErrors.email && !newErrors.password;
+    const valid = touched.email && touched.password && !newErrors.email && !newErrors.password;
+
     setIsFormValid(valid);
+
   }, [formData, touched]);
 
   const handleChange = (e) => {
@@ -119,19 +99,16 @@ export default function SignUpForm() {
     
     // Mark all fields as touched to show validation errors
     setTouched({
-      username: true,
       email: true,
       password: true
     });
     
     // Check if form is valid
-    const usernameError = validateUsername(formData.username);
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
     
-    if (usernameError || emailError || passwordError) {
+    if (emailError || passwordError) {
       setErrors({
-        username: usernameError,
         email: emailError,
         password: passwordError
       });
@@ -147,8 +124,8 @@ export default function SignUpForm() {
       if (result.success) {
         setMessage("Signup successful! Please login.");
         setIsError(false);
-        setFormData({ username: '', email: '', password: '' });
-        setTouched({ username: false, email: false, password: false });
+        setFormData({email: '', password: '' });
+        setTouched({email: false, password: false });
         
         // Navigate to login after a delay
         setTimeout(() => {
@@ -180,26 +157,6 @@ export default function SignUpForm() {
           {message}
         </div>
       )}
-
-      <div>
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-          Username
-        </label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          value={formData.username}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder="Enter username"
-          className={`mt-1 w-full px-4 py-2 border ${errors.username ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.username ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
-          disabled={isLoading}
-        />
-        {errors.username && (
-          <p className="mt-1 text-sm text-red-600">{errors.username}</p>
-        )}
-      </div>
 
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">

@@ -43,7 +43,6 @@
   gap: 1rem; 
 }
 
-/* Media query for smaller screens */
 @media (max-height: 700px) {
   .main-footer {
     padding: 0.5rem 0;
