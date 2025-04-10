@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'PixelifySans';
+  src: url('../../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .user-container {
   display: flex;
   flex-direction: column;
@@ -12,27 +19,41 @@
   justify-content: center;
   gap: 1rem;  /* Space between user cards */
   width: 100%;
-  overflow-y: scroll;
-  max-height: 80vh; /* Makes the user list scrollable */
   padding-bottom: 20px; /* To make space for pagination */
 }
 
 .user-card {
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  flex: 1 1 20%; /* This makes the cards responsive: grow and shrink with a minimum width */
-  max-width: 300px; /* Max width for large screens */
-  min-width: 250px; /* Minimum width for smaller screens */
-  text-align: center;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  background-color: white;
+  padding: 1rem;
+  margin: 1rem auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* ⬇️ Responsive switch: stack vertically on narrow screens */
+@media (max-width: 800px) {
+  .user-card {
+    flex-direction: column;
+    align-items: stretch;
+
+    .user-buttons {
+      flex-direction: row;
+    }
+  }
+
+  .user-icon {
+    display: none;
+  }
 }
 
 .user-buttons {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin-top: 1rem;
 }
@@ -41,25 +62,44 @@
 .toggle-button {
   padding: 6px 12px;
   border: none;
-  background-color: #e2e8f0;
-  border-radius: 5px;
+  border-radius: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: "Pixelify Sans", sans-serif;
+}
+
+.delete-button{
+    background-color: red;
+}
+
+.toggle-button{
+    background-color: yellow;
 }
 
 .delete-button:hover {
-  background-color: #f87171;
-  color: white;
+  background-color: black;
+  color: red;
 }
 
 .toggle-button:hover {
-  background-color: #3b82f6;
-  color: white;
+  background-color: black;
+  color: yellow;
 }
 
 .you-text {
-  color: #4caf50;
-  font-weight: bold;
+  font-family: "Pixelify Sans", sans-serif;
+  background: #38E837;
+  border-radius: 24px;
+  width: fit-content;
+  padding: 5px;
+}
+
+.role-label {
+  font-family: "Pixelify Sans", sans-serif;
+  background: #3b82f6;
+  border-radius: 24px;
+  width: fit-content;
+  padding: 5px;
 }
 
 .pagination-container {
@@ -79,7 +119,7 @@
 .page-button {
   padding: 6px 12px;
   border: 1px solid #ccc;
-  background-color: #f5f5f5;
+  background-color: black;
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -87,6 +127,7 @@
 
 .page-button:hover {
   background-color: #e2e8f0;
+  color:black;
 }
 
 .page-button.active {

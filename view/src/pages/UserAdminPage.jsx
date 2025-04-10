@@ -62,17 +62,18 @@ function UserAdminPage() {
 
                 return (
                   <div key={user.user_id} className={cardClass}>
-                    <div className="user-info">
-                      {/* Place the icon beside the user information */}
-                      <CircleUser className="user-icon" />
+                    <CircleUser className="user-icon w-18 h-18 mx-4" />
+                    <div className="user-info mx-4">
+                      {user.is_admin === 1 && (
+                        <div className="role-label">
+                          <strong>Admin</strong>
+                        </div>
+                      )}
                       <div>
-                        <strong>User ID:</strong> {user.user_id}
+                        <strong>{user.email}</strong>
                       </div>
                       <div>
-                        <strong>Email:</strong> {user.email}
-                      </div>
-                      <div>
-                        <strong>Is Admin:</strong> {user.is_admin ? 'Yes' : 'No'}
+                        {user.created_at}
                       </div>
                     </div>
                     <div className="user-buttons">
