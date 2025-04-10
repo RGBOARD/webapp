@@ -137,58 +137,6 @@ def update_design_status():
     handler = Design(email=get_jwt_identity())
     return handler.update_design_status(design_id=request.form.get('design_id'), status=request.form.get('status'))
 
-@app.route("/design/<int:design_id>", methods=['GET', 'PUT', 'DELETE'])
-def handleDesignById(design_id):
-    if request.method == 'GET':
-        handler = Design()
-        return handler.getDesignById(design_id)
-
-    elif request.method == 'PUT':
-        try:
-            # Get the design by ID
-            handler = Design()
-            existing_design = handler.getDesignById(design_id)
-            if not existing_design:
-                return jsonify({"error": "Design not found"}), 404
-
-            # Check if the image file is included in the request
-            image = None
-            if 'image' in request.files:
-                image_file = request.files['image']
-                if image_file:
-                    image = image_file.read()  # Convert the image to binary data
-
-            # Get other form data (use existing design values if not provided in the request)
-            user_id = request.form.get('user_id', existing_design['user_id'])
-            title = request.form.get('title', existing_design['title'])
-            created_at = request.form.get('created_at', existing_design['created_at'])
-            is_approved = request.form.get('is_approved', existing_design['is_approved'])
-            status = request.form.get('status', existing_design['status'])
-
-            # Prepare the data to update
-            data = {
-                "user_id": user_id,
-                "title": title,
-                "created_at": created_at,
-                "is_approved": is_approved,
-                "status": status,
-                "image": image  # Image may be None if not provided
-            }
-
-            return handler.updateDesignById(design_id, data)
-
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify({"error": "Invalid request data"}), 400
-
-    else:
-        try:
-            handler = Design()
-            return handler.deleteDesignById(design_id)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 400
-
 @app.route("/design/approved", methods=['GET'])
 def get_approved_designs():
     handler = Design()
@@ -442,42 +390,6 @@ def authorize():
 @app.route("/settings/mail/oauth2callback")
 def callback():
     return authorize_callback()
-
-
-# @app.route("/design", methods=['GET', 'POST'])
-# def handleDesign():
-#     if request.method == 'GET':
-#         handler = Design()
-#         return handler.getAllDesign()
-#     else:
-#         try:
-#
-#             if 'image' not in request.files:
-#                 return jsonify({"error": "No image file provided"}), 400
-#
-#             image_file = request.files['image']
-#
-#             if not image_file:
-#                 return jsonify({"error": "No image file provided"}), 400
-#
-#             user_id = request.form.get('user_id')
-#             title = request.form.get('title')
-#
-#             if not user_id or not title:
-#                 return jsonify({"error": "Missing required fields"}), 400
-#
-#             image = image_file.read()
-#
-#             data = {
-#                 "user_id": user_id,
-#                 "title": title,
-#                 "image": image,
-#             }
-#
-#             handler = Design()
-#             return handler.addNewDesign(data)
-#         except Exception as e:
-#             return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
     app.run()

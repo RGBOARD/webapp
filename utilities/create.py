@@ -1,6 +1,6 @@
 import sqlite3
 
-con = sqlite3.connect('data.db')
+con = sqlite3.connect('../data.db')
 cur = con.cursor()
 
 cur.execute("""
@@ -35,7 +35,7 @@ cur.execute("""
                 user_id     INTEGER  NOT NULL,
                 title       TEXT     NOT NULL,
                 image       BLOB     NOT NULL,
-                is_approved BOOLEAN  NOT NULL DEFAULT 0,
+                is_approved BOOLEAN  NOT NULL DEFAULT 1,
                 status      BOOLEAN  NOT NULL DEFAULT 0,
                 created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
