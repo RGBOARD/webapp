@@ -1,7 +1,7 @@
 import "../components/styles/Menu.css";
 import "../components/styles/Upload.css";
-import {useAuth} from '../auth/authContext.js';
-import {useState, useRef, useEffect} from "react";
+import { useAuth } from '../auth/authContext.js';
+import { useState, useRef, useEffect } from "react";
 import axios from '../api/axios';
 
 function UploadPage() {
@@ -26,8 +26,8 @@ function UploadPage() {
     // New state variable for showing a success (or error) message from queue insertion
     const [queueMessage, setQueueMessage] = useState('');
 
-    const {currentUser} = useAuth();
-    const {upload} = useAuth();
+    const { currentUser } = useAuth();
+    const { upload } = useAuth();
     const userid = currentUser?.user_id;
     const [previewUrl, setPreviewUrl] = useState(null);
 
@@ -93,13 +93,15 @@ function UploadPage() {
     };
 
     // Add the uploaded design to the queue with scheduling data
-    // Add the uploaded design to the queue with scheduling data
     const handleAddToQueue = async () => {
-        // Determine if scheduling data was provided
-        const isScheduled = scheduleData.start_time && scheduleData.end_time;
+        if (!newDesignId) {
+            setQueueMessage("Please upload an image first.");
+            return;
+        }
 
-        // If scheduling is intended, enforce that start is in the future and before end time
-        if (isScheduled) {
+        let finalStart, finalEnd;
+        // If both schedule dates are provided, validate and use them.
+        if (scheduleData.start_time && scheduleData.end_time) {
             const now = new Date();
             const start = new Date(scheduleData.start_time);
             const end = new Date(scheduleData.end_time);
@@ -111,26 +113,28 @@ function UploadPage() {
                 setQueueMessage("Error: Start time must be before end time.");
                 return;
             }
+            finalStart = scheduleData.start_time;
+            finalEnd = scheduleData.end_time;
+        } else {
+            // Otherwise, compute the next available slot.
+            // Here we simply set the start time to one minute from now and a default duration of 60 seconds.
+            // In a production app, you might instead query your backend to get the next available time slot.
+            const now = new Date();
+            const nextAvailableStart = new Date(now.getTime() + 60 * 1000); // 1 minute from now
+            const defaultDurationSeconds = 60; // default duration (60 seconds)
+            const nextAvailableEnd = new Date(nextAvailableStart.getTime() + defaultDurationSeconds * 1000);
+            finalStart = nextAvailableStart.toISOString().substring(0, 19);
+            finalEnd = nextAvailableEnd.toISOString().substring(0, 19);
         }
-
-        if (!newDesignId) {
-            setQueueMessage("Please upload an image first.");
-            return;
-        }
-
-        // For unscheduled images, assign default placeholder values for start_time and end_time.
-        // Here we use a far-future date so that in ordering scheduled items (with valid start_time)
-        // come before unscheduled ones.
-        const unscheduledDefault = "9999-12-31T23:59:59";
 
         const queueData = {
             design_id: newDesignId,
             panel_id: 1, // adjust as needed
-            start_time: isScheduled ? scheduleData.start_time : unscheduledDefault,
-            end_time: isScheduled ? scheduleData.end_time : unscheduledDefault,
-            display_duration: isScheduled ? 60 : 0,  // scheduled images get a default duration; unscheduled can be 0
-            display_order: 1,   // adjust if you allow reordering, or compute based on existing items
-            scheduled: isScheduled ? 1 : 0,
+            start_time: finalStart,
+            end_time: finalEnd,
+            display_duration: 60,  // default duration for scheduled items
+            display_order: 1,      // adjust if you allow reordering or compute based on existing items
+            scheduled: 1,          // mark as scheduled because we now have valid start/end times
             scheduled_at: new Date().toISOString()
         };
 
@@ -145,7 +149,6 @@ function UploadPage() {
             setQueueMessage("Error adding image to queue.");
         }
     };
-
 
     return (
         <div className="uploadpage">
@@ -162,7 +165,7 @@ function UploadPage() {
                                         id="image"
                                         name="image"
                                         ref={fileInputRef}
-                                        style={{display: "none"}}
+                                        style={{ display: "none" }}
                                         onChange={handleFileChange}
                                     />
                                     <button
@@ -199,7 +202,7 @@ function UploadPage() {
                                         type="datetime-local"
                                         value={scheduleData.start_time}
                                         onChange={(e) =>
-                                            setScheduleData({...scheduleData, start_time: e.target.value})
+                                            setScheduleData({ ...scheduleData, start_time: e.target.value })
                                         }
                                     />
                                 </div>
@@ -209,7 +212,7 @@ function UploadPage() {
                                         type="datetime-local"
                                         value={scheduleData.end_time}
                                         onChange={(e) =>
-                                            setScheduleData({...scheduleData, end_time: e.target.value})
+                                            setScheduleData({ ...scheduleData, end_time: e.target.value })
                                         }
                                     />
                                 </div>
@@ -236,7 +239,7 @@ function UploadPage() {
                         <p className="upload-p mb-4">
                             {formData.image ? `Selected file: ${formData.image.name}` : "No file selected"}
                         </p>
-                        <img src={previewUrl} alt="Preview"/>
+                        <img src={previewUrl} alt="Preview" />
                     </div>
                 </div>
             </div>
