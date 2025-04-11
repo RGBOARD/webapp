@@ -2,6 +2,7 @@ import "../components/styles/Menu.css";
 import "./styles/Upload.css";
 import { useAuth } from '../auth/authContext'
 import {useState, useRef, useEffect} from "react";
+import MemoryBar from "../components/MemoryBar.jsx";
 
 import Modal from "../components/Modal";
 
@@ -173,8 +174,10 @@ function UploadPage() {
                                           <button type="button" className="upload-button queue-button"
                                                   onClick={handleAddToQueue}>Add to Queue
                                           </button>
+
                                       </div>
                                   )}
+                                  <MemoryBar/>
                               </div>
                           </div>
                       </form>
