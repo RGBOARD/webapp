@@ -102,3 +102,4 @@ cur.execute("""
                 FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE
             );
             """)
+

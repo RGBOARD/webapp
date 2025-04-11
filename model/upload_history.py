@@ -5,6 +5,7 @@ class UploadHistoryDAO:
         database_path = 'data.db'
         print("Connecting to SQLite database at:", database_path)
         self.conn = sqlite3.connect(database_path)
+        self.conn.execute("PRAGMA foreign_keys = ON")
 
     def getAllUploadHistory(self):
         cursor = self.conn.cursor()

@@ -6,16 +6,51 @@ class UserDAO:
     def __init__(self):
         database_path = 'data.db'
         self.conn = sqlite3.connect(database_path)
+        self.conn.execute("PRAGMA foreign_keys = ON")
 
     def get_all_users(self):
         cursor = self.conn.cursor()
         query = "select * from user;"
         cursor.execute(query)
-        result = []
-        for row in cursor:
-            result.append(row)
+        users = cursor.fetchall()
+        columns = [column[0] for column in cursor.description]
+        result = [dict(zip(columns, user)) for user in users]
+
         cursor.close()
         return result
+
+    def get_all_users_paginated(self, page, page_size):
+        cursor = self.conn.cursor()
+        offset = (page - 1) * page_size
+
+        try:
+            query = "SELECT * FROM user LIMIT ? OFFSET ?"
+            cursor.execute(query, (page_size, offset))
+            users = cursor.fetchall()
+
+            columns = [column[0] for column in cursor.description]
+            users = [dict(zip(columns, user)) for user in users]
+
+            count_query = "SELECT COUNT(*) FROM user"
+            cursor.execute(count_query)
+            total_users = cursor.fetchone()[0]
+
+            total_pages = (total_users + page_size - 1) // page_size
+            cursor.close()
+            return {
+                "success": True,
+                "users": users,
+                "total": total_users,
+                "pages": total_pages,
+                "page": page
+            }
+        except Exception as e:
+            cursor.close()
+            print("Error during database operation:", str(e))
+            return {
+                "success": False,
+                "error": str(e)
+            }
 
     def get_user_by_id(self, user_id):
         cursor = self.conn.cursor()
@@ -125,8 +160,8 @@ class UserDAO:
 
 
     def updateUserById(self, user_id, data):
-        cursor = self.conn.cursor()
 
+        cursor = self.conn.cursor()
         for key, value in data.items():
             query = "update user set"
 
@@ -142,13 +177,18 @@ class UserDAO:
                 query += " username = ? where user_id = ?;"
             else:
                 query += " password = ? where user_id = ?;"
-            cursor.execute(query, (value,user_id,))
-            self.conn.commit()
-        query = "select * from user where user_id = ?;"
-        cursor.execute(query, (user_id,))
-        result = cursor.fetchone()
+            try:
+                cursor.execute(query, (value, user_id,))
+                self.conn.commit()
+
+            except sqlite3.IntegrityError:
+                return 2
+
+            except sqlite3.Error:
+                return 1
+
         cursor.close()
-        return result
+        return 0
 
     def deleteUserById(self, user_id):
         cursor = self.conn.cursor()
@@ -161,8 +201,13 @@ class UserDAO:
             return None
         else:
             query = "delete from user where user_id = ?;"
-            cursor.execute(query, (user_id,))
-            self.conn.commit()
-            result = user_id
-            cursor.close()
-            return result
+            status = 0
+            try:
+                cursor.execute(query, (user_id,))
+                self.conn.commit()
+            except sqlite3.Error:
+                status = 1
+
+            finally:
+                cursor.close()
+                return status

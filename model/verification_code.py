@@ -5,6 +5,7 @@ class VerificationCodeDAO:
     def __init__(self):
         database_path = 'data.db'
         self.conn = sqlite3.connect(database_path)
+        self.conn.execute("PRAGMA foreign_keys = ON")
 
     def add_new_verification_code(self, user_id: int, code: str) -> int:
         status = 1  #

@@ -36,6 +36,20 @@ def get_all_users():
     handler = User(email=get_jwt_identity())
     return handler.get_all_users()
 
+@app.route("/user/pagination", methods=['GET'])
+@jwt_required()
+def get_users_paginated():
+    try:
+
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('size', 6))
+        handler = User(email=get_jwt_identity())
+
+        result = handler.get_all_users_paginated(page, page_size)
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/user", methods=['POST'])
 def create_user():
@@ -71,9 +85,10 @@ def get_verification_code():
 
 
 @app.route("/user/<int:user_id>", methods=['GET', 'PUT', 'DELETE'])
+@jwt_required()
 def handleUserById(user_id):
     if request.method == 'GET':
-        handler = User()
+        handler = User(email=get_jwt_identity())
         return handler.getUserById(user_id)
     elif request.method == 'PUT':
         try:
@@ -85,18 +100,18 @@ def handleUserById(user_id):
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
-            handler = User()
+            handler = User(email=get_jwt_identity())
             return handler.updateUserById(user_id, data)
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Invalid data provided"), 400
     else:
         try:
-            handler = User()
+            handler = User(email=get_jwt_identity())
             return handler.deleteUserById(user_id)
         except Exception as e:
             print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 400
+            return jsonify("Couldn't delete the requested record"), 400
 
 
 # Design-----------------------------------------------------------------------------------------------------------

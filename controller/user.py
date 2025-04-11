@@ -3,7 +3,7 @@ import bcrypt
 import json
 import random
 from datetime import datetime, timedelta, timezone
-from flask import jsonify
+from flask import jsonify, request
 from flask_jwt_extended import create_access_token
 
 import base64
@@ -34,13 +34,14 @@ def make_json_one(user):
 def make_json(tuples):
     result = []
     for t in tuples:
-        D = {}
-        D['user_id'] = t[0]
-        D['email'] = t[1]
-        D['is_admin'] = t[3]
-        D['is_verified'] = t[4]
-        D['created_at'] = t[5]
-        D['updated_at'] = t[6]
+        D = {
+            'user_id': t['user_id'],
+            'email': t['email'],
+            'is_admin': t['is_admin'],
+            'is_verified': t['is_verified'],
+            'created_at': t['created_at'],
+            'updated_at': t['updated_at']
+        }
         result.append(D)
 
     return result
@@ -101,6 +102,23 @@ class User:
             else:
                return jsonify(error="Unauthorized. Not admin."), 401
 
+        else:
+            return jsonify(error="Unauthorized. No token."), 401
+    def get_all_users_paginated(self, page, page_size):
+        if self.email is not None:
+            if self.is_admin():
+
+                model = UserDAO()
+                result = model.get_all_users_paginated(page, page_size)
+                body = {
+                    "users": make_json(result["users"]),
+                    "total": result["total"],
+                    "pages": result["pages"],
+                    "page": result["page"]
+                }
+                return body
+            else:
+                return jsonify(error="Unauthorized. Not admin."), 401
         else:
             return jsonify(error="Unauthorized. No token."), 401
 
@@ -187,9 +205,10 @@ class User:
         hashed_password = response
 
         password_encoded = self.password.encode("utf-8")
-
+        is_admin = self.is_admin()
+        user_id = self.get_user_id()
         if bcrypt.checkpw(password_encoded, hashed_password):
-            access_token = create_access_token(identity=self.email)
+            access_token = create_access_token(identity=self.email, additional_claims={"user_id": user_id, "role": is_admin})
             return jsonify(access_token=access_token), 200
         else:
             return jsonify(error="Wrong password"), 400
@@ -204,21 +223,27 @@ class User:
             return result
 
     def updateUserById(self, user_id, data):
+
         dao = UserDAO()
-        user = dao.updateUserById(user_id, data)
+        response = dao.updateUserById(user_id, data)
         if not User:
             return jsonify("Not Found"), 404
         else:
-            result = make_json_one(user)
-            return result
+            match response:
+                case 0:
+                    return jsonify(message="User Updated"), 201
+                case 2:
+                    return jsonify(error="User Conflict"), 409
+
+            return jsonify(error="Couldn't update user"), 500
 
     def deleteUserById(self, user_id):
         dao = UserDAO()
         user = dao.deleteUserById(user_id)
-        if not user:
+        if user:
             return jsonify("Not Found"), 404
         else:
-            return jsonify("Successfully deleted User with ID " + str(user) + "!"), 200
+            return jsonify("Successfully deleted User!"), 200
 
     def generate_verification_code(self):
         verification_code = str(random.randint(100000, 999999))

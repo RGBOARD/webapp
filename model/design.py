@@ -7,6 +7,7 @@ class DesignDAO:
         database_path = 'data.db'
 
         self.conn = sqlite3.connect(database_path)
+        self.conn.execute("PRAGMA foreign_keys = ON")
 
     def get_design_by_id(self, design_id: int):
         cursor = self.conn.cursor()

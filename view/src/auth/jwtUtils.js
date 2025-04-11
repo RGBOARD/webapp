@@ -54,7 +54,8 @@
     return {
       ...decoded,
       username: decoded.name || decoded.username || decoded.sub || decoded.identity,
-      user_id: decoded.user_id || decoded.id
+      user_id: decoded.user_id || decoded.id,
+      role: decoded.role
     };
   };
   
@@ -76,8 +77,7 @@
     if (!user) return false;
     
     if (role === 'admin') {
-      return user.is_admin === true || 
-             user.role === 'admin' || 
+      return user.role === true ||
              (user.roles && user.roles.includes('admin'));
     }
     
