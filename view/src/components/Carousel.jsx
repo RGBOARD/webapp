@@ -8,12 +8,10 @@ const Carousel = ({ userRole }) => {
 
   const [items, setItems] = useState([]);
   const [hoveredItem, setHoveredItem] = useState(null);
-
   const carouselRef = useRef(null);
   const [scrollAmount, setScrollAmount] = useState(200);
 
   useEffect(() => {
-    // Calculate scroll amount once the component is rendered
     if (carouselRef.current && carouselRef.current.children.length > 0) {
       const firstItem = carouselRef.current.children[0];
       const itemWidth = firstItem.offsetWidth;
@@ -21,23 +19,19 @@ const Carousel = ({ userRole }) => {
       const gap = parseInt(computedStyle.columnGap || '16', 10);
       setScrollAmount(itemWidth + gap);
     }
-
-    // Fetch images from the /design endpoint
     fetchImages();
   }, []);
 
   const fetchImages = async () => {
     try {
       const response = await axios.get('/queue_item/scheduled');
-      const data = response.data; // array of design objects
-
-      // Convert each design record into an object with `id` and `url`
-      const transformedItems = data.map((design) => ({
-        id: design.design_id,
-        // base64 image turned into a data URL
-        url: `data:image/jpeg;base64,${design.image}`,
+      const data = response.data;
+      const transformedItems = data.map((record) => ({
+        id: record.queue_id, // or record.design_id, as needed
+        url: `data:image/jpeg;base64,${record.image}`,
+        start_time: record.start_time,
+        end_time: record.end_time
       }));
-
       setItems(transformedItems);
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -59,7 +53,6 @@ const Carousel = ({ userRole }) => {
   const handleItemClick = (item) => {
     if (isAdmin) {
       console.log('Edit item:', item);
-      // Implement edit functionality as needed
     }
   };
 
@@ -73,6 +66,7 @@ const Carousel = ({ userRole }) => {
 
   return (
     <div className="carousel-container">
+      <div className="up-next-label">Up Next:</div>
       <div className="carousel">
         <button className="carousel-button prev-button" onClick={scrollPrev}>
           <ChevronLeft className="chevron-icon" />
