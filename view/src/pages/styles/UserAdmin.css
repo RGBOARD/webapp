@@ -29,7 +29,7 @@
   background-color: white;
   padding: 1rem;
   margin: 1rem auto;
-  border-radius: 0.5rem;
+  border-radius: 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: fit-content;
   max-width: 100%;
@@ -69,21 +69,21 @@
 }
 
 .delete-button{
-    background-color: red;
+    background-color: #F00000;
 }
 
 .toggle-button{
-    background-color: yellow;
+    background-color: #FFDD27;
 }
 
 .delete-button:hover {
   background-color: black;
-  color: red;
+  color: #F00000;
 }
 
 .toggle-button:hover {
   background-color: black;
-  color: yellow;
+  color: #FFDD27;
 }
 
 .you-text {
@@ -96,7 +96,7 @@
 
 .role-label {
   font-family: "Pixelify Sans", sans-serif;
-  background: #3b82f6;
+  background: #009AFF;
   border-radius: 24px;
   width: fit-content;
   padding: 5px;
@@ -117,21 +117,31 @@
 }
 
 .page-button {
-  padding: 6px 12px;
+
   border: 1px solid #ccc;
   background-color: black;
+  color: white;
+  padding: 4px 12px;
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: "Pixelify Sans", sans-serif;
 }
 
 .page-button:hover {
-  background-color: #e2e8f0;
+  background-color: white;
   color:black;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .page-button.active {
-  background-color: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
+
+  background-color: white;
+  color:black;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.page-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

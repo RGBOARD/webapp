@@ -42,7 +42,7 @@ def get_users_paginated():
     try:
 
         page = int(request.args.get('page', 1))
-        page_size = int(request.args.get('size', 10))
+        page_size = int(request.args.get('size', 6))
         handler = User(email=get_jwt_identity())
 
         result = handler.get_all_users_paginated(page, page_size)

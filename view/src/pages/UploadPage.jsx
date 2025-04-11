@@ -1,5 +1,5 @@
 import "../components/styles/Menu.css";
-import "../components/styles/Upload.css";
+import "./styles/Upload.css";
 import { useAuth } from '../auth/authContext'
 import {useState, useRef, useEffect} from "react";
 
