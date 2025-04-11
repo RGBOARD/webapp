@@ -8,7 +8,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
-from controller.display_panel import DisplayPanel
 from controller.upload_history import UploadHistory
 from controller.user import User
 from controller.design import Design
@@ -246,7 +245,7 @@ def handleQueueItem():
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'panel_id', 'start_time', 'end_time', 'display_duration', 'display_order',
+            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration', 'display_order',
                           'scheduled', 'scheduled_at'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
@@ -269,7 +268,7 @@ def handleQueueItemById(queue_id):
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'panel_id', 'start_time', 'end_time', 'display_duration', 'display_order',
+            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration', 'display_order',
                           'scheduled', 'scheduled_at'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
@@ -297,62 +296,6 @@ def get_scheduled_designs():
     handler = QueueItem()  # Assumes your QueueItem controller exists similarly to Design.
     scheduled_items = handler.getScheduledDesigns()
     return jsonify(scheduled_items), 200
-
-
-
-# Display Panel-----------------------------------------------------------------------------------------------------------
-@app.route("/display_panel", methods=['GET', 'POST'])
-def handleDisplayPanel():
-    if request.method == 'GET':
-        handler = DisplayPanel()
-        return handler.getAllDisplayPanel()
-    else:  # POST
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
-
-            valid_keys = {'location', 'status'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
-
-            handler = DisplayPanel()
-            return handler.addNewDisplayPanel(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 400
-
-
-@app.route("/display_panel/<int:panel_id>", methods=['GET', 'PUT', 'DELETE'])
-def handleDisplayPanelById(panel_id):
-    if request.method == 'GET':
-        handler = DisplayPanel()
-        return handler.getDisplayPanelById(panel_id)
-    elif request.method == 'PUT':
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
-
-            # We only have 'location' & 'status', but let's do a soft check:
-            valid_keys = {'location', 'status'}
-            # If you want partial updates, you can remove this check
-            # or adapt it as needed.
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
-
-            handler = DisplayPanel()
-            return handler.updateDisplayPanelById(panel_id, data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 400
-    else:  # DELETE
-        try:
-            handler = DisplayPanel()
-            return handler.deleteDisplayPanelById(panel_id)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Cannot delete record because it is referenced by other records"), 400
 
 
 # UploadHistory-----------------------------------------------------------------------------------------------------------

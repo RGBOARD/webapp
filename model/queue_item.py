@@ -35,11 +35,11 @@ class QueueItemDAO:
         cursor.close()
         return result
 
-    def addNewQueueItem(self, design_id, panel_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at):
+    def addNewQueueItem(self, design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at):
 
         cursor = self.conn.cursor()
-        query = "insert into queue_item (design_id, panel_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at) values (?, ?, ?, ?, ?, ?, ?, ?);"
-        cursor.execute(query, (design_id, panel_id, start_time, end_time, display_duration,display_order,scheduled, scheduled_at))
+        query = "insert into queue_item (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at) values (?, ?, ?, ?, ?, ?, ?);"
+        cursor.execute(query, (design_id, start_time, end_time, display_duration,display_order,scheduled, scheduled_at))
         self.conn.commit()
         query = "select * from queue_item order by queue_id desc limit 1"
         cursor.execute(query)
@@ -55,8 +55,6 @@ class QueueItemDAO:
 
             if key == "design_id":
                 query += " design_id = ? where queue_id = ?;"
-            elif key == "panel_id":
-                query += " panel_id = ? where queue_id = ?;"
             elif key == "start_time":
                 query += " start_time = ? where queue_id = ?;"
             elif key == "end_time":
@@ -100,7 +98,6 @@ class QueueItemDAO:
         query = """
             SELECT q.queue_id,
                    q.design_id,
-                   q.panel_id,
                    q.start_time,
                    q.end_time,
                    q.display_duration,

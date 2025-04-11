@@ -12,13 +12,12 @@ class QueueItem:
                 D = {}
                 D['queue_id'] = t[0]
                 D['design_id'] = t[1]
-                D['panel_id'] = t[2]
-                D['start_time'] = t[3]
-                D['end_time'] = t[4]
-                D['display_duration'] = t[5]
-                D['display_order'] = t[6]
-                D['scheduled'] = t[7]
-                D['scheduled_at'] = t[8]
+                D['start_time'] = t[2]
+                D['end_time'] = t[3]
+                D['display_duration'] = t[4]
+                D['display_order'] = t[5]
+                D['scheduled'] = t[6]
+                D['scheduled_at'] = t[7]
                 result.append(D)
 
             return result
@@ -27,13 +26,12 @@ class QueueItem:
             result = {}
             result['queue_id'] = queue_item[0]
             result['design_id'] = queue_item[1]
-            result['panel_id'] = queue_item[2]
-            result['start_time'] = queue_item[3]
-            result['end_time'] = queue_item[4]
-            result['display_duration'] = queue_item[5]
-            result['display_order'] = queue_item[6]
-            result['scheduled'] = queue_item[7]
-            result['scheduled_at'] = queue_item[8]
+            result['start_time'] = queue_item[2]
+            result['end_time'] = queue_item[3]
+            result['display_duration'] = queue_item[4]
+            result['display_order'] = queue_item[5]
+            result['scheduled'] = queue_item[6]
+            result['scheduled_at'] = queue_item[7]
 
             return result
 
@@ -45,7 +43,6 @@ class QueueItem:
 
         def addNewQueueItem(self, data):
             design_id = data['design_id']
-            panel_id = data['panel_id']
             start_time = data['start_time']
             end_time = data['end_time']
             display_duration = data['display_duration']
@@ -53,7 +50,7 @@ class QueueItem:
             scheduled = data['scheduled']
             scheduled_at = data['scheduled_at']
             dao = QueueItemDAO()
-            queue_item = dao.addNewQueueItem(design_id, panel_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at)
+            queue_item = dao.addNewQueueItem(design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at)
             result = self.make_json_one(queue_item)
             return result
 
@@ -92,17 +89,16 @@ class QueueItem:
                 item = {
                     "queue_id": row[0],
                     "design_id": row[1],
-                    "panel_id": row[2],
-                    "start_time": row[3],
-                    "end_time": row[4],
-                    "display_duration": row[5],
-                    "display_order": row[6],
-                    "scheduled": row[7],
-                    "scheduled_at": row[8],
-                    "image": base64.b64encode(row[9]).decode('utf-8') if row[9] else None,
-                    "is_approved": row[10],
-                    "design_created_at": row[11],
-                    "design_updated_at": row[12]
+                    "start_time": row[2],
+                    "end_time": row[3],
+                    "display_duration": row[4],
+                    "display_order": row[5],
+                    "scheduled": row[6],
+                    "scheduled_at": row[7],
+                    "image": base64.b64encode(row[8]).decode('utf-8') if row[9] else None,
+                    "is_approved": row[9],
+                    "design_created_at": row[10],
+                    "design_updated_at": row[11]
                 }
                 result.append(item)
             return result

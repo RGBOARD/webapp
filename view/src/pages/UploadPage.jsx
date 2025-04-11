@@ -1,8 +1,10 @@
 import "../components/styles/Menu.css";
-import "../components/styles/Upload.css";
+import "./styles/Upload.css";
 import { useAuth } from '../auth/authContext.js';
 import { useState, useRef, useEffect } from "react";
 import axios from '../api/axios';
+
+import Modal from "../components/Modal";
 
 function UploadPage() {
     const fileInputRef = useRef(null);
@@ -12,6 +14,14 @@ function UploadPage() {
         user_id: '',
         title: '',
         image: null,
+    });
+
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        type: null, // 'alert' or 'confirm'
+        message: '',
+        onConfirm: () => {},
+        onCancel: () => {}
     });
 
     // New scheduling state: only start and end date/time
@@ -55,6 +65,35 @@ function UploadPage() {
         }
     };
 
+    const showAlert = (message, callback = () => {}) => {
+        setModalState({
+          isOpen: true,
+          type: 'alert',
+          message,
+          onConfirm: () => {
+            setModalState(prev => ({...prev, isOpen: false}));
+            callback();
+          },
+          onCancel: () => setModalState(prev => ({...prev, isOpen: false}))
+        });
+    };
+
+   const showConfirm = (message, onConfirm, onCancel = () => {}) => {
+     setModalState({
+       isOpen: true,
+       type: 'confirm',
+       message: message.includes(formData.image.name) ? message : `${message} "${formData.image.name}"`,
+       onConfirm: () => {
+         setModalState(prev => ({...prev, isOpen: false}));
+         onConfirm();
+       },
+       onCancel: () => {
+         setModalState(prev => ({...prev, isOpen: false}));
+         onCancel();
+       }
+     });
+   };
+
     const handleImageDelete = () => {
         if (fileInputRef.current) {
             fileInputRef.current.value = ''; // Reset the file input value
@@ -71,7 +110,6 @@ function UploadPage() {
 
     // Upload the image to /design endpoint
     const handleSubmit = async (e) => {
-        e.preventDefault();
         const form = new FormData();
         form.append('user_id', userid);
         if (formData.image) {
@@ -80,22 +118,22 @@ function UploadPage() {
         }
         try {
             const response = await upload(form);
-            console.log("Upload response:", response.data);
             if (response.status === 201 && response.data.design_id) {
-                console.log('Image uploaded successfully with design_id:', response.data.design_id);
+                showAlert('Image uploaded successfully!');
                 setNewDesignId(response.data.design_id);
             } else {
-                console.log('Image upload failed or design_id not returned');
+                showAlert('Image upload failed.');
             }
         } catch (error) {
             console.error('Error during upload:', error);
+            showAlert('An error occurred during upload.');
         }
     };
 
     // Add the uploaded design to the queue with scheduling data
     const handleAddToQueue = async () => {
         if (!newDesignId) {
-            setQueueMessage("Please upload an image first.");
+            showAlert("Please upload an image first.");
             return;
         }
 
@@ -106,11 +144,11 @@ function UploadPage() {
             const start = new Date(scheduleData.start_time);
             const end = new Date(scheduleData.end_time);
             if (start < now) {
-                setQueueMessage("Error: Scheduled start time must be in the future.");
+                showAlert("Error: Scheduled start time must be in the future.");
                 return;
             }
             if (start >= end) {
-                setQueueMessage("Error: Start time must be before end time.");
+                showAlert("Error: Start time must be before end time.");
                 return;
             }
             finalStart = scheduleData.start_time;
@@ -127,7 +165,6 @@ function UploadPage() {
 
         const queueData = {
             design_id: newDesignId,
-            panel_id: 1, // adjust as needed
             start_time: finalStart,
             end_time: finalEnd,
             display_duration: 60,  // default duration for scheduled items
@@ -141,10 +178,10 @@ function UploadPage() {
             if (response.data.message) {
                 setQueueMessage(response.data.message);
             } else {
-                setQueueMessage("Image successfully added to queue.");
+                showAlert("Image successfully added to queue.");
             }
         } catch (error) {
-            setQueueMessage("Error adding image to queue.");
+            showAlert("Error adding image to queue.");
         }
     };
 
@@ -155,15 +192,19 @@ function UploadPage() {
                 <div className="upload-menu-wrapper">
                     <div className="upload-column">
                         <h2 className="upload-text text-2xl">Select an Image File to Upload:</h2>
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            showConfirm("Upload this image?", () => handleSubmit());
+                        }}>
                             <div className="upload-menu my-14">
                                 <div>
                                     <input
                                         type="file"
+                                        accept="image/*"
                                         id="image"
                                         name="image"
                                         ref={fileInputRef}
-                                        style={{ display: "none" }}
+                                        style={{display: "none"}}
                                         onChange={handleFileChange}
                                     />
                                     <button
@@ -192,29 +233,31 @@ function UploadPage() {
                                 </div>
                             </div>
                             {/* Scheduling Section: Only Start and End Date/Time */}
-                            <div className="scheduling-section">
-                                <h3>Schedule</h3>
-                                <div>
-                                    <label>Start Time:</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={scheduleData.start_time}
-                                        onChange={(e) =>
-                                            setScheduleData({ ...scheduleData, start_time: e.target.value })
-                                        }
-                                    />
+                            {previewUrl && (
+                                <div className="scheduling-section">
+                                    <h3 className="upload-text">Schedule</h3>
+                                    <div>
+                                        <label>Start Time:</label>
+                                        <input
+                                            type="datetime-local"
+                                            value={scheduleData.start_time}
+                                            onChange={(e) =>
+                                                setScheduleData({...scheduleData, start_time: e.target.value})
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>End Time:</label>
+                                        <input
+                                            type="datetime-local"
+                                            value={scheduleData.end_time}
+                                            onChange={(e) =>
+                                                setScheduleData({...scheduleData, end_time: e.target.value})
+                                            }
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label>End Time:</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={scheduleData.end_time}
-                                        onChange={(e) =>
-                                            setScheduleData({ ...scheduleData, end_time: e.target.value })
-                                        }
-                                    />
-                                </div>
-                            </div>
+                            )}
                         </form>
                         {previewUrl && (
                             <button
@@ -241,6 +284,13 @@ function UploadPage() {
                     </div>
                 </div>
             </div>
+            <Modal
+          isOpen={modalState.isOpen}
+          type={modalState.type}
+          message={modalState.message}
+          onConfirm={modalState.onConfirm}
+          onCancel={modalState.onCancel}
+        />
         </div>
     );
 }
