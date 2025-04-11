@@ -11,7 +11,21 @@ const Carousel = ({ userRole }) => {
   const carouselRef = useRef(null);
   const [scrollAmount, setScrollAmount] = useState(200);
 
+  // Helper function to format date/time strings into a friendly format.
+  const formatDateTime = (datetimeString) => {
+    if (!datetimeString) return '';
+    const options = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return new Date(datetimeString).toLocaleString(undefined, options);
+  };
+
   useEffect(() => {
+    // Adjust scroll amount based on first item's width and gap.
     if (carouselRef.current && carouselRef.current.children.length > 0) {
       const firstItem = carouselRef.current.children[0];
       const itemWidth = firstItem.offsetWidth;
@@ -30,7 +44,7 @@ const Carousel = ({ userRole }) => {
         id: record.queue_id, // or record.design_id, as needed
         url: `data:image/jpeg;base64,${record.image}`,
         start_time: record.start_time,
-        end_time: record.end_time
+        end_time: record.end_time,
       }));
       setItems(transformedItems);
     } catch (error) {
@@ -86,12 +100,19 @@ const Carousel = ({ userRole }) => {
                 alt={`Image ${item.id}`}
                 className="placeholder-image"
               />
+              {/* Conditional overlay for admin edit or regular view */}
               {isAdmin ? (
                 <div className={`edit-overlay ${hoveredItem === item.id ? 'visible' : ''}`}>
                   <span>Edit</span>
                 </div>
               ) : (
                 <div className={`view-overlay ${hoveredItem === item.id ? 'visible' : ''}`} />
+              )}
+              {/* Schedule overlay: only becomes visible on hover */}
+              {item.start_time && (
+                <div className={`schedule-overlay ${hoveredItem === item.id ? 'visible' : ''}`}>
+                  <span>{formatDateTime(item.start_time)}</span>
+                </div>
               )}
             </div>
           ))}

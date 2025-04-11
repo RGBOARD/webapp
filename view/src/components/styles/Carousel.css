@@ -2,7 +2,6 @@
     max-width: 100%;
     margin: 0 auto;
     position: relative;
-    /*height: 180px;*/
     flex: 0 0 auto;
     overflow: visible;
 }
@@ -47,8 +46,6 @@
     scroll-snap-align: start;
 }
 
-
-/* Force images to 178x142 and crop them if needed */
 .carousel-item img {
     width: 178px;
     height: 142px;
@@ -84,7 +81,7 @@
     color: #4b5563;
 }
 
-/* Base overlay styles (shared between edit and view) */
+/* Common overlay styles for edit and view overlays */
 .edit-overlay,
 .view-overlay {
     position: absolute;
@@ -103,23 +100,33 @@
     z-index: 5;
 }
 
-/* Edit overlay (for admins) */
 .edit-overlay {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* View overlay (for non-admin users) */
 .view-overlay {
     background-color: rgba(0, 0, 0, 0.4);
 }
 
-.carousel-item:hover .edit-overlay,
-.carousel-item:hover .view-overlay {
-    opacity: 1;
+/* Schedule overlay: hidden by default */
+.schedule-overlay {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    z-index: 6;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
 }
 
-.edit-overlay.visible,
-.view-overlay.visible {
+/* Show overlays on hover by adding a visible class */
+.carousel-item:hover .edit-overlay,
+.carousel-item:hover .view-overlay,
+.schedule-overlay.visible {
     opacity: 1;
 }
 
@@ -140,11 +147,6 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.edit-icon {
-    margin-right: 4px;
-    vertical-align: middle;
-}
-
 .up-next-label {
     font-family: "Pixelify Sans", sans-serif;
     font-size: 1.0rem;
@@ -154,38 +156,22 @@
     margin-bottom: 0.5rem;
 }
 
-.schedule-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    padding: 4px 8px;
-    font-size: 0.9rem;
-    border-radius: 4px;
-    z-index: 6;
-}
-
-
 @media (max-height: 700px) {
     .carousel-container {
         min-height: 160px;
         height: auto;
     }
-
     .carousel-item {
         min-width: 160px;
         height: auto;
     }
 }
 
-
 @media (hover: none) {
     .carousel-item:active .edit-overlay,
     .carousel-item:active .view-overlay {
         opacity: 1;
     }
-
     .edit-overlay span,
     .view-overlay span {
         padding: 8px 16px;
