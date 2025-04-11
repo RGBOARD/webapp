@@ -1,6 +1,6 @@
 import sqlite3
 
-con = sqlite3.connect('data.db')
+con = sqlite3.connect('../data.db')
 cur = con.cursor()
 
 cur.execute("""
@@ -29,35 +29,25 @@ cur.execute("""
             """)
 
 cur.execute("""
-            CREATE TABLE IF NOT EXISTS design
-            (
-                design_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER  NOT NULL,
-                title       TEXT     NOT NULL,
-                image       BLOB     NOT NULL,
-                is_approved BOOLEAN  NOT NULL DEFAULT 0,
-                status      BOOLEAN  NOT NULL DEFAULT 0,
-                created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
-            );
-            """)
-
-cur.execute("""
-            CREATE TABLE IF NOT EXISTS display_panel
-            (
-                panel_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                location INTEGER NOT NULL,
-                status   TEXT CHECK (status IN ('active', 'inactive', 'maintenance'))
-            );
-            """)
+    CREATE TABLE IF NOT EXISTS design
+    (
+        design_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER  NOT NULL,
+        title       TEXT     NOT NULL,
+        image       BLOB     NOT NULL,
+        is_approved BOOLEAN  NOT NULL DEFAULT 1,
+        status      BOOLEAN  NOT NULL DEFAULT 0,
+        created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
+    );
+""")
 
 cur.execute("""
             CREATE TABLE IF NOT EXISTS queue_item
             (
                 queue_id         INTEGER PRIMARY KEY AUTOINCREMENT,
                 design_id        INTEGER  NOT NULL,
-                panel_id         INTEGER  NOT NULL,
                 start_time       DATETIME NOT NULL,
                 end_time         DATETIME NOT NULL,
                 display_duration INTEGER  NOT NULL,
@@ -66,8 +56,7 @@ cur.execute("""
                 scheduled_at     DATETIME,
                 created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE,
-                FOREIGN KEY (panel_id) REFERENCES display_panel (panel_id) ON DELETE CASCADE
+                FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE
             );
             """)
 
