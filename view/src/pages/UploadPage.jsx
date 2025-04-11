@@ -117,8 +117,6 @@ function UploadPage() {
             finalEnd = scheduleData.end_time;
         } else {
             // Otherwise, compute the next available slot.
-            // Here we simply set the start time to one minute from now and a default duration of 60 seconds.
-            // In a production app, you might instead query your backend to get the next available time slot.
             const now = new Date();
             const nextAvailableStart = new Date(now.getTime() + 60 * 1000); // 1 minute from now
             const defaultDurationSeconds = 60; // default duration (60 seconds)
@@ -133,8 +131,8 @@ function UploadPage() {
             start_time: finalStart,
             end_time: finalEnd,
             display_duration: 60,  // default duration for scheduled items
-            display_order: 1,      // adjust if you allow reordering or compute based on existing items
-            scheduled: 1,          // mark as scheduled because we now have valid start/end times
+            display_order: 1,
+            scheduled: 1,
             scheduled_at: new Date().toISOString()
         };
 
