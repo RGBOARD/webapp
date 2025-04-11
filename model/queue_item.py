@@ -7,6 +7,7 @@ class QueueItemDAO:
         print("Connecting to SQLite database at:", database_path)
 
         self.conn = sqlite3.connect(database_path)
+        self.conn.execute("PRAGMA foreign_keys = ON")
 
     def getAllQueueItem(self):
         cursor = self.conn.cursor()
