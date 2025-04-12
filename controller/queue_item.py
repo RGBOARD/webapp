@@ -1,10 +1,16 @@
 from flask import jsonify
 import base64
-
+from controller.user import User
 
 from model.queue_item import QueueItemDAO
 
+
+
 class QueueItem:
+        def __init__(self, email=None):
+            self.email = email
+            if email:
+                self.user = User(email=email)
 
         def make_json(self, tuples):
             result = []
@@ -75,7 +81,7 @@ class QueueItem:
         def deleteQueueItemById(self, queue_id):
             dao = QueueItemDAO()
             queue_item = dao.deleteQueueItemById(queue_id)
-            if not queue_item:
+            if queue_item:
                 return jsonify("Not Found"), 404
             else:
                 return jsonify("Successfully deleted QueueItem with ID " + str(queue_item) + "!"), 200
@@ -102,3 +108,35 @@ class QueueItem:
                 }
                 result.append(item)
             return result
+
+        def get_all_items_paginated(self, page, page_size):
+            if self.email is not None:
+                if self.user.is_admin():
+                    model = QueueItemDAO()
+                    result = model.get_all_items_paginated(page, page_size)
+
+                    formatted_items = []
+                    for item in result["queue"]:
+                        formatted_items.append({
+                            "queue_id": item["queue_id"],
+                            "design_id": item["design_id"],
+                            "start_time": item["start_time"],
+                            "display_order": item["display_order"],
+                            "scheduled": item["scheduled"],
+                            "scheduled_at": item["scheduled_at"],
+                            "is_approved": item["is_approved"],
+                            "image": base64.b64encode(item["image"]).decode("utf-8"),
+                            "title": item["title"]
+                        })
+
+                    body = {
+                        "items": formatted_items,
+                        "total": result["total"],
+                        "pages": result["pages"],
+                        "page": result["page"]
+                    }
+                    return body
+
+                return jsonify(error="Unauthorized. Not admin."), 401
+
+            return jsonify(error="Unauthorized. No token."), 401
