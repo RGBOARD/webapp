@@ -52,11 +52,10 @@ class QueueItem:
             start_time = data['start_time']
             end_time = data['end_time']
             display_duration = data['display_duration']
-            display_order = data['display_order']
             scheduled = data['scheduled']
             scheduled_at = data['scheduled_at']
             dao = QueueItemDAO()
-            queue_item = dao.addNewQueueItem(design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at)
+            queue_item = dao.addNewQueueItem(design_id, start_time, end_time, display_duration, scheduled, scheduled_at)
             result = self.make_json_one(queue_item)
             return result
 

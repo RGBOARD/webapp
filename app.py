@@ -261,7 +261,7 @@ def handleQueueItem():
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration', 'display_order',
+            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration',
                           'scheduled', 'scheduled_at'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400

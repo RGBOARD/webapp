@@ -119,14 +119,14 @@ function UploadPage() {
         try {
             const response = await upload(form);
             if (response.status === 201 && response.data.design_id) {
-                showAlert('Image uploaded successfully!');
+                showAlert('Image saved successfully!');
                 setNewDesignId(response.data.design_id);
             } else {
-                showAlert('Image upload failed.');
+                showAlert('Image save failed.');
             }
         } catch (error) {
-            console.error('Error during upload:', error);
-            showAlert('An error occurred during upload.');
+            console.error('Error during save:', error);
+            showAlert('An error occurred during save.');
         }
     };
 
@@ -168,7 +168,6 @@ function UploadPage() {
             start_time: finalStart,
             end_time: finalEnd,
             display_duration: 60,  // default duration for scheduled items
-            display_order: 1,
             scheduled: 1,
             scheduled_at: new Date().toISOString()
         };
@@ -188,13 +187,13 @@ function UploadPage() {
     return (
         <div className="uploadpage">
             <div className="upload-wrapper">
-                <h1 className="upload-h1">Upload an Image</h1>
+                <h1 className="upload-h1">Save an Image</h1>
                 <div className="upload-menu-wrapper">
                     <div className="upload-column">
-                        <h2 className="upload-text text-2xl">Select an Image File to Upload:</h2>
+                        <h2 className="upload-text text-2xl">Select an Image File to Save:</h2>
                         <form onSubmit={(e) => {
                             e.preventDefault();
-                            showConfirm("Upload this image?", () => handleSubmit());
+                            showConfirm("Save this image?", () => handleSubmit());
                         }}>
                             <div className="upload-menu my-14">
                                 <div>
@@ -225,7 +224,7 @@ function UploadPage() {
                                                     Delete
                                                 </button>
                                                 <button type="submit" className="upload-button submit-button">
-                                                    Upload
+                                                    Save
                                                 </button>
                                             </div>
                                         </div>

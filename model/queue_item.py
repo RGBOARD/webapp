@@ -35,9 +35,15 @@ class QueueItemDAO:
         cursor.close()
         return result
 
-    def addNewQueueItem(self, design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at):
+    def addNewQueueItem(self, design_id, start_time, end_time, display_duration,scheduled, scheduled_at):
 
         cursor = self.conn.cursor()
+
+        count_query = """ SELECT COUNT(*) FROM queue_item"""
+        cursor.execute(count_query)
+        items = cursor.fetchone()[0]
+        display_order = items + 1
+
         query = "insert into queue_item (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at) values (?, ?, ?, ?, ?, ?, ?);"
         cursor.execute(query, (design_id, start_time, end_time, display_duration,display_order,scheduled, scheduled_at))
         self.conn.commit()

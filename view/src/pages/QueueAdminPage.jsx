@@ -93,13 +93,13 @@ function QueueAdminPage() {
                     <div className={`approval-label ${item.is_approved ? 'approved' : 'unapproved'}`}>
                       {item.is_approved ? 'Approved' : 'Unapproved'}
                     </div>
-                    <div className="text-xl">
+                    <div className="text-lg">
                       <strong>{item.title}</strong>
                     </div>
-                    <div>
-                      <strong>Scheduled for:</strong> {item.start_time || 'Unscheduled'}
+                    <div className="text-base">
+                      <strong>Scheduled at:</strong> {item.start_time || 'Unscheduled'}
                     </div>
-                    <div>
+                    <div className="text-base">
                       <strong>Order:</strong> {item.display_order}
                     </div>
                   </div>
