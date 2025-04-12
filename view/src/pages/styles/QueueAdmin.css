@@ -1,0 +1,14 @@
+.approval-label {
+  font-family: "Pixelify Sans", sans-serif;
+  border-radius: 24px;
+  width: fit-content;
+  padding: 5px;
+}
+
+.approval-label.approved {
+  background-color: #38E837;
+}
+
+.approval-label.unapproved {
+  background-color: #F00000;
+}

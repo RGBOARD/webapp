@@ -35,9 +35,15 @@ class QueueItemDAO:
         cursor.close()
         return result
 
-    def addNewQueueItem(self, design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at):
+    def addNewQueueItem(self, design_id, start_time, end_time, display_duration,scheduled, scheduled_at):
 
         cursor = self.conn.cursor()
+
+        count_query = """ SELECT COUNT(*) FROM queue_item"""
+        cursor.execute(count_query)
+        items = cursor.fetchone()[0]
+        display_order = items + 1
+
         query = "insert into queue_item (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at) values (?, ?, ?, ?, ?, ?, ?);"
         cursor.execute(query, (design_id, start_time, end_time, display_duration,display_order,scheduled, scheduled_at))
         self.conn.commit()
@@ -76,6 +82,7 @@ class QueueItemDAO:
         return result
 
     def deleteQueueItemById(self, queue_id):
+
         cursor = self.conn.cursor()
         select_query = "SELECT * FROM queue_item WHERE queue_id = ?"
         cursor.execute(select_query, (queue_id,))
@@ -86,11 +93,16 @@ class QueueItemDAO:
             return None
         else:
             query = "delete from queue_item where queue_id = ?;"
-            cursor.execute(query, (queue_id,))
-            self.conn.commit()
-            result = queue_id
-            cursor.close()
-            return result
+            status = 0
+            try:
+                cursor.execute(query, (queue_id,))
+                self.conn.commit()
+            except sqlite3.Error:
+                status = 1
+
+            finally:
+                cursor.close()
+                return status
 
     def getScheduledDesigns(self):
         cursor = self.conn.cursor()
@@ -123,3 +135,56 @@ class QueueItemDAO:
             return []
         finally:
             cursor.close()
+
+    def get_all_items_paginated(self, page, page_size):
+        cursor = self.conn.cursor()
+        offset = (page - 1) * page_size
+
+        try:
+            query = """
+            SELECT q.queue_id,
+                   q.design_id,
+                   q.start_time,
+                   q.display_order,
+                   q.scheduled,                  
+                   q.scheduled_at,
+                   d.image,
+                   d.title,
+                   d.is_approved
+            FROM queue_item q
+            JOIN design d ON q.design_id = d.design_id
+            ORDER BY 
+                CASE WHEN q.scheduled = 1 THEN q.start_time ELSE '9999-12-31 23:59:59' END ASC,
+                q.display_order ASC
+            LIMIT ? OFFSET ?;
+            """
+            cursor.execute(query, (page_size, offset))
+            queue = cursor.fetchall()
+
+            columns = [column[0] for column in cursor.description]
+            queue_items = [dict(zip(columns, design)) for design in queue]
+
+            count_query = """
+            SELECT COUNT(*) 
+            FROM queue_item q
+            JOIN design d ON q.design_id = d.design_id
+            """
+            cursor.execute(count_query)
+            total_items = cursor.fetchone()[0]
+
+            total_pages = (total_items + page_size - 1) // page_size
+            cursor.close()
+            return {
+                "success": True,
+                "queue": queue_items,
+                "total": total_items,
+                "pages": total_pages,
+                "page": page
+            }
+        except Exception as e:
+            cursor.close()
+            print("Error during database operation:", str(e))
+            return {
+                "success": False,
+                "error": str(e)
+            }

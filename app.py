@@ -127,25 +127,27 @@ def get_design():
     handler = Design(email=get_jwt_identity())
     return handler.get_design(design_id=request.form.get('design_id'))
 
-@app.route("/design/<int>:design_id/title", methods=['PUT'])
+@app.route("/design/<int:design_id>/title", methods=['PUT'])
 @jwt_required()
 def update_design_title():
     handler = Design(email=get_jwt_identity())
     return handler.update_design_title(design_id=request.form.get('design_id'), title=request.form.get('title'))
 
-@app.route("/design/<int>:design_id/image", methods=['PUT'])
+@app.route("/design/<int:design_id>/image", methods=['PUT'])
 @jwt_required()
 def update_design_image():
     handler = Design(email=get_jwt_identity())
     return handler.update_design_image(design_id=request.form.get('design_id'), image=request.files.get('image'))
 
-@app.route("/design/<int>:design_id/approval", methods=['PUT'])
+@app.route("/design/<int:design_id>/approval", methods=['PUT'])
 @jwt_required()
-def update_design_approval():
+def update_design_approval(design_id):
+    data = request.get_json()
+    approval = data.get('approval')
+
     handler = Design(email=get_jwt_identity())
-    return handler.update_design_approval(design_id=request.form.get('design_id'),
-                                          approval=request.form.get('approval'))
-@app.route("/design/<int>:design_id/status", methods=['PUT'])
+    return handler.update_design_approval(design_id=design_id, approval=approval)
+@app.route("/design/<int:design_id>/status", methods=['PUT'])
 @jwt_required()
 def update_design_status():
     handler = Design(email=get_jwt_identity())
@@ -234,6 +236,20 @@ def handleAdminActionById(action_id):
 
 
 # QueueItem-----------------------------------------------------------------------------------------------------------
+
+@app.route("/queue_item/pagination", methods=['GET'])
+@jwt_required()
+def get_queue_paginated():
+    try:
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('size', 6))
+        handler = QueueItem(email=get_jwt_identity())
+
+        result = handler.get_all_items_paginated(page, page_size)
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 @app.route("/queue_item", methods=['GET', 'POST'])
 def handleQueueItem():
     if request.method == 'GET':
@@ -245,7 +261,7 @@ def handleQueueItem():
             if not data:
                 return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration', 'display_order',
+            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration',
                           'scheduled', 'scheduled_at'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400

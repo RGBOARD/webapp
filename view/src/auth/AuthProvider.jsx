@@ -88,68 +88,117 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Design Upload function
-const upload = async (imageData) => {
-  try {
-    const response = await axios.post('/design', imageData);
-    return response;
-  } catch (error) {
-    console.error('Upload error:', error);
-    return {
-      success: false,
-      error: error.response?.data?.error || 'Image Upload failed'
-    };
-  }
-};
+  const upload = async (imageData) => {
+    try {
+      const response = await axios.post('/design', imageData);
+      return response;
+    } catch (error) {
+      console.error('Upload error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Image Upload failed'
+      };
+    }
+  };
 
-// Get paginated users (admin only)
-const getpageusers = async (pageNum, pageSize) => {
-  try {
-    const response = await axios.get('/user/pagination', {
-      params: {
-        page: pageNum,
-        pageSize: pageSize,
-      },
-    });
-    return {
-      success: true,
-      data: response.data // Make sure you return 'data' to match what you're trying to access in the component
-    };
-  } catch (error) {
-    console.error('Fetch users error:', error);
-    return {
-      success: false,
-      error: error.response?.data?.error || 'Failed to fetch users'
-    };
-  }
-};
+  // Get paginated users (admin only)
+  const getpageusers = async (pageNum, pageSize) => {
+    try {
+      const response = await axios.get('/user/pagination', {
+        params: {
+          page: pageNum,
+          pageSize: pageSize,
+        },
+      });
+      return {
+        success: true,
+        data: response.data // Make sure you return 'data' to match what you're trying to access in the component
+      };
+    } catch (error) {
+      console.error('Fetch users error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch users'
+      };
+    }
+  };
 
-// Delete a user by ID
-const deleteuser = async (userId) => {
-  try {
-    await axios.delete(`/user/${userId}`);
-    return { success: true };
-  } catch (error) {
-    console.error('Delete user error:', error);
-    return {
-      success: false,
-      error: error.response?.data?.error || 'Failed to delete user'
-    };
-  }
-};
+  // Delete a user by ID
+  const deleteuser = async (userId) => {
+    try {
+      await axios.delete(`/user/${userId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Delete user error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to delete user'
+      };
+    }
+  };
 
-// Toggle admin status
-const toggleadmin = async (userId, is_admin) => {
-  try {
-    await axios.put(`/user/${userId}`, { is_admin });
-    return { success: true };
-  } catch (error) {
-    console.error('Toggle admin error:', error);
-    return {
-      success: false,
-      error: error.response?.data?.error || 'Failed to update admin status'
-    };
-  }
-};
+  // Toggle admin status
+  const toggleadmin = async (userId, is_admin) => {
+    try {
+      await axios.put(`/user/${userId}`, { is_admin });
+      return { success: true };
+    } catch (error) {
+      console.error('Toggle admin error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to update admin status'
+      };
+    }
+  };
+
+    // Get paginated users (admin only)
+  const getpageimages = async (pageNum, pageSize) => {
+    try {
+      const response = await axios.get('/queue_item/pagination', {
+        params: {
+          page: pageNum,
+          pageSize: pageSize,
+        },
+      });
+      return {
+        success: true,
+        data: response.data // Make sure you return 'data' to match what you're trying to access in the component
+      };
+    } catch (error) {
+      console.error('Fetch users error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch users'
+      };
+    }
+  };
+
+    // Toggle approval status
+  const toggleapproval = async (designId, approval) => {
+    try {
+      await axios.put(`/design/${designId}/approval`, { approval });
+      return { success: true };
+    } catch (error) {
+      console.error('Toggle admin error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to update admin status'
+      };
+    }
+  };
+
+  const deletequeueitem = async (queueId) => {
+    try {
+      await axios.delete(`/queue_item/${queueId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Delete design error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to delete user'
+      };
+    }
+  };
 
   // Logout function
   const logout = () => {
@@ -169,6 +218,9 @@ const toggleadmin = async (userId, is_admin) => {
     getpageusers,
     deleteuser,
     toggleadmin,
+    getpageimages,
+    toggleapproval,
+    deletequeueitem,
     logout,
     hasRole, 
     hasAnyRole

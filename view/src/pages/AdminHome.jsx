@@ -21,12 +21,12 @@ function AdminHome() {
           <div className="button-menu">
             <ActionButton 
               icon="upload" 
-              text="Upload an Image to the Queue"
+              text="Save Image"
               route="/upload"
             />
             <ActionButton 
               icon="create" 
-              text="Create an Image for the Queue"
+              text="Create Image"
               route="/create"
             />
             <ActionButton 
