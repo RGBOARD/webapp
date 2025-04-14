@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="custom.css">
+
 <p align="center">
   <img src="view\src\assets\RGB-Icon.png" alt="Project Logo" width="200"/>
 </p>
@@ -10,11 +12,10 @@ The goal is to improve how organizations communicate with members by replacing s
 
 It features a user-friendly web application for content uploads and scheduling, an admin portal for content moderation and user management, and a backend system that validates and queues display content. This solution enhances member engagement, promotes sustainability by reducing paper use, and fits in small spaces where TVs are impractical.
 
----
+<hr>
 
-## Contributors
-
-- *Marianyelis Jimenez Mercedes* (marianyelis.jimenez1@upr.edu)
-- *Irsaris Pérez Rodríguez* (irsaris.perez@upr.edu)
-- *Jandel Rodríguez Vázquez* (jandel.rodriguez@upr.edu)
-- *Edimar Valentín Kery* (edimar.valentin@upr.edu)
+## Team Members
+- Marianyelis Jimenez Mercedes  (marianyelis.jimenez1@upr.edu)
+- Irsaris Pérez Rodríguez  (irsaris.perez@upr.edu)
+- Jandel Rodríguez Vázquez  (jandel.rodriguez@upr.edu)
+- Edimar Valentín Kery  (edimar.valentin@upr.edu)
