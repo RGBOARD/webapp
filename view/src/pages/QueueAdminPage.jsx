@@ -5,7 +5,8 @@ import "./styles/QueueAdmin.css";
 import { useAuth } from '../auth/authContext.js';
 import { useState, useEffect } from "react";
 import Modal from "../components/Modal";
-import Carousel from "../components/Carousel.jsx";
+import { formatDateTime } from '../utils/dateUtils';
+import { renderPixelDataToImage } from '../utils/pixelRenderer'
 
 function QueueAdminPage() {
   const [items, setItems] = useState([]);
@@ -25,10 +26,31 @@ function QueueAdminPage() {
     try {
       const res = await getpageimages(pageNum);
       const data = res.data;
-      const transformed = data.items.map((item) => ({
-        ...item,
-        url: `data:image/jpeg;base64,${item.image}`
-      }));
+      
+      // Transform data to include rendered pixel data images
+      const transformed = data.items.map((item) => {
+        let pixelData = {};
+        
+        // Parse pixel_data if it's a string
+        if (item.pixel_data) {
+          try {
+            pixelData = typeof item.pixel_data === 'string' 
+              ? JSON.parse(item.pixel_data) 
+              : item.pixel_data;
+          } catch (error) {
+            console.error('Error parsing pixel data:', error);
+          }
+        }
+        
+        // Render pixel data to image URL
+        const imageUrl = renderPixelDataToImage(pixelData, 64, 64, 1);
+        
+        return {
+          ...item,
+          url: imageUrl
+        };
+      });
+      
       setItems(transformed);
       setPage(data.page);
       setPages(data.pages);
@@ -97,7 +119,7 @@ function QueueAdminPage() {
                       <strong>{item.title}</strong>
                     </div>
                     <div className="text-base">
-                      <strong>Scheduled at:</strong> {item.start_time || 'Unscheduled'}
+                      <strong>Scheduled at:</strong> { formatDateTime(item?.start_time) || 'Unscheduled'}
                     </div>
                     <div className="text-base">
                       <strong>Order:</strong> {item.display_order}
@@ -180,7 +202,6 @@ function QueueAdminPage() {
         onConfirm={modalState.onConfirm}
         onCancel={modalState.onCancel}
       />
-      <Carousel userRole="user" />
     </div>
   );
 }

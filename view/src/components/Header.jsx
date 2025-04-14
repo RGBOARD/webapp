@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './styles/Header.css'
 import logoImage from '../assets/RGB-Icon.png';
-import { Menu, LogOut, ArrowLeft } from 'lucide-react';
+import { LogOut, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../auth/authContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 

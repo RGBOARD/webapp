@@ -1,6 +1,6 @@
 import sqlite3
 
-con = sqlite3.connect('../data.db')
+con = sqlite3.connect('data.db')
 cur = con.cursor()
 
 cur.execute("""
@@ -34,7 +34,7 @@ cur.execute("""
         design_id   INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id     INTEGER  NOT NULL,
         title       TEXT     NOT NULL,
-        image       BLOB     NOT NULL,
+        pixel_data   TEXT     NOT NULL, -- Changed to pixel_data since conversion is client-side
         is_approved BOOLEAN  NOT NULL DEFAULT 1,
         status      BOOLEAN  NOT NULL DEFAULT 0,
         created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

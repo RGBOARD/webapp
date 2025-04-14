@@ -1,9 +1,6 @@
 from flask import jsonify
-import base64
 from controller.user import User
-
 from model.queue_item import QueueItemDAO
-
 
 
 class QueueItem:
@@ -100,7 +97,7 @@ class QueueItem:
                     "display_order": row[5],
                     "scheduled": row[6],
                     "scheduled_at": row[7],
-                    "image": base64.b64encode(row[8]).decode('utf-8') if row[9] else None,
+                    "pixel_data": row[8],
                     "is_approved": row[9],
                     "design_created_at": row[10],
                     "design_updated_at": row[11]
@@ -124,7 +121,7 @@ class QueueItem:
                             "scheduled": item["scheduled"],
                             "scheduled_at": item["scheduled_at"],
                             "is_approved": item["is_approved"],
-                            "image": base64.b64encode(item["image"]).decode("utf-8"),
+                            "pixel_data": item["pixel_data"],
                             "title": item["title"]
                         })
 

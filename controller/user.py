@@ -3,7 +3,7 @@ import bcrypt
 import json
 import random
 from datetime import datetime, timedelta, timezone
-from flask import jsonify, request
+from flask import jsonify
 from flask_jwt_extended import create_access_token
 
 import base64

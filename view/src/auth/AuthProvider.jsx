@@ -88,15 +88,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Design Upload function
-  const upload = async (imageData) => {
+  const upload = async (formData) => {
     try {
-      const response = await axios.post('/design', imageData);
-      return response;
+      const response = await axios.post('/design', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      
+      return {
+        success: true,
+        data: response.data,
+        status: response.status
+      };
     } catch (error) {
       console.error('Upload error:', error);
+      
+      // If unauthorized, logout user
+      if (error.response && error.response.status === 401) {
+        logout();
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.error || 'Image Upload failed'
+        error: error.response?.data?.error || 'Upload failed'
       };
     }
   };

@@ -114,12 +114,25 @@ def handleUserById(user_id):
 
 
 # Design-----------------------------------------------------------------------------------------------------------
-
 @app.route("/design", methods=['POST'])
 @jwt_required()
 def upload_design():
     handler = Design(email=get_jwt_identity())
-    return handler.add_new_design(title=request.form.get('title'), files=request.files)
+    return handler.add_new_design(
+        title=request.form.get('title'), 
+        pixel_data=request.form.get('pixel_data')
+    )
+
+
+@app.route("/design/<int:design_id>/image", methods=['PUT'])
+@jwt_required()
+def update_design_image(design_id):
+    handler = Design(email=get_jwt_identity())
+    return handler.update_design_image(
+        design_id=design_id, 
+        pixel_data=request.form.get('pixel_data')
+    )
+
 
 @app.route("/design/<int:design_id>", methods=['GET'])
 @jwt_required()
@@ -127,31 +140,29 @@ def get_design():
     handler = Design(email=get_jwt_identity())
     return handler.get_design(design_id=request.form.get('design_id'))
 
+
 @app.route("/design/<int:design_id>/title", methods=['PUT'])
 @jwt_required()
 def update_design_title():
     handler = Design(email=get_jwt_identity())
     return handler.update_design_title(design_id=request.form.get('design_id'), title=request.form.get('title'))
 
-@app.route("/design/<int:design_id>/image", methods=['PUT'])
-@jwt_required()
-def update_design_image():
-    handler = Design(email=get_jwt_identity())
-    return handler.update_design_image(design_id=request.form.get('design_id'), image=request.files.get('image'))
 
 @app.route("/design/<int:design_id>/approval", methods=['PUT'])
 @jwt_required()
 def update_design_approval(design_id):
     data = request.get_json()
     approval = data.get('approval')
-
     handler = Design(email=get_jwt_identity())
     return handler.update_design_approval(design_id=design_id, approval=approval)
+
+
 @app.route("/design/<int:design_id>/status", methods=['PUT'])
 @jwt_required()
 def update_design_status():
     handler = Design(email=get_jwt_identity())
     return handler.update_design_status(design_id=request.form.get('design_id'), status=request.form.get('status'))
+
 
 @app.route("/design/approved", methods=['GET'])
 @jwt_required()
@@ -159,6 +170,7 @@ def get_approved_designs():
     handler = Design(email=get_jwt_identity())
     approved = handler.getApprovedDesigns()
     return jsonify(approved), 200
+
 
 #AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
@@ -250,6 +262,8 @@ def get_queue_paginated():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+    
 @app.route("/queue_item", methods=['GET', 'POST'])
 def handleQueueItem():
     if request.method == 'GET':

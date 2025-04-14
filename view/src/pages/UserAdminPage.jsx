@@ -6,6 +6,7 @@ import {useState, useEffect} from "react";
 import { CircleUser } from 'lucide-react';
 
 import Modal from "../components/Modal";
+import { formatDateTime } from '../utils/dateUtils';
 
 function UserAdminPage() {
 
@@ -98,7 +99,7 @@ function UserAdminPage() {
                           <strong>{user.email}</strong>
                         </div>
                         <div>
-                          {user.created_at}
+                          {formatDateTime(user.created_at)}
                         </div>
                       </div>
                       <div className="user-buttons">

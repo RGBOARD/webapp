@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import './styles/Carousel.css';
 import axios from '../api/axios';
+import { renderPixelDataToImage } from '../utils/pixelRenderer';
+import { formatDateTime } from '../utils/dateUtils';
 
 const Carousel = ({ userRole }) => {
   const isAdmin = userRole === 'admin';
@@ -11,21 +13,8 @@ const Carousel = ({ userRole }) => {
   const carouselRef = useRef(null);
   const [scrollAmount, setScrollAmount] = useState(200);
 
-  // Helper function to format date/time strings into a friendly format.
-  const formatDateTime = (datetimeString) => {
-    if (!datetimeString) return '';
-    const options = {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    };
-    return new Date(datetimeString).toLocaleString(undefined, options);
-  };
-
   useEffect(() => {
-    // Adjust scroll amount based on first item's width and gap.
+    // Adjust scroll amount based on first item's width and gap
     if (carouselRef.current && carouselRef.current.children.length > 0) {
       const firstItem = carouselRef.current.children[0];
       const itemWidth = firstItem.offsetWidth;
@@ -39,13 +28,32 @@ const Carousel = ({ userRole }) => {
   const fetchImages = async () => {
     try {
       const response = await axios.get('/queue_item/scheduled');
+      console.log(response)
       const data = response.data;
-      const transformedItems = data.map((record) => ({
-        id: record.queue_id, // or record.design_id, as needed
-        url: `data:image/jpeg;base64,${record.image}`,
-        start_time: record.start_time,
-        end_time: record.end_time,
-      }));
+      
+      const transformedItems = data.map((record) => {
+        // Parse the pixel data if it's a string
+        let pixelData = {};
+        if (record.pixel_data) {
+          try {
+            pixelData = typeof record.pixel_data === 'string' 
+              ? JSON.parse(record.pixel_data) 
+              : record.pixel_data;
+          } catch (error) {
+            console.error('Error parsing pixel data:', error);
+          }
+        }
+        
+        return {
+          id: record.queue_id,
+          design_id: record.design_id,
+          pixel_data: pixelData,
+          start_time: record.start_time,
+          end_time: record.end_time,
+          imageUrl: renderPixelDataToImage(pixelData, 64, 64, 1)
+        };
+      });
+      
       setItems(transformedItems);
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -95,11 +103,13 @@ const Carousel = ({ userRole }) => {
               onMouseEnter={() => handleMouseEnter(item.id)}
               onMouseLeave={handleMouseLeave}
             >
+              {/* Use pre-rendered image URL */}
               <img
-                src={item.url}
-                alt={`Image ${item.id}`}
+                src={item.imageUrl}
+                alt={`Design ${item.design_id}`}
                 className="placeholder-image"
               />
+              
               {/* Conditional overlay for admin edit or regular view */}
               {isAdmin ? (
                 <div className={`edit-overlay ${hoveredItem === item.id ? 'visible' : ''}`}>
@@ -108,6 +118,7 @@ const Carousel = ({ userRole }) => {
               ) : (
                 <div className={`view-overlay ${hoveredItem === item.id ? 'visible' : ''}`} />
               )}
+              
               {/* Schedule overlay: only becomes visible on hover */}
               {item.start_time && (
                 <div className={`schedule-overlay ${hoveredItem === item.id ? 'visible' : ''}`}>

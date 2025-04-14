@@ -1,5 +1,5 @@
+import json
 from flask import jsonify, request
-import base64
 from controller.user import User
 from model.design import DesignDAO
 
@@ -9,7 +9,7 @@ def serialize_design(t):
         'design_id': t[0],
         'user_id': t[1],
         'title': t[2],
-        'image': base64.b64encode(t[3]).decode('utf-8') if t[3] else None,
+        'pixel_data': t[3],
         'is_approved': t[4],
         'status': t[5],
         'created_at': t[6],
@@ -32,21 +32,25 @@ class Design:
         if email:
             self.user = User(email=email)
 
-    def add_new_design(self, title=None, files=None):
-        if 'image' not in files:
-            return jsonify(error="No image file provided"), 400
+    def add_new_design(self, title=None, pixel_data=None):
+        if not pixel_data:
+            return jsonify(error="No pixel data provided"), 400
 
-        image_file = files['image']
-        if not image_file:
-            return jsonify(error="No image file provided"), 400
+        try:
+            # Parse the JSON to validate it, but store as string
+            json.loads(pixel_data)
+        except json.JSONDecodeError:
+            return jsonify(error="Invalid pixel data format"), 400
+        
+        if not title:
+            title = "Untitled Design"
 
         user_id = self.user.get_user_id()
         if user_id is None:
             return jsonify(error='User not found'), 404
-
-        image = image_file.read()
+        
         dao = DesignDAO()
-        new_id = dao.add_new_design(user_id, title, image)
+        new_id = dao.add_new_design(user_id, title, pixel_data)
 
         if isinstance(new_id, int) and new_id > 0:
             return jsonify(message="Design created", design_id=new_id), 201
@@ -100,9 +104,19 @@ class Design:
         else:
             return jsonify(error="Unathorized."), 403
 
-    def update_design_image(self, design_id, image):
+    def update_design_image(self, design_id, pixel_data=None):
         if design_id is None:
             return jsonify(error="No id provided."), 400
+            
+        if not pixel_data:
+            return jsonify(error="No pixel data provided"), 400
+            
+        # Validate pixel_data is valid JSON
+        try:
+            # Parse the JSON to validate it, but store as string
+            json.loads(pixel_data)
+        except json.JSONDecodeError:
+            return jsonify(error="Invalid pixel data format"), 400
 
         user_id = self.user.get_user_id()
         if user_id is None:
@@ -112,21 +126,11 @@ class Design:
         design_user_id = design_dao.get_user_id(design_id)
 
         if design_user_id == user_id or self.user.is_admin():
-
-            # TODO: Check that the user hasn't exceed capacity limits
-            ## Nothing stops the user from uploading a gamzillion bytes.
-            ## Sum up all images of the user in the system and make sure
-            ## it doesn't exceed some size, like 1MB of total images.
-
-            # TODO: Image Processing and Constraints
-            ## Transform the image to fit the board and return it to the user
-            ## once we get a 201. The view should show and ask if they like it.
-
-            response = design_dao.update_design_image(design_id, image)
+            response = design_dao.update_design_image(design_id, pixel_data)
             if response == 0:
-                return jsonify(message="Title updated."), 200
+                return jsonify(message="Design updated."), 200
             else:
-                return jsonify(error="Couldn't update title"), 500
+                return jsonify(error="Couldn't update design"), 500
         else:
             return jsonify(error="Unauthorized."), 403
 
