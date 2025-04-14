@@ -1,0 +1,32 @@
+/* Override Cayman theme colors */
+body {
+  background-color: #f0f0f0; /* Change the background */
+}
+
+.page-header {
+  background-image: linear-gradient(135deg, red, green, blue) !important;
+  color: white !important;
+  background-color: transparent !important; 
+}
+
+h2, h3, h4, h5, h6 {
+  color: black !important;
+}
+
+.page-header h2
+{
+  color: white !important; /* But keep header text white inside the page header */
+}
+
+a {
+  color: blue; /* Change link color */
+}
+
+.main-content hr {
+    height: 2px;
+    padding: 0;
+    margin: 1rem 0;
+    background-color: #a7a7a8;
+    border: 0;
+}
+
