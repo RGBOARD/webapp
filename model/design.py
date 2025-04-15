@@ -38,11 +38,11 @@ class DesignDAO:
         finally:
             cursor.close()
 
-    def add_new_design(self, user_id, title, image):
+    def add_new_design(self, user_id, title, pixel_data):
         cursor = self.conn.cursor()
-        query = "INSERT INTO design (user_id, title, image) VALUES (?, ?, ?);"
+        query = "INSERT INTO design (user_id, title, pixel_data) VALUES (?, ?, ?);"
         try:
-            cursor.execute(query, (user_id, title, image))
+            cursor.execute(query, (user_id, title, pixel_data))
             self.conn.commit()
             new_id = cursor.lastrowid
             return new_id
@@ -68,13 +68,13 @@ class DesignDAO:
             cursor.close()
             return status
 
-    def update_design_image(self, design_id: int, image):
+    def update_design_image(self, design_id: int, pixel_data):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE design SET image = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?"
+        query = "UPDATE design SET pixel_data = ?, updated_at = CURRENT_TIMESTAMP WHERE design_id = ?"
 
         try:
-            cursor.execute(query, (image, design_id))
+            cursor.execute(query, (pixel_data, design_id))
             self.conn.commit()
             status = 0
         except sqlite3.Error:

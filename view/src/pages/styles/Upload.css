@@ -158,3 +158,44 @@
   color: #FFDD27;
 }
 
+.preview-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.original-preview {
+  max-width: 512px;
+  max-height: 512px;
+  object-fit: contain;
+  margin-bottom: 20px;
+}
+
+.pixelated-preview {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.pixelated-preview canvas {
+  border: 1px solid #333;
+  background-color: #000;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: 512px;
+  max-height: 512px;
+}
+
+@media (max-width: 1024px) {
+  .upload-menu-wrapper {
+    flex-direction: column;
+  }
+  
+  .upload-column, 
+  .preview-column {
+    width: 100%;
+  }
+}

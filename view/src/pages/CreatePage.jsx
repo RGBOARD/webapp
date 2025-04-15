@@ -153,41 +153,31 @@ function CreatePage() {
       showAlert('Please draw something on the canvas before saving');
       return;
     }
-
+    
     if (!fileName.trim()) {
       showAlert('Please enter a file name');
       return;
     }
-
+    
     showConfirm(
       'Are you sure you want to save this design as',
       async () => {
-        // Extract image from canvas
-        const dataURL = stageRef.current.toDataURL({ 
-          pixelRatio: 1,
-          mimeType: 'image/png'
-        });
-        
-        // Convert dataURL to blob
-        const fetchResponse = await fetch(dataURL);
-        const blob = await fetchResponse.blob();
-        
-        // Create a File object from the blob
-        const imageFile = new File([blob], `${fileName}.png`, { type: 'image/png' });
-
+        // Create FormData with pixel data instead of image file
         const form = new FormData();
         form.append('user_id', currentUser?.user_id);
         form.append('title', fileName);
-        form.append('image', imageFile);
-
+        
+        // Convert the pixels object to a JSON string
+        const pixelDataJSON = JSON.stringify(pixels);
+        form.append('pixel_data', pixelDataJSON);
+        
         try {
-          const response = await upload(form);
-          console.log(response);
-
-          if (response.status === 201) {
-            showAlert('Image uploaded successfully');
+          const result = await upload(form);
+          
+          if (result.success) {
+            showAlert('Design saved successfully');
           } else {
-            showAlert('Image upload failed');
+            showAlert(`Design save failed: ${result.error || 'Unknown error'}`);
           }
         } catch (error) {
           console.error('Error during upload:', error);

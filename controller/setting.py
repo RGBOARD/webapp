@@ -1,7 +1,5 @@
 import json
-
 import flask
-
 from google_auth_oauthlib.flow import Flow
 
 

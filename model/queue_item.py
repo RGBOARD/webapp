@@ -116,7 +116,7 @@ class QueueItemDAO:
                    q.display_order,
                    q.scheduled,
                    q.scheduled_at,
-                   d.image,
+                   d.pixel_data,
                    d.is_approved,
                    d.created_at,
                    d.updated_at
@@ -148,7 +148,7 @@ class QueueItemDAO:
                    q.display_order,
                    q.scheduled,                  
                    q.scheduled_at,
-                   d.image,
+                   d.pixel_data,
                    d.title,
                    d.is_approved
             FROM queue_item q

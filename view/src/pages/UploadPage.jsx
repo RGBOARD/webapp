@@ -3,11 +3,18 @@ import "./styles/Upload.css";
 import { useAuth } from '../auth/authContext.js';
 import { useState, useRef, useEffect } from "react";
 import axios from '../api/axios';
+import { Stage, Layer, Rect } from "react-konva";
+import { convertImageToPixels } from "../utils/imageConverter";
 
 import Modal from "../components/Modal";
 
 function UploadPage() {
     const fileInputRef = useRef(null);
+    const stageRef = useRef(null);
+
+    // Pixel art canvas settings - match CreatePage
+    const gridSize = 8;
+    const canvasSize = { width: 512, height: 512 };
 
     // Existing file upload form data
     const [formData, setFormData] = useState({
@@ -24,7 +31,7 @@ function UploadPage() {
         onCancel: () => {}
     });
 
-    // New scheduling state: only start and end date/time
+    // Schedule data state
     const [scheduleData, setScheduleData] = useState({
         start_time: '',
         end_time: ''
@@ -32,9 +39,12 @@ function UploadPage() {
 
     // To capture the design_id returned after upload
     const [newDesignId, setNewDesignId] = useState(null);
-
-    // New state variable for showing a success (or error) message from queue insertion
     const [queueMessage, setQueueMessage] = useState('');
+
+    // New state for pixel preview
+    const [pixels, setPixels] = useState({});
+    const [isConverting, setIsConverting] = useState(false);
+    const [pixelatedPreviewUrl, setPixelatedPreviewUrl] = useState(null);
 
     const { currentUser } = useAuth();
     const { upload } = useAuth();
@@ -46,10 +56,13 @@ function UploadPage() {
             if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
             }
+            if (pixelatedPreviewUrl) {
+                URL.revokeObjectURL(pixelatedPreviewUrl);
+            }
         };
-    }, [previewUrl]);
+    }, [previewUrl, pixelatedPreviewUrl]);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target?.files?.[0];
         if (file) {
             const objectUrl = URL.createObjectURL(file);
@@ -62,6 +75,19 @@ function UploadPage() {
                 image: file,
                 title: file.name,
             }));
+            
+            // Convert image to pixels
+            setIsConverting(true);
+            try {
+                const { pixels, pixelatedDataURL } = await convertImageToPixels(file);
+                setPixels(pixels);
+                setPixelatedPreviewUrl(pixelatedDataURL);
+            } catch (error) {
+                console.error("Error converting image:", error);
+                showAlert("Error converting image to pixels");
+            } finally {
+                setIsConverting(false);
+            }
         }
     };
 
@@ -82,7 +108,7 @@ function UploadPage() {
      setModalState({
        isOpen: true,
        type: 'confirm',
-       message: message.includes(formData.image.name) ? message : `${message} "${formData.image.name}"`,
+       message: message.includes(formData.image?.name) ? message : `${message} "${formData.image?.name}"`,
        onConfirm: () => {
          setModalState(prev => ({...prev, isOpen: false}));
          onConfirm();
@@ -102,33 +128,58 @@ function UploadPage() {
             URL.revokeObjectURL(previewUrl);
             setPreviewUrl(null);
         }
+        if (pixelatedPreviewUrl) {
+            URL.revokeObjectURL(pixelatedPreviewUrl);
+            setPixelatedPreviewUrl(null);
+        }
+        setPixels({});
         setFormData((prevData) => ({
             ...prevData,
             image: null,
         }));
     };
 
-    // Upload the image to /design endpoint
-    const handleSubmit = async (e) => {
-        const form = new FormData();
-        form.append('user_id', userid);
-        if (formData.image) {
+    // Upload the image and pixel data to /design endpoint
+    const handleSubmit = async () => {
+        // Validate data
+        if (Object.keys(pixels).length === 0) {
+          showAlert('Please draw something on the canvas before saving');
+          return;
+        }
+      
+        if (!formData.title || !formData.title.trim()) {
+          showAlert('Please enter a file name');
+          return;
+        }
+      
+        showConfirm(
+          'Are you sure you want to save this design?',
+          async () => {
+            // Create form data
+            const form = new FormData();
+            form.append('user_id', userid);
             form.append('title', formData.title);
-            form.append('image', formData.image);
-        }
-        try {
-            const response = await upload(form);
-            if (response.status === 201 && response.data.design_id) {
-                showAlert('Image saved successfully!');
-                setNewDesignId(response.data.design_id);
-            } else {
-                showAlert('Image save failed.');
+            
+            // Convert pixels object to JSON string and send it
+            const pixelDataJSON = JSON.stringify(pixels);
+            form.append('pixel_data', pixelDataJSON);
+      
+            try {
+              const result = await upload(form);
+              
+              if (result.success) {
+                showAlert('Design saved successfully!');
+                setNewDesignId(result.data.design_id);
+              } else {
+                showAlert(`Design save failed: ${result.error}`);
+              }
+            } catch (error) {
+              console.error('Error during save:', error);
+              showAlert(`Error during save: ${error.message}`);
             }
-        } catch (error) {
-            console.error('Error during save:', error);
-            showAlert('An error occurred during save.');
-        }
-    };
+          }
+        );
+      };
 
     // Add the uploaded design to the queue with scheduling data
     const handleAddToQueue = async () => {
@@ -184,6 +235,43 @@ function UploadPage() {
         }
     };
 
+    // Render pixelated preview using Konva
+    const renderPixelPreview = () => {
+        return (
+            <div className="pixelated-preview">
+                <h3 className="upload-text mb-4">64x64 Pixel Preview:</h3>
+                <Stage
+                    width={canvasSize.width}
+                    height={canvasSize.height}
+                    ref={stageRef}
+                >
+                    <Layer>
+                        <Rect
+                            width={canvasSize.width}
+                            height={canvasSize.height}
+                            fill="black"
+                        />
+                    </Layer>
+                    <Layer>
+                        {Object.entries(pixels).map(([key, color], i) => {
+                            const [x, y] = key.split(',').map(Number);
+                            return (
+                                <Rect
+                                    key={`pixel-${i}`}
+                                    x={x}
+                                    y={y}
+                                    width={gridSize}
+                                    height={gridSize}
+                                    fill={color}
+                                />
+                            );
+                        })}
+                    </Layer>
+                </Stage>
+            </div>
+        );
+    };
+
     return (
         <div className="uploadpage">
             <div className="upload-wrapper">
@@ -193,7 +281,11 @@ function UploadPage() {
                         <h2 className="upload-text text-2xl">Select an Image File to Save:</h2>
                         <form onSubmit={(e) => {
                             e.preventDefault();
-                            showConfirm("Save this image?", () => handleSubmit());
+                            if (formData.image) {
+                                handleSubmit();
+                            } else {
+                                showAlert("Please select an image first.");
+                            }
                         }}>
                             <div className="upload-menu my-14">
                                 <div>
@@ -275,21 +367,28 @@ function UploadPage() {
                         )}
                     </div>
                     <div className="preview-column">
-                        <h3 className="upload-text mb-4">Preview:</h3>
+                        <h3 className="upload-text mb-4">Original Preview:</h3>
                         <p className="upload-p mb-4">
                             {formData.image ? `Selected file: ${formData.image.name}` : "No file selected"}
                         </p>
-                        <img src={previewUrl} alt="Preview" />
+                        {isConverting ? (
+                            <div>Converting image to pixels...</div>
+                        ) : (
+                            <>
+                                <img src={previewUrl} alt="Original Preview" className="original-preview" />
+                                {Object.keys(pixels).length > 0 && renderPixelPreview()}
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
             <Modal
-          isOpen={modalState.isOpen}
-          type={modalState.type}
-          message={modalState.message}
-          onConfirm={modalState.onConfirm}
-          onCancel={modalState.onCancel}
-        />
+                isOpen={modalState.isOpen}
+                type={modalState.type}
+                message={modalState.message}
+                onConfirm={modalState.onConfirm}
+                onCancel={modalState.onCancel}
+            />
         </div>
     );
 }

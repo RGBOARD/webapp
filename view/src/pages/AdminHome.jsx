@@ -6,7 +6,7 @@ import { useAuth } from '../auth/authContext'
 function AdminHome() {
   const { currentUser } = useAuth();
   const username = currentUser?.name || currentUser?.username || currentUser?.sub || "User";
-  const displayName = username.charAt(0).toUpperCase() + username.slice(1);
+  const displayName = username.charAt(0).toUpperCase() + username.slice(1).split(".")[0];
 
   return (
     <div className="homepage">
@@ -31,17 +31,17 @@ function AdminHome() {
             />
             <ActionButton 
               icon="view" 
-              text="View your Queued Images"
+              text="View Saved Images"
               route="/view"
             />
             <ActionButton 
               icon="quote" 
-              text="Queue Admin"
+              text="Manage Queue"
               route="/queue-admin"
             />
             <ActionButton 
               icon="users" 
-              text="User Admin"
+              text="Manage Users"
               route="/user-admin"
             />
           </div>

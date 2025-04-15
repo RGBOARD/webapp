@@ -51,19 +51,19 @@ function UserHome() {
         </div>
         <div className="menu-column">
           <div className="button-menu">
-            <ActionButton
-              icon="upload"
-              text="Upload an Image to the Queue"
+          <ActionButton 
+              icon="upload" 
+              text="Save Image"
               route="/upload"
             />
-            <ActionButton
-              icon="create"
-              text="Create an Image for the Queue"
+            <ActionButton 
+              icon="create" 
+              text="Create Image"
               route="/create"
             />
-            <ActionButton
-              icon="view"
-              text="View your Queued Images"
+            <ActionButton 
+              icon="view" 
+              text="View Saved Images"
               route="/view"
             />
           </div>

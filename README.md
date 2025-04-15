@@ -1,3 +1,5 @@
+#### Running the Backend
+
 To run app.py:
 
 1. Create a virtual environment:
@@ -51,14 +53,34 @@ To run app.py:
 
 5. If you are on vscode, remember to set the python interpreter to the created environment's python version.
 
-6. After python env is ready, create the database in the root folder /backend: 
+6. After python env is ready, database must be created in the root folder (```/backend```): 
     ```sh
     python utilities/create.py 
     ```
 
-Now cd into the frontend:
-1. ```cd view```
-2. ```⁠npm install```
-3. ⁠Make sure the /backend is running in another terminal using: ```python app.py``` or ```flask run```
-4. ⁠Run frontend: ```npm run dev```
+7. Run the server (in its own terminal):
+    ```sh
+    python app.py
+    ```
 
+#### Running the Web App (Frontend)
+
+1. Navigate to the frontend directory (in its own terminal):
+   ```sh
+   cd view
+   ```
+
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+   
+3. Run the development server:
+   ```sh
+   npm run dev
+   ```
+
+#### After Sign Up and Log in
+1. **Without credentials file:** Open your database application and check the `VerificationCode` table to find the code associated with the newly created account.
+
+2. **With credentials file:** You should receive an email containing the verification code.
