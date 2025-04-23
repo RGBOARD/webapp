@@ -79,7 +79,29 @@ class QueueItemDAO:
         cursor.execute(query, (queue_id,))
         result = cursor.fetchone()
         cursor.close()
-        return result
+        return
+
+    def update_item_order(self, queue_id: int, new_order: int):
+        status = 1
+        query = None
+        cursor = self.conn.cursor()
+        old_order = self.getQueueItemById(queue_id)["display_order"]
+        if new_order < old_order:
+            query = "UPDATE queue_item SET display_order = display_order + 1 WHERE display_order >= ? AND display_order < ?"
+        elif new_order > old_order:
+            query = "UPDATE queue_item SET display_order = display_order - 1 WHERE display_order <= ? AND display_order > ?"
+        try:
+            if query:
+                cursor.execute(query, (new_order, old_order))
+            shift = "UPDATE queue_item SET display_order = ? WHERE queue_id = ?"
+            cursor.execute(shift,(new_order, queue_id))
+            self.conn.commit()
+            status = 0
+        except sqlite3.Error:
+            status = 1
+        finally:
+            cursor.close()
+            return status
 
     def deleteQueueItemById(self, queue_id):
 
@@ -96,6 +118,16 @@ class QueueItemDAO:
             status = 0
             try:
                 cursor.execute(query, (queue_id,))
+
+                query = "SELECT queue_id FROM queue_item ORDER BY display_order ASC"
+
+                cursor.execute(query)
+                items = cursor.fetchall()
+
+                for index, item in enumerate(items):
+                    query = "UPDATE queue_item SET display_order = ? WHERE queue_id = ?"
+                    cursor.execute(query, (index + 1, item[0]))
+
                 self.conn.commit()
             except sqlite3.Error:
                 status = 1

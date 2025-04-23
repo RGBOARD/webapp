@@ -12,7 +12,8 @@ function QueueAdminPage() {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  const { getpageimages, deletequeueitem, toggleapproval } = useAuth();
+  const [total, setTotal] = useState(0);
+  const { getpageimages, deletequeueitem, toggleapproval, updateorder } = useAuth();
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -54,6 +55,7 @@ function QueueAdminPage() {
       setItems(transformed);
       setPage(data.page);
       setPages(data.pages);
+      setTotal(data.total)
     } catch (err) {
       console.error("Failed to load queue images:", err);
     }
@@ -69,6 +71,15 @@ function QueueAdminPage() {
       fetchImages(page);
     } catch (err) {
       console.error("Delete failed:", err);
+    }
+  };
+
+  const handleOrderUpdate = async (queueId, newOrder) => {
+    try {
+      await updateorder(queueId, newOrder);
+      fetchImages(page);
+    } catch (err) {
+      console.error("Order update failed:", err);
     }
   };
 
@@ -122,7 +133,22 @@ function QueueAdminPage() {
                       <strong>Scheduled at:</strong> { formatDateTime(item?.start_time) || 'Unscheduled'}
                     </div>
                     <div className="text-base">
-                      <strong>Order:</strong> {item.display_order}
+                      <strong>Order:</strong> {" "}
+                      <select
+                        value={item.display_order}
+                        onChange={(e) =>
+                          showConfirm(
+                            `Move item to position ${e.target.value}?`,
+                            () => handleOrderUpdate(item.queue_id, Number(e.target.value))
+                          )
+                        }
+                      >
+                        {Array.from({ length: total }).map((_, idx) => (
+                          <option key={idx + 1} value={idx + 1}>
+                            {idx + 1}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   <div className="user-buttons">

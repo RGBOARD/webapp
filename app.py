@@ -262,7 +262,14 @@ def get_queue_paginated():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
+@app.route("/queue_item/<int:queue_id>/order", methods=['PUT'])
+@jwt_required()
+def update_item_order(queue_id):
+    data = request.get_json()
+    new_order = data.get('new_order')
+    handler = QueueItem(email=get_jwt_identity())
+    return handler.update_item_order(queue_id=queue_id, new_order=new_order)
     
 @app.route("/queue_item", methods=['GET', 'POST'])
 def handleQueueItem():
