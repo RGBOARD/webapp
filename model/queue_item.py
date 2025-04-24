@@ -85,7 +85,7 @@ class QueueItemDAO:
         status = 1
         query = None
         cursor = self.conn.cursor()
-        old_order = self.getQueueItemById(queue_id)["display_order"]
+        old_order = self.getQueueItemById(queue_id)[5]
         if new_order < old_order:
             query = "UPDATE queue_item SET display_order = display_order + 1 WHERE display_order >= ? AND display_order < ?"
         elif new_order > old_order:
@@ -154,10 +154,10 @@ class QueueItemDAO:
                    d.updated_at
             FROM queue_item q
             JOIN design d ON q.design_id = d.design_id
-            WHERE d.is_approved = 1
-            ORDER BY 
-                CASE WHEN q.scheduled = 1 THEN q.start_time ELSE '9999-12-31 23:59:59' END ASC,
-                q.display_order ASC;
+            WHERE d.is_approved = 1 AND q.scheduled = 1 
+            AND strftime('%Y-%m-%d %H:%M:%S', q.start_time) <= strftime('%Y-%m-%d %H:%M:%S', 'now')
+            AND strftime('%Y-%m-%d %H:%M:%S', q.end_time)   >= strftime('%Y-%m-%d %H:%M:%S', 'now')
+            ORDER BY q.display_order ASC;
         """
         try:
             cursor.execute(query)
@@ -185,9 +185,7 @@ class QueueItemDAO:
                    d.is_approved
             FROM queue_item q
             JOIN design d ON q.design_id = d.design_id
-            ORDER BY 
-                CASE WHEN q.scheduled = 1 THEN q.start_time ELSE '9999-12-31 23:59:59' END ASC,
-                q.display_order ASC
+            ORDER BY q.display_order ASC
             LIMIT ? OFFSET ?;
             """
             cursor.execute(query, (page_size, offset))

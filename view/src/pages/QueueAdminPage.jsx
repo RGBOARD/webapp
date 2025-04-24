@@ -135,13 +135,15 @@ function QueueAdminPage() {
                     <div className="text-base">
                       <strong>Order:</strong> {" "}
                       <select
+                        className="order-select"
                         value={item.display_order}
-                        onChange={(e) =>
+                          onChange={(e) => {
+                          const newPos = Number(e.target.value);
                           showConfirm(
-                            `Move item to position ${e.target.value}?`,
-                            () => handleOrderUpdate(item.queue_id, Number(e.target.value))
-                          )
-                        }
+                            `Move item to position ${newPos}?`,
+                            () => handleOrderUpdate(item.queue_id, newPos)
+                          );
+                        }}
                       >
                         {Array.from({ length: total }).map((_, idx) => (
                           <option key={idx + 1} value={idx + 1}>
