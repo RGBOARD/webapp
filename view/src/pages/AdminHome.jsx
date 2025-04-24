@@ -34,6 +34,11 @@ function AdminHome() {
               text="View Saved Images"
               route="/view"
             />
+            <ActionButton
+              icon="history"
+              text="View Upload History"
+              route="/upload-history"
+            />
             <ActionButton 
               icon="quote" 
               text="Manage Queue"

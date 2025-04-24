@@ -15,6 +15,10 @@ import LoadingPage from './pages/LoadingPage';
 import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 
+function UploadHistoryPage() {
+    return null;
+}
+
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
 
@@ -78,6 +82,14 @@ function AppContent() {
                 <ViewPage />
               </RequireAuth>
             } 
+          />
+          <Route
+            path="/upload-history"
+            element={
+              <RequireAuth>
+                <UploadHistoryPage />
+              </RequireAuth>
+            }
           />
           <Route 
             path="/queue-admin" 
