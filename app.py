@@ -134,12 +134,18 @@ def update_design_image(design_id):
     )
 
 
+# @app.route("/design/<int:design_id>", methods=['GET'])
+# @jwt_required()
+# def get_design():
+#     handler = Design(email=get_jwt_identity())
+#     return handler.get_design(design_id=request.form.get('design_id'))
+
 @app.route("/design/<int:design_id>", methods=['GET'])
 @jwt_required()
-def get_design():
+def get_design(design_id):
     handler = Design(email=get_jwt_identity())
-    return handler.get_design(design_id=request.form.get('design_id'))
-
+    # Use the URL param, not request.form
+    return handler.get_design(design_id=design_id)
 
 @app.route("/design/<int:design_id>/title", methods=['PUT'])
 @jwt_required()

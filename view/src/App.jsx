@@ -15,9 +15,11 @@ import LoadingPage from './pages/LoadingPage';
 import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 
-function UploadHistoryPage() {
-    return null;
-}
+import UploadHistoryPage from './pages/UploadHistoryPage';
+
+// function UploadHistoryPage() {
+//     return null;
+// }
 
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
