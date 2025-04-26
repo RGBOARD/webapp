@@ -208,8 +208,9 @@ function UploadPage() {
             // Otherwise, compute the next available slot.
             const now = new Date();
             const nextAvailableStart = new Date(now.getTime() + 60 * 1000); // 1 minute from now
-            const defaultDurationSeconds = 60; // default duration (60 seconds)
-            const nextAvailableEnd = new Date(nextAvailableStart.getTime() + defaultDurationSeconds * 1000);
+            // const defaultDurationSeconds = 60; // default duration (60 seconds)
+            const oneDayMs        = 24 * 60 * 60 * 1000; // If not given a schedule items will stay one day in the active queue
+            const nextAvailableEnd = new Date(nextAvailableStart.getTime() + oneDayMs);
             finalStart = nextAvailableStart.toISOString().substring(0, 19);
             finalEnd = nextAvailableEnd.toISOString().substring(0, 19);
         }
@@ -231,7 +232,7 @@ function UploadPage() {
                 showAlert("Image successfully added to queue.");
             }
         } catch (error) {
-            showAlert("Error adding image to queue.");
+            showAlert("Error adding image to queue.", error);
         }
     };
 

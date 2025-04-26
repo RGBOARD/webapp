@@ -74,6 +74,23 @@ class QueueItem:
                 result = self.make_json_one(queue_item)
                 return result
 
+        def update_item_order(self, queue_id, new_order):
+
+            if queue_id is None:
+                return jsonify(error="No id provided."), 400
+            if self.email is not None:
+                if self.user.is_admin():
+                    queue_dao = QueueItemDAO()
+                    response = queue_dao.update_item_order(queue_id, new_order)
+                    if response == 0:
+                        return jsonify("Order updated"), 200
+                    else:
+                        return jsonify(error="Couldn't update Order"), 500
+                else:
+                    return jsonify(error="Unauthorized."),
+
+            return jsonify(error="Unauthorized. No token."), 401
+
         def deleteQueueItemById(self, queue_id):
             dao = QueueItemDAO()
             queue_item = dao.deleteQueueItemById(queue_id)
