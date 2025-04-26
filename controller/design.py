@@ -41,14 +41,14 @@ class Design:
             json.loads(pixel_data)
         except json.JSONDecodeError:
             return jsonify(error="Invalid pixel data format"), 400
-        
+
         if not title:
             title = "Untitled Design"
 
         user_id = self.user.get_user_id()
         if user_id is None:
             return jsonify(error='User not found'), 404
-        
+
         dao = DesignDAO()
         new_id = dao.add_new_design(user_id, title, pixel_data)
 
@@ -84,6 +84,27 @@ class Design:
 
         return design, 200
 
+    def get_user_designs(self, user_id: int, page=1, page_size=10):
+        requesting_user_id = self.user.get_user_id()
+
+        if requesting_user_id is None:
+            return jsonify(error="Couldn't verify user."), 500
+
+        if user_id is None:
+            user_id = requesting_user_id
+
+        #admin can see everything, user has restrictions
+        if requesting_user_id != user_id and not self.user.is_admin():
+            return jsonify(error="Unauthorized."), 403
+
+        design_dao = DesignDAO()
+        designs = design_dao.get_designs_by_id(user_id, page, page_size)
+
+        if designs is None or len(designs) == 0:
+            return jsonify(error="No designs found."), 404
+
+        return jsonify(designs), 200
+
     def update_design_title(self, design_id, title):
         if design_id is None:
             return jsonify(error="No id provided."), 400
@@ -107,10 +128,10 @@ class Design:
     def update_design_image(self, design_id, pixel_data=None):
         if design_id is None:
             return jsonify(error="No id provided."), 400
-            
+
         if not pixel_data:
             return jsonify(error="No pixel data provided"), 400
-            
+
         # Validate pixel_data is valid JSON
         try:
             # Parse the JSON to validate it, but store as string
@@ -196,4 +217,3 @@ class Design:
         approved_records = dao.getApprovedDesigns()
         answer = [serialize_design(record) for record in approved_records]
         return answer
-

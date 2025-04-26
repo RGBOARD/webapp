@@ -35,6 +35,7 @@ def get_all_users():
     handler = User(email=get_jwt_identity())
     return handler.get_all_users()
 
+
 @app.route("/user/pagination", methods=['GET'])
 @jwt_required()
 def get_users_paginated():
@@ -49,6 +50,7 @@ def get_users_paginated():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route("/user", methods=['POST'])
 def create_user():
@@ -119,7 +121,7 @@ def handleUserById(user_id):
 def upload_design():
     handler = Design(email=get_jwt_identity())
     return handler.add_new_design(
-        title=request.form.get('title'), 
+        title=request.form.get('title'),
         pixel_data=request.form.get('pixel_data')
     )
 
@@ -129,7 +131,7 @@ def upload_design():
 def update_design_image(design_id):
     handler = Design(email=get_jwt_identity())
     return handler.update_design_image(
-        design_id=design_id, 
+        design_id=design_id,
         pixel_data=request.form.get('pixel_data')
     )
 
@@ -139,6 +141,16 @@ def update_design_image(design_id):
 def get_design():
     handler = Design(email=get_jwt_identity())
     return handler.get_design(design_id=request.form.get('design_id'))
+
+
+@app.route("/designs", methods=['GET'])
+@jwt_required()
+def get_designs():
+    page = int(request.args.get('page', 1))  # default 1
+    page_size = int(request.args.get('page_size', 10))  # default 10
+
+    handler = Design(email=get_jwt_identity())
+    return handler.get_user_designs(page=page, page_size=page_size)
 
 
 @app.route("/design/<int:design_id>/title", methods=['PUT'])
@@ -172,7 +184,7 @@ def get_approved_designs():
     return jsonify(approved), 200
 
 
-#AdminAction-----------------------------------------------------------------------------------------------------------
+# AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
 def handleAdminAction():
     if request.method == 'GET':
@@ -263,6 +275,7 @@ def get_queue_paginated():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route("/queue_item/<int:queue_id>/order", methods=['PUT'])
 @jwt_required()
 def update_item_order(queue_id):
@@ -270,7 +283,8 @@ def update_item_order(queue_id):
     new_order = data.get('new_order')
     handler = QueueItem(email=get_jwt_identity())
     return handler.update_item_order(queue_id=queue_id, new_order=new_order)
-    
+
+
 @app.route("/queue_item", methods=['GET', 'POST'])
 def handleQueueItem():
     if request.method == 'GET':
@@ -322,7 +336,6 @@ def handleQueueItemById(queue_id):
         except Exception as e:
             print("Error processing request:", e)
             return jsonify("Can not delete record because it is referenced by other records"), 400
-
 
 
 @app.route("/queue_item/scheduled", methods=['GET'])
@@ -398,6 +411,7 @@ def authorize():
 @app.route("/settings/mail/oauth2callback")
 def callback():
     return authorize_callback()
+
 
 if __name__ == '__main__':
     app.run()
