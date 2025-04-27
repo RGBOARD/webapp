@@ -4,7 +4,7 @@ import {Linkedin} from 'lucide-react';
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-100 border-t border-gray-300 py-6 mt-8">
+        <footer className="fixed bottom-0 left-0 w-full bg-gray-100 border-t border-gray-300 py-6 shadow-inner z-50">
             <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
                 {/* Sponsor's Socials */}
                 <div className="flex flex-col items-center md:items-start">
@@ -17,7 +17,8 @@ const Footer = () => {
                             <SimpleIcon name="X" color="#000000"/>
                         </a>
                         <a href="https://www.instagram.com/ieee_computer_society/" target="_blank"
-                           rel="noopener noreferrer" className="hover:opacity-75">
+                           rel="noopener noreferrer"
+                           className="hover:opacity-75">
                             <SimpleIcon name="Instagram" color="#000000"/>
                         </a>
                         <a href="https://www.youtube.com/@IEEEComputerSociety" target="_blank" rel="noopener noreferrer"

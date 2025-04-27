@@ -184,6 +184,14 @@ def get_approved_designs():
     return jsonify(approved), 200
 
 
+@app.route("/design", methods=['DELETE'])
+@jwt_required()
+def delete_design():
+    data = request.get_json()
+    handler = Design(email=get_jwt_identity())
+    return handler.delete_design(design_id=data.get('design_id'))
+
+
 # AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
 def handleAdminAction():

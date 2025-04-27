@@ -109,7 +109,7 @@ function QueueAdminPage() {
   };
 
   return (
-    <div className="useradminpage">
+    <div className="useradminpage" >
       <div className="upload-wrapper">
         <h1 className="upload-h1">Queue Admin</h1>
         <div className="upload-menu-wrapper p-4">

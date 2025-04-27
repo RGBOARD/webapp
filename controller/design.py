@@ -196,9 +196,13 @@ class Design:
             return jsonify(error="Unauthorized."), 403
 
     def delete_design(self, design_id):
+        # TODO: Handle a delete with a design that is in queue.
         user_id = self.user.get_user_id()
         if user_id is None:
             return jsonify(error="Couldn't verify user"), 500
+
+        if design_id is None:
+            return jsonify(error="No design id provided"), 400
 
         design_dao = DesignDAO()
         design_user_id = design_dao.get_user_id(design_id)

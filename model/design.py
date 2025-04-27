@@ -24,7 +24,7 @@ class DesignDAO:
     def get_designs_by_id(self, user_id: int, page: int, page_size: int):
         cursor = self.conn.cursor()
         query = ("SELECT d.*, CASE WHEN q.queue_id IS NOT NULL THEN 1 ELSE 0 END AS is_in_queue FROM design d"
-                 " LEFT JOIN queue_item q ON d.design_id = q.design_id WHERE d.user_id = ? LIMIT ? OFFSET ?;")
+                 " LEFT JOIN queue_item q ON d.design_id = q.design_id WHERE d.user_id = ? ORDER BY d.updated_at DESC LIMIT ? OFFSET ?;")
         try:
             cursor.execute(query, (user_id, page_size, (page - 1) * page_size))
             columns = [col[0] for col in cursor.description]
