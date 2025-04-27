@@ -1,11 +1,10 @@
 import React from 'react';
+import UserImages from '../components/UserImages.jsx'
 
 function ViewPage() {
-  return (
-    <div>
-        This is a dummy view page!
-    </div>
-  )
+    return (
+        <UserImages/>
+    )
 }
 
 export default ViewPage;

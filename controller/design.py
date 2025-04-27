@@ -84,7 +84,7 @@ class Design:
 
         return design, 200
 
-    def get_user_designs(self, user_id: int, page=1, page_size=10):
+    def get_user_designs(self, user_id: int = None, page=1, page_size=10):
         requesting_user_id = self.user.get_user_id()
 
         if requesting_user_id is None:
@@ -93,7 +93,7 @@ class Design:
         if user_id is None:
             user_id = requesting_user_id
 
-        #admin can see everything, user has restrictions
+        # admin can see everything, user has restrictions
         if requesting_user_id != user_id and not self.user.is_admin():
             return jsonify(error="Unauthorized."), 403
 
