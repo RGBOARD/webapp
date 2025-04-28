@@ -208,7 +208,7 @@ function UserImages() {
                             </button>
                             <button
                                 onClick={handleDeleteClick}
-                                className="flex-1 border font-bold text-white border-gray-300 bg-red-500  py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-red-500 hover:shadow-md transition-all duration-200 ease-in-out"
+                                className="flex-1 border font-bold text-white border-gray-300 bg-red-500  py-2 rounded-md text-md font-pixelify hover:bg-white hover:text-red-500 hover:shadow-md transition-all duration-200 ease-in-out"
                             >
                                 Delete
                             </button>
