@@ -1,7 +1,10 @@
 import json
-from flask import jsonify, request
+
+from flask import jsonify
+
 from controller.user import User
 from model.design import DesignDAO
+from model.queue_item import QueueItemDAO
 
 
 def serialize_design(t):
@@ -23,6 +26,11 @@ def make_json(tuples):
 
 def make_json_one(t):
     return serialize_design(t)
+
+
+def is_scheduled(design_id):
+    queue_item_dao = QueueItemDAO()
+    return queue_item_dao.is_design_scheduled(design_id)
 
 
 class Design:
@@ -129,6 +137,9 @@ class Design:
         if design_id is None:
             return jsonify(error="No id provided."), 400
 
+        if is_scheduled(design_id):
+            return jsonify(error="Design  image can't be updated when already in queue."), 400
+
         if not pixel_data:
             return jsonify(error="No pixel data provided"), 400
 
@@ -196,7 +207,6 @@ class Design:
             return jsonify(error="Unauthorized."), 403
 
     def delete_design(self, design_id):
-        # TODO: Handle a delete with a design that is in queue.
         user_id = self.user.get_user_id()
         if user_id is None:
             return jsonify(error="Couldn't verify user"), 500
