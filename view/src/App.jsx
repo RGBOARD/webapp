@@ -36,9 +36,9 @@ function AppContent() {
   };
 
   return (
-    <div>
+    <div className="app-container">
       <Header />
-      <main>
+      <main className="content">
         <Routes>
           <Route 
             path="/login" 
