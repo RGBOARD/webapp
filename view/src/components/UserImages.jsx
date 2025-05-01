@@ -120,35 +120,42 @@ function UserImages() {
         <div className="flex flex-row w-full h-full items-center justify-center">
             {/* GALLERY SIDE */}
             <div className="w-1/2 p-2 flex flex-col h-full">
-                <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-2 overflow-auto min-h-[400px]">
-                    {designs.map((design) => (
+                <div
+                    className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-2 overflow-auto min-h-[400px]">{designs.map((design) => (
+                    <div
+                        key={design.design_id}
+                        className={`relative cursor-pointer border ${selectedDesign?.design_id === design.design_id ? 'border-blue-400' : 'border-gray-300'} rounded-md p-1`}
+                        onClick={() => setSelectedDesign(design)}
+                    >
                         <div
-                            key={design.design_id}
-                            className={`relative cursor-pointer border ${selectedDesign?.design_id === design.design_id ? 'border-blue-400' : 'border-gray-300'} rounded-md p-1`}
-                            onClick={() => setSelectedDesign(design)}
+                            className={`absolute top-1 left-1 px-1 py-[1px] rounded-sm text-sm text-white font-bold ${
+                                !design.is_approved
+                                    ? 'bg-red-500'
+                                    : design.is_scheduled
+                                        ? 'bg-blue-500'
+                                        : design.is_in_queue
+                                            ? 'bg-green-500'
+                                            : 'bg-gray-400'
+                            }`}
+                            style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                         >
-                            {design.is_approved ? (
-                                <div
-                                    className={`absolute top-1 left-1 px-1 py-[1px] rounded-sm text-sm text-white font-bold ${design.is_scheduled ? 'bg-green-500' : 'bg-gray-400'}`}
-                                    style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
-                                    {design.is_scheduled ? 'Scheduled' : 'Not in Queue'}
-                                </div>
-                            ) : (
-                                <div
-                                    className="absolute top-1 left-1 px-1 py-[1px] rounded-sm text-sm text-white font-bold bg-red-500"
-                                    style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
-                                    Not Approved
-                                </div>
-                            )}
-
-                            <img
-                                src={renderPixelDataToImage(JSON.parse(design.pixel_data), 64, 64, 8)}
-                                alt={design.title}
-                                className="w-full object-contain rounded"
-                                style={{imageRendering: 'pixelated'}}
-                            />
+                            {!design.is_approved
+                                ? 'Not Approved'
+                                : design.is_scheduled
+                                    ? 'Scheduled'
+                                    : design.is_in_queue
+                                        ? 'In Queue'
+                                        : 'Not in Queue'}
                         </div>
-                    ))}
+
+                        <img
+                            src={renderPixelDataToImage(JSON.parse(design.pixel_data), 64, 64, 8)}
+                            alt={design.title}
+                            className="w-full object-contain rounded"
+                            style={{imageRendering: 'pixelated'}}
+                        />
+                    </div>
+                ))}
 
 
                     {Array.from({length: Math.max(0, pageSize - designs.length)}).map((_, idx) => (
