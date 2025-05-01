@@ -115,14 +115,12 @@ function UserImages() {
         setShowDeleteModal(false);
     };
 
-
     return (
-        <div className="flex flex-col md:flex-row w-full h-3/4 items-start md:items-center justify-center">
+        <div className="flex flex-col md:flex-row w-full h-9/10 gap-4 px-2 pb-8">
             {/* GALLERY SIDE */}
             <div className="w-full md:w-3/4 p-2 flex flex-col h-full">
                 <div
-                    className="flex-1 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 overflow-auto min-h-[300px]"
-                >
+                    className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 overflow-auto min-h-[300px]">
                     {designs.map((design) => (
                         <div
                             key={design.design_id}
@@ -173,7 +171,7 @@ function UserImages() {
 
                 {/* Pagination */}
                 <div
-                    className="flex justify-center items-center gap-4 p-2 text-xs border-t border-gray-300 mb-4 md:mb-10"
+                    className="flex justify-center items-center gap-4 p-2 text-xs border-t border-gray-300 mt-4"
                     style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 >
                     <button
@@ -194,10 +192,12 @@ function UserImages() {
             </div>
 
             {/* CARD SIDE */}
-            <div className="w-full md:w-1/4 p-2 flex flex-col items-center h-full">
+            <div className="w-full md:w-1/4 p-2 flex flex-col items-center h-auto md:h-full">
                 {selectedDesign ? (
                     <div
-                        className="w-full bg-white border border-gray-300 rounded-xl shadow-md p-6 flex flex-col items-center space-y-6 mb-10">
+                        className="w-full bg-white border border-gray-300 rounded-xl shadow-md p-4 flex flex-col items-center space-y-4 mb-10"
+                        style={{maxHeight: '80vh', overflowY: 'auto'}}
+                    >
                         <img
                             src={renderPixelDataToImage(JSON.parse(selectedDesign.pixel_data), 64, 64, 8)}
                             alt={selectedDesign.title}
@@ -232,13 +232,13 @@ function UserImages() {
                                     {!selectedDesign.is_scheduled && (
                                         <button
                                             onClick={handleQueue}
-                                            className="w-full border font-bold text-black border-gray-300 bg-yellow-400 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-yellow-400 hover:shadow-md transition-all duration-200 ease-in-out"
+                                            className="cursor-pointer w-full border font-bold text-black border-gray-300 bg-yellow-400 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-yellow-400 hover:shadow-md transition-all duration-200 ease-in-out"
                                         >
                                             {selectedDesign.is_in_queue ? 'Schedule' : 'Queue'}
                                         </button>
                                     )}
 
-                                    <div className="flex gap-4">
+                                    <div className="flex flex-col sm:flex-row gap-4">
                                         <button
                                             onClick={selectedDesign.is_scheduled ? handleQueue : handleEdit}
                                             className={`cursor-pointer flex-1 border font-bold text-black border-gray-300 py-2 rounded-md text-md font-pixelify hover:bg-black hover:shadow-md transition-all duration-200 ease-in-out ${
@@ -259,7 +259,7 @@ function UserImages() {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex gap-4">
+                                <div className="flex flex-col sm:flex-row gap-4">
                                     <button
                                         onClick={handleEdit}
                                         className="cursor-pointer flex-1 border font-bold text-black border-gray-300 bg-blue-500 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-blue-500 hover:shadow-md transition-all duration-200 ease-in-out"
@@ -278,7 +278,7 @@ function UserImages() {
                     </div>
                 ) : (
                     <div
-                        className="text-gray-400 text-center text-lg w-full h-full flex items-center justify-center border border-gray-300 rounded-lg">
+                        className="text-gray-400 text-center text-lg w-full h-full flex items-center justify-center border border-gray-300 rounded-lg p-4">
                         No design selected
                     </div>
                 )}
@@ -299,6 +299,7 @@ function UserImages() {
             />
         </div>
     );
+
 
 }
 
