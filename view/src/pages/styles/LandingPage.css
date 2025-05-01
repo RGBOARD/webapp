@@ -30,25 +30,35 @@
     font-size: larger;
 }
 
-.logo{
-    max-height: 300px;
+.landing-logo{
+  width: 100%;
+  max-width: 600px;
+  height: auto;
 }
 
-.desc-container{
+.desc-container {
   display: flex;
   justify-content: center;
-  align-items: center;
   flex-direction: column;
+  padding: 1rem;
 }
 
-.desc-title{
-  font-size: 1.75rem;
+.desc-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
   font-weight: bold;
   margin-bottom: 0.5rem;
 }
 
+.desc {
+  max-width: 600px;
+  width: 100%;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  margin: 0 auto;
+}
+
 .sponsored{
     font-family: "Pixelify Sans", sans-serif;
+    font-size: 24px;
 }
 .choice-container{
   display: flex;
@@ -60,14 +70,17 @@
 
 .landing-buttons{
   width: 100%;
-  padding: 0.5rem 4rem;
+  max-width: 400px;
+  padding: clamp(1rem, 2.5vw, 2rem) clamp(3rem, 8vw, 6rem);
+  font-size: clamp(1rem, 3vw, 2rem);
   color: white;
   font-weight: 600;
-  border-radius: 0.5rem;
+  border-radius: 2rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   outline: none;
   background: black;
   font-family: "Pixelify Sans", sans-serif;
+  text-align: center;
 }
 
 .landing-buttons:hover {

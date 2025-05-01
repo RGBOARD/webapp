@@ -38,7 +38,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      {location.pathname !== '/' && <Header />}
+      {!(location.pathname === '/' && !isAuthenticated) && <Header />}
       <main className="content">
         <Routes>
           <Route 
