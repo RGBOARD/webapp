@@ -225,7 +225,7 @@ function UserImages() {
                                             onClick={handleQueue}
                                             className="w-full border font-bold text-black border-gray-300 bg-yellow-400 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-yellow-400 hover:shadow-md transition-all duration-200 ease-in-out cursor-pointer"
                                         >
-                                            Queue
+                                            {selectedDesign.is_in_queue? 'Schedule' : 'Queue'}
                                         </button>
                                     )}
 
