@@ -1,8 +1,11 @@
 from flask import jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+from controller.upload_history import UploadHistory
 from controller.user import User
 from model.queue_item import QueueItemDAO
+from datetime import datetime
+
 
 
 class QueueItem:
@@ -53,9 +56,20 @@ class QueueItem:
             display_duration = data['display_duration']
             scheduled = data['scheduled']
             scheduled_at = data['scheduled_at']
+
             dao = QueueItemDAO()
-            queue_item = dao.addNewQueueItem(design_id, start_time, end_time, display_duration, scheduled, scheduled_at)
+            queue_item = dao.addNewQueueItem(
+                design_id, start_time, end_time,
+                display_duration, scheduled, scheduled_at
+            )
             result = self.make_json_one(queue_item)
+
+            UploadHistory().addNewUploadHistory({
+                'design_id': design_id,
+                'attempt_time': datetime.utcnow().isoformat(),
+                'status': 'successful'
+            })
+
             return result
 
         def getQueueItemById(self, queue_id):
@@ -87,7 +101,6 @@ class QueueItem:
         def getScheduledDesigns(self):
             dao = QueueItemDAO()
             rows = dao.getScheduledDesigns()
-            # Build a list of dicts, merging fields from both tables
             result = []
             for row in rows:
                 item = {

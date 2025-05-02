@@ -1,4 +1,6 @@
 from flask import jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from model.upload_history import UploadHistoryDAO
 
 class UploadHistory:
@@ -10,8 +12,9 @@ class UploadHistory:
             D['history_id'] = t[0]
             D['design_id'] = t[1]
             D['attempt_time'] = t[2]
-            D['file_size'] = t[3]
-            D['status'] = t[4]
+            D['status'] = t[3]
+            D['title'] = t[4]
+            D['pixel_data'] = t[5]
             result.append(D)
         return result
 
@@ -21,24 +24,24 @@ class UploadHistory:
         result['history_id'] = row[0]
         result['design_id'] = row[1]
         result['attempt_time'] = row[2]
-        result['file_size'] = row[3]
-        result['status'] = row[4]
+        result['status'] = row[3]
+        result['title'] = row[4]
+        result['pixel_data'] = row[5]
         return result
 
+    @jwt_required()
     def getAllUploadHistory(self):
+        email = get_jwt_identity()
         dao = UploadHistoryDAO()
-        rows = dao.getAllUploadHistory()
+        rows = dao.getByUserEmail(email)
         return self.make_json(rows)
 
     def addNewUploadHistory(self, data):
-
-        design_id = data['design_id']
+        design_id    = data['design_id']
         attempt_time = data['attempt_time']
-        file_size = data['file_size']
-        status = data['status']
-
+        status       = data['status']
         dao = UploadHistoryDAO()
-        row = dao.addNewUploadHistory(design_id, attempt_time, file_size, status)
+        row = dao.addNewUploadHistory(design_id, attempt_time, status)
         return self.make_json_one(row)
 
     def getUploadHistoryById(self, history_id):

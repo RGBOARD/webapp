@@ -270,29 +270,34 @@ def get_queue_paginated():
         return jsonify({'error': str(e)}), 500
     
     
-@app.route("/queue_item", methods=['GET', 'POST'])
-def handleQueueItem():
-    if request.method == 'GET':
-        handler = QueueItem()
-        return handler.getAllQueueItem()
-    else:
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
+@app.route("/queue_item", methods=['GET'])
+def handleGetQueueItems():
+    handler = QueueItem()
+    items = handler.getAllQueueItem()
+    return jsonify(items), 200
 
-            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration',
-                          'scheduled', 'scheduled_at'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
+@app.route("/queue_item", methods=['POST'])
+@jwt_required()
+def handleCreateQueueItem():
+    data = request.get_json() or {}
+    required_keys = {
+        'design_id',
+        'start_time',
+        'end_time',
+        'display_duration',
+        'scheduled',
+        'scheduled_at'
+    }
+    if not required_keys.issubset(data):
+        return jsonify("Missing one of required keys"), 400
 
-            handler = QueueItem()
-            return handler.addNewQueueItem(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 400
-
-
+    handler = QueueItem()
+    try:
+        new_item = handler.addNewQueueItem(data)
+        return jsonify(new_item), 201
+    except Exception as e:
+        print("Error processing request:", e)
+        return jsonify("Invalid JSON data provided"), 400
 @app.route("/queue_item/<int:queue_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleQueueItemById(queue_id):
     if request.method == 'GET':
@@ -339,9 +344,7 @@ def get_scheduled_designs():
 @app.route("/upload_history", methods=['GET'])
 @jwt_required()
 def get_upload_history_for_current_user():
-    handler = QueueItem()
-    history = handler.getUserHistory()
-    return jsonify(history), 200
+    return jsonify(UploadHistory().getAllUploadHistory()), 200
 
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])

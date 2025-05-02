@@ -5,6 +5,7 @@ import "./styles/UserAdmin.css";
 import "./styles/QueueAdmin.css";
 import axios from '../api/axios';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
+import {formatDateTime} from "../utils/dateUtils.jsx";
 
 export default function UploadHistoryPage() {
   const [history, setHistory] = useState([]);
@@ -49,7 +50,7 @@ export default function UploadHistoryPage() {
         <h1 className="upload-h1">Your Upload History</h1>
         <div className="upload-menu-wrapper p-4">
           <div className="user-container">
-            <div className="user-grid">
+            <div className="user-list">
               {history.map(item => (
                 <div key={item.history_id} className="user-card">
                   {/* Match QueueAdmin image styling */}
@@ -63,10 +64,9 @@ export default function UploadHistoryPage() {
                       <strong>{item.title || 'Untitled'}</strong>
                     </div>
                     <div className="text-base">
-                      <strong>Created at:</strong> {new Date(item.created_at).toLocaleString()}
+                        <strong>Created at:</strong>{" "}{formatDateTime( item.attempt_time)}
                     </div>
                   </div>
-                  {/* Placeholder for layout: invisible buttons */}
                   <div className="user-buttons" style={{ visibility: 'hidden' }}>
                     <button className="toggle-button">Approve</button>
                     <button className="delete-button">Delete</button>

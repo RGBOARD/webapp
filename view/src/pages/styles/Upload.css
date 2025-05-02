@@ -200,7 +200,6 @@
   }
 }
 
-/* Stack history cards full-width */
 .history-grid {
   display: flex;
   flex-direction: column;
@@ -211,4 +210,5 @@
   width: 100%;
   max-width: none;
 }
+
 
