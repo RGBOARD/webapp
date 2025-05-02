@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import '../App.css';
+import './styles/UserImages.css';
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf';
 import axios from '../api/axios';
 import {renderPixelDataToImage} from '../utils/pixelRenderer';
@@ -116,7 +117,7 @@ function UserImages() {
     };
 
     return (
-        <div className="flex flex-col md:flex-row w-full h-9/10 gap-4 px-2">
+        <div className="flex flex-col md:flex-row w-full gap-4 px-2">
             {/* GALLERY SIDE */}
             <div className="w-full md:w-3/4 p-2 flex flex-col h-full">
                 <div
@@ -171,7 +172,7 @@ function UserImages() {
 
                 {/* Pagination */}
                 <div
-                    className="flex justify-center items-center gap-4 p-2 text-xs border-t border-gray-300 mt-4"
+                    className="flex justify-center items-center gap-4 image-panel-container text-xs border-t border-gray-300 arrows"
                     style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 >
                     <button
@@ -195,7 +196,7 @@ function UserImages() {
             <div className="w-full md:w-1/4 p-2 flex flex-col items-center h-auto md:h-full">
                 {selectedDesign ? (
                     <div
-                        className="w-full bg-white border border-gray-300 rounded-xl shadow-md p-4 flex flex-col items-center space-y-4 mb-10"
+                        className="w-full bg-white border border-gray-300 rounded-xl shadow-md flex flex-col items-center space-y-4 selected-box"
                         style={{maxHeight: '80vh', overflowY: 'auto'}}
                     >
                         <img
@@ -224,7 +225,7 @@ function UserImages() {
                         </div>
 
                         <div
-                            className="flex flex-col w-full max-w-xs space-y-4 mt-4"
+                            className="flex flex-col w-full max-w-xs space-y-4 selected-buttons"
                             style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                         >
                             {selectedDesign.is_approved ? (
@@ -278,7 +279,7 @@ function UserImages() {
                     </div>
                 ) : (
                     <div
-                        className="text-gray-400 text-center text-lg w-full h-full flex items-center justify-center border border-gray-300 rounded-lg p-4">
+                        className="text-gray-400 text-center text-lg w-full h-full flex items-center justify-center border border-gray-300 rounded-lg no-design-box">
                         No design selected
                     </div>
                 )}
