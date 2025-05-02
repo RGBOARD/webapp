@@ -1,0 +1,11 @@
+
+.view-container {
+  width: 100%;
+  margin: 1rem auto;
+  padding: 0 1rem;
+  overflow-y: scroll;
+}
+
+.images-container{
+    padding: 1rem;
+}
