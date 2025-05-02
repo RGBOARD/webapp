@@ -116,7 +116,7 @@ function UserImages() {
     };
 
     return (
-        <div className="flex flex-col md:flex-row w-full h-9/10 gap-4 px-2 pb-8">
+        <div className="flex flex-col md:flex-row w-full h-9/10 gap-4 px-2">
             {/* GALLERY SIDE */}
             <div className="w-full md:w-3/4 p-2 flex flex-col h-full">
                 <div
