@@ -12,7 +12,7 @@ const LandingPage = () => {
               <img className= "landing-logo" src={logoImage} alt="RGB Board"/>
               <p className="sponsored font-bold">Sponsored by:</p>
               <p className="sponsored bold">IEEE Computer Society – Student Branch, University of Puerto Rico at Mayagüez</p>
-              <h1 className="desc-title">What are we about?</h1>
+              <h1 className="desc-title spacing">What are we about?</h1>
               <p className= "desc">
                   RGBoard provides a dynamic, engaging, and simple to understand system
                   that allows its users to to engage with each other and the wider community of people
