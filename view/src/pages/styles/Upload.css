@@ -199,3 +199,16 @@
     width: 100%;
   }
 }
+
+/* Stack history cards full-width */
+.history-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.history-grid .user-card {
+  width: 100%;
+  max-width: none;
+}
+

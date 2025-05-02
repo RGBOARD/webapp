@@ -195,7 +195,7 @@ class QueueItemDAO:
             SELECT
                 qi.queue_id      AS history_id,
                 qi.design_id,
-                qi.start_time    AS attempt_time,
+                qi.created_at    AS created_at,
                 qi.display_duration,
                 qi.display_order,
                 qi.scheduled     AS status,
