@@ -10,7 +10,8 @@ const LandingPage = () => {
       <div className="landing-container">
           <div className="desc-container landing-page-animation">
               <img className= "landing-logo" src={logoImage} alt="RGB Board"/>
-              <p className="sponsored">Sponsored by: IEEE Computer Society</p>
+              <p className="sponsored font-bold">Sponsored by:</p>
+              <p className="sponsored bold">IEEE Computer Society – Student Branch, University of Puerto Rico at Mayagüez</p>
               <h1 className="desc-title">What are we about?</h1>
               <p className= "desc">
                   RGBoard provides a dynamic, engaging, and simple to understand system
