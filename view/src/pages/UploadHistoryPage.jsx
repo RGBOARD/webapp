@@ -54,7 +54,7 @@ export default function UploadHistoryPage() {
         <h1 className="upload-h1">Your Upload History</h1>
         <div className="upload-menu-wrapper p-4">
           <div className="user-container">
-            <div className="user-list">
+            <div className="user-grid">
               {history.map(item => (
                 <div key={item.history_id} className="user-card">
                   <img
