@@ -332,9 +332,8 @@ def handleQueueItemById(queue_id):
 @app.route("/queue_item/scheduled", methods=['GET'])
 @jwt_required()
 def get_scheduled_designs():
-    # If needed, you can also pass the identity to restrict results
-    # For example: identity = get_jwt_identity()
-    handler = QueueItem()  # Assumes your QueueItem controller exists similarly to Design.
+
+    handler = QueueItem()
     scheduled_items = handler.getScheduledDesigns()
     return jsonify(scheduled_items), 200
 
