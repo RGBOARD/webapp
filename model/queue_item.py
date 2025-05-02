@@ -188,3 +188,28 @@ class QueueItemDAO:
                 "success": False,
                 "error": str(e)
             }
+
+    def getByUserEmail(self, email):
+        cursor = self.conn.cursor()
+        query = """
+            SELECT
+                qi.queue_id      AS history_id,
+                qi.design_id,
+                qi.start_time    AS attempt_time,
+                qi.display_duration,
+                qi.display_order,
+                qi.scheduled     AS status,
+                d.title,
+                d.pixel_data
+            FROM queue_item qi
+            JOIN design d 
+              ON d.design_id = qi.design_id
+            JOIN user u
+              ON u.user_id = d.user_id
+            WHERE u.email = ?
+            ORDER BY qi.start_time DESC;
+        """
+        cursor.execute(query, (email,))
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows

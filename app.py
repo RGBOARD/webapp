@@ -335,26 +335,13 @@ def get_scheduled_designs():
 
 
 # UploadHistory-----------------------------------------------------------------------------------------------------------
-@app.route("/upload_history", methods=['GET', 'POST'])
-def handleUploadHistory():
-    if request.method == 'GET':
-        handler = UploadHistory()
-        return handler.getAllUploadHistory()
-    else:  # POST
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
-
-            handler = UploadHistory()
-            return handler.addNewUploadHistory(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 400
+@app.route("/upload_history", methods=['GET'])
+@jwt_required()
+def get_upload_history_for_current_user():
+    handler = QueueItem()
+    history = handler.getUserHistory()
+    return jsonify(history), 200
 
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])

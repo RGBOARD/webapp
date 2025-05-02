@@ -4,39 +4,24 @@ import CanvasImage from '../components/CanvasImage';
 
 export default function UploadHistoryPage() {
   const [history, setHistory] = useState([]);
-  const [designs, setDesigns] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        // 1) fetch upload history
-        const { data: hist } = await axios.get('/upload_history');
-        setHistory(hist);
-
-        // 2) fetch each design in parallel
-        const designPromises = hist.map(item =>
-          axios
-            .get(`/design/${item.design_id}`)
-            .then(res => ({ id: item.design_id, design: res.data }))
-        );
-        const results = await Promise.all(designPromises);
-
-        const map = {};
-        results.forEach(({ id, design }) => {
-          map[id] = design;
-        });
-        setDesigns(map);
-      } catch (e) {
-        console.error(e);
-        setError(e);
-      } finally {
-        setLoading(false);
+    useEffect(() => {
+      async function load() {
+        try {
+          const { data } = await axios.get('/upload_history');
+          setHistory(data);
+        } catch (e) {
+          console.error(e);
+          setError(e);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
-    load();
-  }, []);
+      load();
+    }, []);
+
 
   if (loading) return <p>Loading your uploads…</p>;
   if (error) return <p style={{ color: 'red' }}>Error: {error.message}</p>;
@@ -52,31 +37,28 @@ export default function UploadHistoryPage() {
           marginTop: '1rem'
         }}
       >
-        {history.map(item => {
-          const d = designs[item.design_id] || {};
-          return (
-            <div
-              key={item.history_id}
-              style={{
-                border: '1px solid #eee',
-                borderRadius: '4px',
-                padding: '0.5rem',
-                textAlign: 'center'
-              }}
-            >
-              <CanvasImage pixelData={d.pixel_data} maxSize={120} />
-              <h4 style={{ margin: '0.5rem 0 0.25rem' }}>
-                {d.title || 'Untitled'}
-              </h4>
-              <small>
-                {new Date(item.attempt_time).toLocaleString()}
-              </small>
-              <div>
-                <em>Status:</em> {item.status}
-              </div>
+        {history.map(item => (
+          <div
+            key={item.history_id}
+            style={{
+              border: '1px solid #eee',
+              borderRadius: '4px',
+              padding: '0.5rem',
+              textAlign: 'center'
+            }}
+          >
+            <CanvasImage pixelData={item.pixel_data} maxSize={120} />
+            <h4 style={{ margin: '0.5rem 0 0.25rem' }}>
+              {item.title || 'Untitled'}
+            </h4>
+            <small>
+              {new Date(item.attempt_time).toLocaleString()}
+            </small>
+            <div>
+              <em>Status:</em> {item.status}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

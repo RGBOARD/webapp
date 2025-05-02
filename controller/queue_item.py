@@ -1,4 +1,6 @@
 from flask import jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from controller.user import User
 from model.queue_item import QueueItemDAO
 
@@ -136,3 +138,25 @@ class QueueItem:
                 return jsonify(error="Unauthorized. Not admin."), 401
 
             return jsonify(error="Unauthorized. No token."), 401
+
+        @jwt_required()
+        def getUserHistory(self):
+            user_email = get_jwt_identity()
+
+            rows = QueueItemDAO().getByUserEmail(user_email)
+
+            result = []
+            for (history_id, design_id, attempt_time,
+                 display_duration, display_order, status,
+                 title, pixel_data) in rows:
+                result.append({
+                    'history_id': history_id,
+                    'design_id': design_id,
+                    'attempt_time': attempt_time,
+                    'display_duration': display_duration,
+                    'display_order': display_order,
+                    'status': 'scheduled' if status else 'pending',
+                    'title': title,
+                    'pixel_data': pixel_data,
+                })
+            return result
