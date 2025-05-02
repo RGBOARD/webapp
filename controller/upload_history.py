@@ -1,3 +1,8 @@
+import math
+
+from flask import jsonify, request
+
+
 from flask import jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -67,3 +72,21 @@ class UploadHistory:
             return jsonify("Not Found"), 404
         else:
             return jsonify("Successfully deleted UploadHistory with ID " + str(deleted_id) + "!"), 200
+
+
+    @jwt_required()
+    def getAllUploadHistoryPaginated(self):
+        email = get_jwt_identity()
+        page = int(request.args.get('page', 1))
+        size = int(request.args.get('size', 6))
+        dao = UploadHistoryDAO()
+        total   = dao.countByUserEmail(email)
+        rows    = dao.getByUserEmailPaginated(email, page, size)
+        items   = self.make_json(rows)
+        pages   = math.ceil(total / size)
+
+        return jsonify({
+            'items': items,
+            'page': page,
+            'pages': pages
+        }), 200

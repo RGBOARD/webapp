@@ -94,3 +94,38 @@ class UploadHistoryDAO:
         rows = cursor.fetchall()
         cursor.close()
         return rows
+
+    def countByUserEmail(self, email):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+                       SELECT COUNT(*)
+                       FROM upload_history uh
+                                JOIN design d ON d.design_id = uh.design_id
+                                JOIN user u ON u.user_id = d.user_id
+                       WHERE u.email = ?
+                       """, (email,))
+        total = cursor.fetchone()[0]
+        cursor.close()
+        return total
+
+    def getByUserEmailPaginated(self, email, page, page_size):
+        offset = (page - 1) * page_size
+        cursor = self.conn.cursor()
+        cursor.execute(f"""
+            SELECT
+              uh.history_id,
+              uh.design_id,
+              uh.attempt_time,
+              uh.status,
+              d.title,
+              d.pixel_data
+            FROM upload_history uh
+            JOIN design d ON d.design_id = uh.design_id
+            JOIN user   u ON u.user_id   = d.user_id
+            WHERE u.email = ?
+            ORDER BY uh.attempt_time DESC
+            LIMIT ? OFFSET ?
+        """, (email, page_size, offset))
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows

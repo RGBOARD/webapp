@@ -3,46 +3,50 @@ import "../components/styles/Menu.css";
 import "./styles/Upload.css";
 import "./styles/UserAdmin.css";
 import "./styles/QueueAdmin.css";
-import axios from '../api/axios';
+import { useAuth } from '../auth/authContext.js';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
-import {formatDateTime} from "../utils/dateUtils.jsx";
+import { formatDateTime } from "../utils/dateUtils.jsx";
 
 export default function UploadHistoryPage() {
+  const { getPageUploadHistory } = useAuth();
   const [history, setHistory] = useState([]);
+  const [page, setPage]       = useState(1);
+  const [pages, setPages]     = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError]     = useState(null);
+
+  const fetchPage = async (pageNum) => {
+    setLoading(true);
+    const res = await getPageUploadHistory(pageNum);
+    if (!res.success) {
+      setError(res.error);
+    } else {
+      const { items, page: p, pages: totalPages } = res.data;
+      // render pixel_data → image URL
+      const transformed = items.map(item => {
+        let pd = {};
+        if (item.pixel_data) {
+          try {
+            pd = typeof item.pixel_data === 'string'
+              ? JSON.parse(item.pixel_data)
+              : item.pixel_data;
+          } catch {}
+        }
+        return { ...item, url: renderPixelDataToImage(pd, 64, 64, 1) };
+      });
+      setHistory(transformed);
+      setPage(p);
+      setPages(totalPages);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        const { data } = await axios.get('/upload_history');
-        const transformed = data.map(item => {
-          let pixelData = {};
-          if (item.pixel_data) {
-            try {
-              pixelData = typeof item.pixel_data === 'string'
-                ? JSON.parse(item.pixel_data)
-                : item.pixel_data;
-            } catch (e) {
-              console.error('Error parsing pixel_data:', e);
-            }
-          }
-          const url = renderPixelDataToImage(pixelData, 64, 64, 1);
-          return { ...item, url };
-        });
-        setHistory(transformed);
-      } catch (e) {
-        console.error(e);
-        setError(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
+    fetchPage(page);
+  }, [page]);
 
   if (loading) return <p className="upload-p">Loading your uploads…</p>;
-  if (error) return <p className="upload-p" style={{ color: 'red' }}>Error: {error.message}</p>;
+  if (error)   return <p className="upload-p" style={{ color: 'red' }}>Error: {error}</p>;
 
   return (
     <div className="useradminpage">
@@ -53,7 +57,6 @@ export default function UploadHistoryPage() {
             <div className="user-list">
               {history.map(item => (
                 <div key={item.history_id} className="user-card">
-                  {/* Match QueueAdmin image styling */}
                   <img
                     src={item.url}
                     alt={item.title || 'Upload'}
@@ -64,16 +67,45 @@ export default function UploadHistoryPage() {
                       <strong>{item.title || 'Untitled'}</strong>
                     </div>
                     <div className="text-base">
-                        <strong>Created at:</strong>{" "}{formatDateTime( item.attempt_time)}
+                      <strong>Created at:</strong> {formatDateTime(item.attempt_time)}
                     </div>
-                  </div>
-                  <div className="user-buttons" style={{ visibility: 'hidden' }}>
-                    <button className="toggle-button">Approve</button>
-                    <button className="delete-button">Delete</button>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Pagination controls */}
+            <div className="pagination-container">
+              <div className="pagination">
+                <button
+                  onClick={() => setPage(p => Math.max(p - 1, 1))}
+                  disabled={page === 1}
+                  className="page-button"
+                >&laquo;</button>
+
+                {Array.from({ length: pages }, (_, i) => i + 1)
+                  .filter(p => {
+                    if (pages <= 5) return true;
+                    if (page <= 3)   return p <= 5;
+                    if (page >= pages - 2) return p >= pages - 4;
+                    return Math.abs(p - page) <= 2;
+                  })
+                  .map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`page-button ${page === p ? 'active' : ''}`}
+                    >{p}</button>
+                  ))}
+
+                <button
+                  onClick={() => setPage(p => Math.min(p + 1, pages))}
+                  disabled={page === pages}
+                  className="page-button"
+                >&raquo;</button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

@@ -346,6 +346,10 @@ def get_scheduled_designs():
 def get_upload_history_for_current_user():
     return jsonify(UploadHistory().getAllUploadHistory()), 200
 
+@app.route("/upload_history/pagination", methods=['GET'])
+@jwt_required()
+def get_upload_history_paginated():
+    return UploadHistory().getAllUploadHistoryPaginated()
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):

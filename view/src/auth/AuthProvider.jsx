@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  setToken, 
-  getToken, 
-  removeToken, 
-  getUserFromToken, 
+import {
+  setToken,
+  getToken,
+  removeToken,
+  getUserFromToken,
   isTokenExpired,
   hasRole,
   hasAnyRole
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post('/login', { email, password });
-      
+
       // Extract token from various possible response formats
       let token = null;
       if (response.data.access_token) {
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       } else if (typeof response.data === 'string') {
         token = response.data;
       }
-      
+
       if (token) {
         setToken(token);
         const user = getUserFromToken();
@@ -56,16 +56,16 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         return { success: true };
       } else {
-        return { 
-          success: false, 
-          error: 'Authentication failed. No token received.' 
+        return {
+          success: false,
+          error: 'Authentication failed. No token received.'
         };
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Authentication failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Authentication failed'
       };
     }
   };
@@ -74,15 +74,15 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       const response = await axios.post('/user', userData);
-      return { 
-        success: true, 
-        data: response.data 
+      return {
+        success: true,
+        data: response.data
       };
     } catch (error) {
       console.error('Signup error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Registration failed'
       };
     }
   };
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
           'Authorization': `Bearer ${getToken()}`
         }
       });
-      
+
       return {
         success: true,
         data: response.data,
@@ -104,12 +104,12 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Upload error:', error);
-      
+
       // If unauthorized, logout user
       if (error.response && error.response.status === 401) {
         logout();
       }
-      
+
       return {
         success: false,
         error: error.response?.data?.error || 'Upload failed'
@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
       });
       return {
         success: true,
-        data: response.data // Make sure you return 'data' to match what you're trying to access in the component
+        data: response.data
       };
     } catch (error) {
       console.error('Fetch users error:', error);
@@ -167,7 +167,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-    // Get paginated users (admin only)
+  // Get paginated queue images
   const getpageimages = async (pageNum, pageSize) => {
     try {
       const response = await axios.get('/queue_item/pagination', {
@@ -178,40 +178,60 @@ export const AuthProvider = ({ children }) => {
       });
       return {
         success: true,
-        data: response.data // Make sure you return 'data' to match what you're trying to access in the component
+        data: response.data
       };
     } catch (error) {
-      console.error('Fetch users error:', error);
+      console.error('Fetch queue images error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to fetch users'
+        error: error.response?.data?.error || 'Failed to fetch queue images'
       };
     }
   };
 
-    // Toggle approval status
+  // Get paginated upload history
+  const getPageUploadHistory = async (pageNum, pageSize = 6) => {
+    try {
+      const response = await axios.get('/upload_history/pagination', {
+        params: {
+          page: pageNum,
+          size: pageSize,
+        },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Fetch upload history error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch upload history'
+      };
+    }
+  };
+
+  // Toggle approval status
   const toggleapproval = async (designId, approval) => {
     try {
       await axios.put(`/design/${designId}/approval`, { approval });
       return { success: true };
     } catch (error) {
-      console.error('Toggle admin error:', error);
+      console.error('Toggle approval error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to update admin status'
+        error: error.response?.data?.error || 'Failed to update approval status'
       };
     }
   };
 
+  // Delete queue item
   const deletequeueitem = async (queueId) => {
     try {
       await axios.delete(`/queue_item/${queueId}`);
       return { success: true };
     } catch (error) {
-      console.error('Delete design error:', error);
+      console.error('Delete queue item error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to delete user'
+        error: error.response?.data?.error || 'Failed to delete queue item'
       };
     }
   };
@@ -235,10 +255,11 @@ export const AuthProvider = ({ children }) => {
     deleteuser,
     toggleadmin,
     getpageimages,
+    getPageUploadHistory,
     toggleapproval,
     deletequeueitem,
     logout,
-    hasRole, 
+    hasRole,
     hasAnyRole
   };
 
