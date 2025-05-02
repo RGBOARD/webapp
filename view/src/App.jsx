@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -12,12 +12,13 @@ import ViewPage from './pages/ViewPage';
 import QueueAdminPage from './pages/QueueAdminPage';
 import UserAdminPage from './pages/UserAdminPage';
 import LoadingPage from './pages/LoadingPage';
+import LandingPage from './pages/LandingPage';
 import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
-
+  const location = useLocation();
   if (isLoading) {
     return <LoadingPage />;
   }
@@ -37,7 +38,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Header />
+      {!(location.pathname === '/' && !isAuthenticated) && <Header />}
       <main className="content">
         <Routes>
           <Route 
@@ -47,7 +48,7 @@ function AppContent() {
           <Route 
             path="/" 
             element={
-              !isAuthenticated ? <Navigate to="/login" /> :
+              !isAuthenticated ? <LandingPage /> :
               hasRole('admin') ? <AdminHome /> : <UserHome />
             } 
           />
