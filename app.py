@@ -289,15 +289,6 @@ def get_queue_paginated():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    
-    
-@app.route("/queue_item", methods=['GET'])
-def handleGetQueueItems():
-    handler = QueueItem()
-    items = handler.getAllQueueItem()
-    return jsonify(items), 200
-
-
 
 @app.route("/queue_item/<int:queue_id>/order", methods=['PUT'])
 @jwt_required()
@@ -309,6 +300,14 @@ def update_item_order(queue_id):
 
 
 
+# ————— GET all queue items (public) —————
+@app.route("/queue_item", methods=['GET'])
+def handleGetQueueItems():
+    handler = QueueItem()
+    items = handler.getAllQueueItem()
+    return jsonify(items), 200
+
+# ————— Create a new queue item (auth required) —————
 @app.route("/queue_item", methods=['POST'])
 @jwt_required()
 def handleCreateQueueItem():
@@ -321,6 +320,7 @@ def handleCreateQueueItem():
         'scheduled',
         'scheduled_at'
     }
+
     if not required_keys.issubset(data):
         return jsonify("Missing one of required keys"), 400
 
@@ -331,6 +331,7 @@ def handleCreateQueueItem():
     except Exception as e:
         print("Error processing request:", e)
         return jsonify("Invalid JSON data provided"), 400
+
 @app.route("/queue_item/<int:queue_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleQueueItemById(queue_id):
     if request.method == 'GET':
@@ -394,7 +395,7 @@ def handleUploadHistoryById(history_id):
                 return jsonify("No data provided"), 400
 
             # For partial updates, you might remove this check or adapt it
-            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
+            valid_keys = {'design_id', 'attempt_time', 'status'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 
