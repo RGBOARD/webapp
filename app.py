@@ -136,12 +136,18 @@ def update_design_image(design_id):
     )
 
 
+# @app.route("/design/<int:design_id>", methods=['GET'])
+# @jwt_required()
+# def get_design():
+#     handler = Design(email=get_jwt_identity())
+#     return handler.get_design(design_id=request.form.get('design_id'))
+
 @app.route("/design/<int:design_id>", methods=['GET'])
 @jwt_required()
-def get_design():
+def get_design(design_id):
     handler = Design(email=get_jwt_identity())
-    return handler.get_design(design_id=request.form.get('design_id'))
-
+    # Use the URL param, not request.form
+    return handler.get_design(design_id=design_id)
 
 @app.route("/designs", methods=['GET'])
 @jwt_required()
@@ -293,28 +299,38 @@ def update_item_order(queue_id):
     return handler.update_item_order(queue_id=queue_id, new_order=new_order)
 
 
-@app.route("/queue_item", methods=['GET', 'POST'])
-def handleQueueItem():
-    if request.method == 'GET':
-        handler = QueueItem()
-        return handler.getAllQueueItem()
-    else:
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration',
-                          'scheduled', 'scheduled_at'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
+# ————— GET all queue items (public) —————
+@app.route("/queue_item", methods=['GET'])
+def handleGetQueueItems():
+    handler = QueueItem()
+    items = handler.getAllQueueItem()
+    return jsonify(items), 200
 
-            handler = QueueItem()
-            return handler.addNewQueueItem(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 400
+# ————— Create a new queue item (auth required) —————
+@app.route("/queue_item", methods=['POST'])
+@jwt_required()
+def handleCreateQueueItem():
+    data = request.get_json() or {}
+    required_keys = {
+        'design_id',
+        'start_time',
+        'end_time',
+        'display_duration',
+        'scheduled',
+        'scheduled_at'
+    }
 
+    if not required_keys.issubset(data):
+        return jsonify("Missing one of required keys"), 400
+
+    handler = QueueItem()
+    try:
+        new_item = handler.addNewQueueItem(data)
+        return jsonify(new_item), 201
+    except Exception as e:
+        print("Error processing request:", e)
+        return jsonify("Invalid JSON data provided"), 400
 
 @app.route("/queue_item/<int:queue_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleQueueItemById(queue_id):
@@ -349,35 +365,23 @@ def handleQueueItemById(queue_id):
 @app.route("/queue_item/scheduled", methods=['GET'])
 @jwt_required()
 def get_scheduled_designs():
-    # If needed, you can also pass the identity to restrict results
-    # For example: identity = get_jwt_identity()
-    handler = QueueItem()  # Assumes your QueueItem controller exists similarly to Design.
+
+    handler = QueueItem()
     scheduled_items = handler.getScheduledDesigns()
     return jsonify(scheduled_items), 200
 
 
 # UploadHistory-----------------------------------------------------------------------------------------------------------
-@app.route("/upload_history", methods=['GET', 'POST'])
-def handleUploadHistory():
-    if request.method == 'GET':
-        handler = UploadHistory()
-        return handler.getAllUploadHistory()
-    else:  # POST
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
+@app.route("/upload_history", methods=['GET'])
+@jwt_required()
+def get_upload_history_for_current_user():
+    return jsonify(UploadHistory().getAllUploadHistory()), 200
 
-            handler = UploadHistory()
-            return handler.addNewUploadHistory(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 400
-
+@app.route("/upload_history/pagination", methods=['GET'])
+@jwt_required()
+def get_upload_history_paginated():
+    return UploadHistory().getAllUploadHistoryPaginated()
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):
@@ -391,7 +395,7 @@ def handleUploadHistoryById(history_id):
                 return jsonify("No data provided"), 400
 
             # For partial updates, you might remove this check or adapt it
-            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
+            valid_keys = {'design_id', 'attempt_time', 'status'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 

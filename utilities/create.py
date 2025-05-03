@@ -84,7 +84,6 @@ cur.execute("""
                 history_id   INTEGER PRIMARY KEY AUTOINCREMENT,
                 design_id    INTEGER  NOT NULL,
                 attempt_time DATETIME NOT NULL,
-                file_size    INTEGER  NOT NULL,
                 status       TEXT CHECK (status IN ('pending', 'successful', 'failed')),
                 created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

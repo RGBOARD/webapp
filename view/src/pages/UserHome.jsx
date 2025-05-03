@@ -66,6 +66,11 @@ function UserHome() {
               text="View Saved Images"
               route="/view"
             />
+            <ActionButton
+              icon="history"
+              text="View Upload History"
+              route="/upload-history"
+            />
           </div>
         </div>
       </div>
