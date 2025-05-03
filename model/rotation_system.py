@@ -18,6 +18,7 @@ class RotationSystemDAO:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row  # Enable row factory for dict-like access
         conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA busy_timeout = 5000;")
         return conn
     
     def get_active_image(self) -> Optional[Dict]:
@@ -71,7 +72,7 @@ class RotationSystemDAO:
             
             # Calculate expiry time (1 day from now)
             expiry_time = datetime.now() + timedelta(days=1)
-            
+
             # Insert the new item
             cur.execute("""
             INSERT INTO rotation_queue 
@@ -85,6 +86,11 @@ class RotationSystemDAO:
             # If this is the first item, make it active
             self._ensure_active_item(conn)
             
+            cur.execute(
+            "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, ?, ?);",
+            (design_id, datetime.utcnow().isoformat(), 'successful')
+            )
+
             return item_id
             
         finally:
@@ -178,7 +184,7 @@ class RotationSystemDAO:
                         """, (active_item_id,))
                         result = cur.fetchone()
                         current_order = result['display_order'] if result else 0
-                        
+
                         # Shift all items with display_order > current_order up by 1
                         cur.execute("""
                         UPDATE rotation_queue
@@ -205,6 +211,11 @@ class RotationSystemDAO:
                 VALUES (?, ?, ?, ?)
                 """, (item['design_id'], item['duration'], display_order, expiry_time))
                 
+                cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, ?, ?);",
+                (item['design_id'], datetime.utcnow().isoformat(), 'successful')
+                )
+
                 item_id = cur.lastrowid
                 
                 # If override_current is true, make this the active item

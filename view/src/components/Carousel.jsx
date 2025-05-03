@@ -152,16 +152,7 @@ const Carousel = ({ userRole }) => {
                   src={item.imageUrl}
                   alt={item.title || `Design ${item.design_id}`}
                   className="placeholder-image"
-                />
-                
-                {/* Conditional overlay for admin edit or regular view */}
-                {isAdmin ? (
-                  <div className={`edit-overlay ${hoveredItem === item.id ? 'visible' : ''}`}>
-                    <span>Edit</span>
-                  </div>
-                ) : (
-                  <div className={`view-overlay ${hoveredItem === item.id ? 'visible' : ''}`} />
-                )}
+                />              
                 
                 {/* Display duration information on hover */}
                 <div className={`schedule-overlay ${hoveredItem === item.id ? 'visible' : ''}`}>

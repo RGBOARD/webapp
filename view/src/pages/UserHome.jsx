@@ -67,11 +67,10 @@ function UserHome() {
               />
             </div>
           </div>
-
           {/* Show the upcoming images carousel */}
+          </div>
           <Carousel userRole="user" />
         </div>
-      </div>
     );
   } else {
     return (
