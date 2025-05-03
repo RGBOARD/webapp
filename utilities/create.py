@@ -94,19 +94,8 @@ cur.execute("""
 
 print("Created table: active_item")
 
-cur.execute("SELECT COUNT(*) FROM active_item WHERE id = 1")
-row_exists = cur.fetchone()[0] > 0
-
-if not row_exists:
-    # If it doesn't exist, insert it
-    cur.execute("INSERT INTO active_item (id, item_id, activated_at) VALUES (1, NULL, CURRENT_TIMESTAMP)")
-    print("Created initial active_item entry")
-else:
-    # If it exists but item_id is NULL, we might want to update activated_at
-    cur.execute("UPDATE active_item SET activated_at = CURRENT_TIMESTAMP WHERE id = 1 AND item_id IS NULL")
-    updated_rows = cur.rowcount
-    if updated_rows > 0:
-        print("Updated existing active_item entry")
+cur.execute("INSERT INTO active_item (id, item_id, activated_at) VALUES (1, NULL, CURRENT_TIMESTAMP)")
+print("Created initial active_item entry")
 
 cur.execute("""
             CREATE TABLE IF NOT EXISTS admin_action
@@ -143,3 +132,4 @@ cur.execute("""
             """)
 
 print("Created table: upload_history")
+con.commit()
