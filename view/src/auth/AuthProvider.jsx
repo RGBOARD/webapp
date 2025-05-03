@@ -221,6 +221,19 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+  // Update order of queue item
+  const updateorder = async (queueId, newOrder)  => {
+    try {
+      await axios.put(`/queue_item/${queueId}/order`, { new_order: newOrder });
+      return { success: true };
+    } catch (error) {
+      console.error('Order update error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to update admin status'
+      };
+    }
+  };
 
   // Delete queue item
   const deletequeueitem = async (queueId) => {
@@ -257,6 +270,7 @@ export const AuthProvider = ({ children }) => {
     getpageimages,
     getPageUploadHistory,
     toggleapproval,
+    updateorder,
     deletequeueitem,
     logout,
     hasRole,

@@ -21,6 +21,30 @@ class DesignDAO:
         finally:
             cursor.close()
 
+    def get_designs_by_id(self, user_id: int, page: int, page_size: int):
+        cursor = self.conn.cursor()
+        query = (
+            "SELECT d.*, "
+            "CASE WHEN q.scheduled THEN 1 ELSE 0 END AS is_scheduled, "
+            "CASE WHEN q.queue_id IS NOT NULL THEN 1 ELSE 0 END AS is_in_queue "
+            "FROM design d "
+            "LEFT JOIN queue_item q ON d.design_id = q.design_id "
+            "WHERE d.user_id = ? "
+            "ORDER BY d.updated_at DESC "
+            "LIMIT ? OFFSET ?;"
+        )
+
+        try:
+            cursor.execute(query, (user_id, page_size, (page - 1) * page_size))
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
+            result = [dict(zip(columns, row)) for row in rows]
+            return result
+        except sqlite3.Error:
+            return None
+        finally:
+            cursor.close()
+
     def get_user_id(self, design_id: int):
         """
         This so we can verify the user corresponding to the image in a small transaction.
@@ -114,24 +138,19 @@ class DesignDAO:
             return status
 
     def delete_design(self, design_id):
-        status = 1
         cursor = self.conn.cursor()
         query = "DELETE FROM design WHERE design_id = ?"
 
         try:
             cursor.execute(query, (design_id,))
             self.conn.commit()
-            status = 0
+            if cursor.rowcount == 0:
+                return 1  # No row deleted
+            return 0
         except sqlite3.Error:
-            status = 1
-
+            return 1
         finally:
             cursor.close()
-            return status
-
-            return result
-
-    import logging
 
     def getApprovedDesigns(self):
         cursor = self.conn.cursor()
@@ -146,4 +165,3 @@ class DesignDAO:
             return []  # Return an empty list on error
         finally:
             cursor.close()
-

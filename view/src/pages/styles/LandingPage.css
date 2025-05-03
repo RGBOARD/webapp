@@ -1,0 +1,96 @@
+@font-face {
+  font-family: 'PixelifySans';
+  src: url('../../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-page-animation {
+  animation: fadeSlideIn 0.6s ease-out both;
+}
+
+.landing-container{
+    background: #D9D9D9;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    padding: 1.5rem;
+    width: 100%;
+    font-size: larger;
+}
+
+.landing-logo{
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+}
+
+.desc-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.desc-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.desc {
+  max-width: 600px;
+  width: 100%;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  margin: 0 auto;
+}
+
+.sponsored{
+    font-family: "Pixelify Sans", sans-serif;
+    max-width: 600px;
+    font-size: 24px;
+}
+.choice-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.landing-buttons{
+  width: 100%;
+  max-width: 400px;
+  padding: clamp(1rem, 2.5vw, 2rem) clamp(3rem, 8vw, 6rem);
+  font-size: clamp(1rem, 3vw, 2rem);
+  color: white;
+  font-weight: 600;
+  border-radius: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  outline: none;
+  background: black;
+  font-family: "Pixelify Sans", sans-serif;
+  text-align: center;
+  cursor: pointer;
+}
+
+.landing-buttons:hover {
+    background-color: white;
+    color: black;
+    transform: translateY(-2px);
+}
+
+.spacing {
+  margin-top: 2rem;
+}

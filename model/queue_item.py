@@ -1,5 +1,6 @@
 import sqlite3
 
+
 class QueueItemDAO:
 
     def __init__(self):
@@ -12,11 +13,11 @@ class QueueItemDAO:
     def getAllQueueItem(self):
         cursor = self.conn.cursor()
         query = """
-            SELECT * FROM queue_item
-            ORDER BY 
-              CASE WHEN scheduled = 1 THEN start_time ELSE '9999-12-31 23:59:59' END ASC,
-              display_order ASC;
-        """
+                SELECT *
+                FROM queue_item
+                ORDER BY CASE WHEN scheduled = 1 THEN start_time ELSE '9999-12-31 23:59:59' END ASC,
+                         display_order ASC; \
+                """
         try:
             cursor.execute(query)
             result = [row for row in cursor]
@@ -35,6 +36,7 @@ class QueueItemDAO:
         cursor.close()
         return result
 
+
     def addNewQueueItem(self, design_id, start_time, end_time,
                         display_duration, scheduled, scheduled_at):
         cursor = self.conn.cursor()
@@ -47,6 +49,7 @@ class QueueItemDAO:
             VALUES (?, ?, ?, ?, ?, ?, ?);
         """, (design_id, start_time, end_time, display_duration,
               display_order, scheduled, scheduled_at))
+
         self.conn.commit()
 
         cursor.execute("SELECT * FROM queue_item ORDER BY queue_id DESC LIMIT 1;")
@@ -74,13 +77,35 @@ class QueueItemDAO:
                 query += " scheduled = ? where queue_id = ?;"
             else:
                 query += " scheduled_at = ? where queue_id = ?;"
-            cursor.execute(query, (value,queue_id,))
+            cursor.execute(query, (value, queue_id,))
             self.conn.commit()
         query = "select * from queue_item where queue_id = ?;"
         cursor.execute(query, (queue_id,))
         result = cursor.fetchone()
         cursor.close()
-        return result
+        return
+
+    def update_item_order(self, queue_id: int, new_order: int):
+        status = 1
+        query = None
+        cursor = self.conn.cursor()
+        old_order = self.getQueueItemById(queue_id)[5]
+        if new_order < old_order:
+            query = "UPDATE queue_item SET display_order = display_order + 1 WHERE display_order >= ? AND display_order < ?"
+        elif new_order > old_order:
+            query = "UPDATE queue_item SET display_order = display_order - 1 WHERE display_order <= ? AND display_order > ?"
+        try:
+            if query:
+                cursor.execute(query, (new_order, old_order))
+            shift = "UPDATE queue_item SET display_order = ? WHERE queue_id = ?"
+            cursor.execute(shift, (new_order, queue_id))
+            self.conn.commit()
+            status = 0
+        except sqlite3.Error:
+            status = 1
+        finally:
+            cursor.close()
+            return status
 
     def deleteQueueItemById(self, queue_id):
 
@@ -97,6 +122,16 @@ class QueueItemDAO:
             status = 0
             try:
                 cursor.execute(query, (queue_id,))
+
+                query = "SELECT queue_id FROM queue_item ORDER BY display_order ASC"
+
+                cursor.execute(query)
+                items = cursor.fetchall()
+
+                for index, item in enumerate(items):
+                    query = "UPDATE queue_item SET display_order = ? WHERE queue_id = ?"
+                    cursor.execute(query, (index + 1, item[0]))
+
                 self.conn.commit()
             except sqlite3.Error:
                 status = 1
@@ -109,25 +144,26 @@ class QueueItemDAO:
         cursor = self.conn.cursor()
         # Join queue_item and design, only returning records where the design is approved.
         query = """
-            SELECT q.queue_id,
-                   q.design_id,
-                   q.start_time,
-                   q.end_time,
-                   q.display_duration,
-                   q.display_order,
-                   q.scheduled,
-                   q.scheduled_at,
-                   d.pixel_data,
-                   d.is_approved,
-                   d.created_at,
-                   d.updated_at
-            FROM queue_item q
-            JOIN design d ON q.design_id = d.design_id
-            WHERE d.is_approved = 1
-            ORDER BY 
-                CASE WHEN q.scheduled = 1 THEN q.start_time ELSE '9999-12-31 23:59:59' END ASC,
-                q.display_order ASC;
-        """
+                SELECT q.queue_id,
+                       q.design_id,
+                       q.start_time,
+                       q.end_time,
+                       q.display_duration,
+                       q.display_order,
+                       q.scheduled,
+                       q.scheduled_at,
+                       d.pixel_data,
+                       d.is_approved,
+                       d.created_at,
+                       d.updated_at
+                FROM queue_item q
+                         JOIN design d ON q.design_id = d.design_id
+                WHERE d.is_approved = 1
+                  AND q.scheduled = 1
+                  AND strftime('%Y-%m-%d %H:%M:%S', q.start_time) <= strftime('%Y-%m-%d %H:%M:%S', 'now')
+                  AND strftime('%Y-%m-%d %H:%M:%S', q.end_time) >= strftime('%Y-%m-%d %H:%M:%S', 'now')
+                ORDER BY q.display_order ASC; \
+                """
         try:
             cursor.execute(query)
             result = cursor.fetchall()
@@ -143,22 +179,20 @@ class QueueItemDAO:
 
         try:
             query = """
-            SELECT q.queue_id,
-                   q.design_id,
-                   q.start_time,
-                   q.display_order,
-                   q.scheduled,                  
-                   q.scheduled_at,
-                   d.pixel_data,
-                   d.title,
-                   d.is_approved
-            FROM queue_item q
-            JOIN design d ON q.design_id = d.design_id
-            ORDER BY 
-                CASE WHEN q.scheduled = 1 THEN q.start_time ELSE '9999-12-31 23:59:59' END ASC,
-                q.display_order ASC
-            LIMIT ? OFFSET ?;
-            """
+                    SELECT q.queue_id,
+                           q.design_id,
+                           q.start_time,
+                           q.display_order,
+                           q.scheduled,
+                           q.scheduled_at,
+                           d.pixel_data,
+                           d.title,
+                           d.is_approved
+                    FROM queue_item q
+                             JOIN design d ON q.design_id = d.design_id
+                    ORDER BY q.display_order ASC
+                    LIMIT ? OFFSET ?; \
+                    """
             cursor.execute(query, (page_size, offset))
             queue = cursor.fetchall()
 
@@ -166,10 +200,10 @@ class QueueItemDAO:
             queue_items = [dict(zip(columns, design)) for design in queue]
 
             count_query = """
-            SELECT COUNT(*) 
-            FROM queue_item q
-            JOIN design d ON q.design_id = d.design_id
-            """
+                          SELECT COUNT(*)
+                          FROM queue_item q
+                                   JOIN design d ON q.design_id = d.design_id \
+                          """
             cursor.execute(count_query)
             total_items = cursor.fetchone()[0]
 
@@ -189,6 +223,7 @@ class QueueItemDAO:
                 "success": False,
                 "error": str(e)
             }
+
 
     def getByUserEmail(self, email):
         cursor = self.conn.cursor()
@@ -214,3 +249,27 @@ class QueueItemDAO:
         rows = cursor.fetchall()
         cursor.close()
         return rows
+
+    def is_design_in_queue(self, design_id):
+        cursor = self.conn.cursor()
+        query = "SELECT 1 FROM queue_item WHERE design_id = ?"
+        try:
+            cursor.execute(query, (design_id,))
+            return cursor.fetchone() is not None
+        except sqlite3.Error:
+            return False
+        finally:
+            cursor.close()
+
+    def is_design_scheduled(self, design_id):
+        cursor = self.conn.cursor()
+        query = "SELECT scheduled FROM queue_item WHERE design_id = ?"
+        try:
+            cursor.execute(query, (design_id,))
+            results = cursor.fetchall()
+            return any(bool(row[0]) for row in results)
+        except sqlite3.Error:
+            return False
+        finally:
+            cursor.close()
+
