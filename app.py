@@ -1,18 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import JWTManager
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
+from controller.design import Design
+from controller.queue_item import QueueItem
+from controller.setting import authorize_mail, authorize_callback
 from controller.upload_history import UploadHistory
 from controller.user import User
-from controller.design import Design
-
-from controller.setting import authorize_mail, authorize_callback
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
@@ -35,6 +32,7 @@ def get_all_users():
     handler = User(email=get_jwt_identity())
     return handler.get_all_users()
 
+
 @app.route("/user/pagination", methods=['GET'])
 @jwt_required()
 def get_users_paginated():
@@ -49,6 +47,7 @@ def get_users_paginated():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route("/user", methods=['POST'])
 def create_user():
@@ -119,7 +118,7 @@ def handleUserById(user_id):
 def upload_design():
     handler = Design(email=get_jwt_identity())
     return handler.add_new_design(
-        title=request.form.get('title'), 
+        title=request.form.get('title'),
         pixel_data=request.form.get('pixel_data')
     )
 
@@ -129,7 +128,7 @@ def upload_design():
 def update_design_image(design_id):
     handler = Design(email=get_jwt_identity())
     return handler.update_design_image(
-        design_id=design_id, 
+        design_id=design_id,
         pixel_data=request.form.get('pixel_data')
     )
 
@@ -172,7 +171,7 @@ def get_approved_designs():
     return jsonify(approved), 200
 
 
-#AdminAction-----------------------------------------------------------------------------------------------------------
+# AdminAction-----------------------------------------------------------------------------------------------------------
 @app.route("/admin_action", methods=['GET', 'POST'])
 def handleAdminAction():
     if request.method == 'GET':
@@ -263,6 +262,7 @@ def get_queue_paginated():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route("/queue_item/<int:queue_id>/order", methods=['PUT'])
 @jwt_required()
 def update_item_order(queue_id):
@@ -270,7 +270,8 @@ def update_item_order(queue_id):
     new_order = data.get('new_order')
     handler = QueueItem(email=get_jwt_identity())
     return handler.update_item_order(queue_id=queue_id, new_order=new_order)
-    
+
+
 @app.route("/queue_item", methods=['GET', 'POST'])
 def handleQueueItem():
     if request.method == 'GET':
@@ -324,7 +325,6 @@ def handleQueueItemById(queue_id):
             return jsonify("Can not delete record because it is referenced by other records"), 400
 
 
-
 @app.route("/queue_item/scheduled", methods=['GET'])
 @jwt_required()
 def get_scheduled_designs():
@@ -333,6 +333,13 @@ def get_scheduled_designs():
     handler = QueueItem()  # Assumes your QueueItem controller exists similarly to Design.
     scheduled_items = handler.getScheduledDesigns()
     return jsonify(scheduled_items), 200
+
+
+@app.route("/queue_item/dequeue", methods=['POST'])
+@jwt_required()
+def dequeue():
+    handler = QueueItem(email=get_jwt_identity())
+    return handler.dequeue()
 
 
 # UploadHistory-----------------------------------------------------------------------------------------------------------
@@ -398,6 +405,7 @@ def authorize():
 @app.route("/settings/mail/oauth2callback")
 def callback():
     return authorize_callback()
+
 
 if __name__ == '__main__':
     app.run()
