@@ -8,7 +8,7 @@ function AdminHome() {
   const { currentUser } = useAuth();
   const username = currentUser?.name || currentUser?.username || currentUser?.sub || "User";
   const displayName = username.charAt(0).toUpperCase() + username.slice(1).split(".")[0];
-  
+
   return (
     <div className="homepage">
       <div className="menu-wrapper">
@@ -36,6 +36,11 @@ function AdminHome() {
               route="/view"
             />
             <ActionButton
+              icon="history"
+              text="View Upload History"
+              route="/upload-history"
+            />
+            <ActionButton
               icon="quote"
               text="Manage Queue"
               route="/queue-admin"
@@ -48,7 +53,7 @@ function AdminHome() {
           </div>
         </div>
       </div>
-      
+
       {/* Show the upcoming images carousel */}
       <Carousel userRole="admin" />
     </div>

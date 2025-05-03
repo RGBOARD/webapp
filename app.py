@@ -162,6 +162,12 @@ def update_design_image(design_id):
     )
 
 
+# @app.route("/design/<int:design_id>", methods=['GET'])
+# @jwt_required()
+# def get_design():
+#     handler = Design(email=get_jwt_identity())
+#     return handler.get_design(design_id=request.form.get('design_id'))
+
 @app.route("/design/<int:design_id>", methods=['GET'])
 @jwt_required()
 def get_design(design_id):
@@ -376,27 +382,16 @@ def remove_scheduled_item(schedule_id):
         return jsonify({'error': str(e)}), 500
 
 # UploadHistory-----------------------------------------------------------------------------------------------------------
-@app.route("/upload_history", methods=['GET', 'POST'])
-def handleUploadHistory():
-    if request.method == 'GET':
-        handler = UploadHistory()
-        return handler.getAllUploadHistory()
-    else:  # POST
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
 
-            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
+@app.route("/upload_history", methods=['GET'])
+@jwt_required()
+def get_upload_history_for_current_user():
+    return jsonify(UploadHistory().getAllUploadHistory()), 200
 
-            handler = UploadHistory()
-            return handler.addNewUploadHistory(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided"), 400
-
+@app.route("/upload_history/pagination", methods=['GET'])
+@jwt_required()
+def get_upload_history_paginated():
+    return UploadHistory().getAllUploadHistoryPaginated()
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):
@@ -410,7 +405,7 @@ def handleUploadHistoryById(history_id):
                 return jsonify("No data provided"), 400
 
             # For partial updates, you might remove this check or adapt it
-            valid_keys = {'design_id', 'attempt_time', 'file_size', 'status'}
+            valid_keys = {'design_id', 'attempt_time', 'status'}
             if not any(key in data for key in valid_keys):
                 return jsonify("Missing a key"), 400
 

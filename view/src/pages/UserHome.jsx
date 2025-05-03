@@ -18,13 +18,13 @@ function UserHome() {
   const displayName = username.charAt(0).toUpperCase() + username.slice(1).split(".")[0];
   const [isVerified, setIsVerified] = useState(null);
   const location = useLocation();
-  
+
   useEffect(() => {
     async function fetchVerification() {
       const verified = await checkVerification();
       setIsVerified(verified);
     }
-    
+
     if (isVerified === null || location.state?.justVerified) {
       fetchVerification().catch(error => {
         console.error("Verification check failed:", error);
@@ -60,12 +60,17 @@ function UserHome() {
                 text="View Saved Images"
                 route="/view"
               />
+              <ActionButton
+                icon="history"
+                text="View Upload History"
+                route="/upload-history"
+              />
             </div>
           </div>
+
+          {/* Show the upcoming images carousel */}
+          <Carousel userRole="user" />
         </div>
-        
-        {/* Show the upcoming images carousel */}
-        <Carousel userRole="user" />
       </div>
     );
   } else {
@@ -74,5 +79,5 @@ function UserHome() {
     );
   }
 }
-
 export default UserHome;
+

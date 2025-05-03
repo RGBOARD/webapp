@@ -37,25 +37,26 @@ class QueueItemDAO:
         cursor.close()
         return result
 
-    def addNewQueueItem(self, design_id, start_time, end_time, display_duration, scheduled, scheduled_at):
 
+    def addNewQueueItem(self, design_id, start_time, end_time,
+                        display_duration, scheduled, scheduled_at):
         cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM queue_item;")
+        display_order = cursor.fetchone()[0] + 1
 
-        count_query = """ SELECT COUNT(*)
-                          FROM queue_item"""
-        cursor.execute(count_query)
-        items = cursor.fetchone()[0]
-        display_order = items + 1
+        cursor.execute("""
+            INSERT INTO queue_item
+              (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+        """, (design_id, start_time, end_time, display_duration,
+              display_order, scheduled, scheduled_at))
 
-        query = "insert into queue_item (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at) values (?, ?, ?, ?, ?, ?, ?);"
-        cursor.execute(query,
-                       (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at))
         self.conn.commit()
-        query = "select * from queue_item order by queue_id desc limit 1"
-        cursor.execute(query)
-        result = cursor.fetchone()
+
+        cursor.execute("SELECT * FROM queue_item ORDER BY queue_id DESC LIMIT 1;")
+        row = cursor.fetchone()
         cursor.close()
-        return result
+        return row
 
     def updateQueueItemById(self, queue_id, data):
         cursor = self.conn.cursor()
@@ -250,6 +251,32 @@ class QueueItemDAO:
                 "error": str(e)
             }
 
+
+    def getByUserEmail(self, email):
+        cursor = self.conn.cursor()
+        query = """
+            SELECT
+                qi.queue_id      AS history_id,
+                qi.design_id,
+                qi.created_at    AS created_at,
+                qi.display_duration,
+                qi.display_order,
+                qi.scheduled     AS status,
+                d.title,
+                d.pixel_data
+            FROM queue_item qi
+            JOIN design d 
+              ON d.design_id = qi.design_id
+            JOIN user u
+              ON u.user_id = d.user_id
+            WHERE u.email = ?
+            ORDER BY qi.start_time DESC;
+        """
+        cursor.execute(query, (email,))
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+
     def is_design_in_queue(self, design_id):
         cursor = self.conn.cursor()
         query = "SELECT 1 FROM queue_item WHERE design_id = ?"
@@ -272,3 +299,4 @@ class QueueItemDAO:
             return False
         finally:
             cursor.close()
+
