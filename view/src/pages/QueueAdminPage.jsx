@@ -177,7 +177,7 @@ function QueueAdminPage() {
   };
 
   return (
-    <div className="useradminpage">
+    <div className="useradminpage" >
       <div className="upload-wrapper">
         <h1 className="upload-h1">Administer Queue</h1>
         

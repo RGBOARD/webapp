@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 
+
 class QueueItemDAO:
 
     def __init__(self):
@@ -13,11 +14,11 @@ class QueueItemDAO:
     def getAllQueueItem(self):
         cursor = self.conn.cursor()
         query = """
-            SELECT * FROM queue_item
-            ORDER BY 
-              CASE WHEN scheduled = 1 THEN start_time ELSE '9999-12-31 23:59:59' END ASC,
-              display_order ASC;
-        """
+                SELECT *
+                FROM queue_item
+                ORDER BY CASE WHEN scheduled = 1 THEN start_time ELSE '9999-12-31 23:59:59' END ASC,
+                         display_order ASC; \
+                """
         try:
             cursor.execute(query)
             result = [row for row in cursor]
@@ -36,17 +37,19 @@ class QueueItemDAO:
         cursor.close()
         return result
 
-    def addNewQueueItem(self, design_id, start_time, end_time, display_duration,scheduled, scheduled_at):
+    def addNewQueueItem(self, design_id, start_time, end_time, display_duration, scheduled, scheduled_at):
 
         cursor = self.conn.cursor()
 
-        count_query = """ SELECT COUNT(*) FROM queue_item"""
+        count_query = """ SELECT COUNT(*)
+                          FROM queue_item"""
         cursor.execute(count_query)
         items = cursor.fetchone()[0]
         display_order = items + 1
 
         query = "insert into queue_item (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at) values (?, ?, ?, ?, ?, ?, ?);"
-        cursor.execute(query, (design_id, start_time, end_time, display_duration,display_order,scheduled, scheduled_at))
+        cursor.execute(query,
+                       (design_id, start_time, end_time, display_duration, display_order, scheduled, scheduled_at))
         self.conn.commit()
         query = "select * from queue_item order by queue_id desc limit 1"
         cursor.execute(query)
@@ -74,7 +77,7 @@ class QueueItemDAO:
                 query += " scheduled = ? where queue_id = ?;"
             else:
                 query += " scheduled_at = ? where queue_id = ?;"
-            cursor.execute(query, (value,queue_id,))
+            cursor.execute(query, (value, queue_id,))
             self.conn.commit()
         query = "select * from queue_item where queue_id = ?;"
         cursor.execute(query, (queue_id,))
@@ -223,10 +226,10 @@ class QueueItemDAO:
             queue_items = [dict(zip(columns, design)) for design in queue]
 
             count_query = """
-            SELECT COUNT(*) 
-            FROM queue_item q
-            JOIN design d ON q.design_id = d.design_id
-            """
+                          SELECT COUNT(*)
+                          FROM queue_item q
+                                   JOIN design d ON q.design_id = d.design_id \
+                          """
             cursor.execute(count_query)
             total_items = cursor.fetchone()[0]
 
@@ -246,53 +249,26 @@ class QueueItemDAO:
                 "success": False,
                 "error": str(e)
             }
-    
-    def updateActiveItems(self):
+
+    def is_design_in_queue(self, design_id):
+        cursor = self.conn.cursor()
+        query = "SELECT 1 FROM queue_item WHERE design_id = ?"
         try:
-            cursor = self.conn.cursor()
+            cursor.execute(query, (design_id,))
+            return cursor.fetchone() is not None
+        except sqlite3.Error:
+            return False
+        finally:
+            cursor.close()
 
-            # First, update which items are active
-            active_update_query = """
-            UPDATE queue_item
-            SET is_active = (
-                (scheduled = 1 AND strftime('%Y-%m-%d %H:%M:%S', end_time) >= strftime('%Y-%m-%d %H:%M:%S', 'now'))
-                OR
-                (scheduled = 0 AND strftime('%Y-%m-%d %H:%M:%S', 'now') >= strftime('%Y-%m-%d %H:%M:%S', scheduled_at) AND scheduled_at IS NOT NULL)
-            ),
-            updated_at = datetime('now')
-            """
-            cursor.execute(active_update_query)
-
-            # Then reindex display_order for active items
-            reindex_query = """
-            WITH ranked AS (
-                SELECT
-                    queue_id,
-                    ROW_NUMBER() OVER (
-                        ORDER BY 
-                            scheduled ASC,  -- Unscheduled first (0 then 1)
-                            CASE 
-                                WHEN scheduled = 1 THEN start_time  -- Scheduled items sorted by start_time
-                                ELSE scheduled_at  -- Unscheduled items sorted by scheduled_at
-                            END ASC,
-                            display_order ASC  -- Secondary sort by display_order
-                    ) as new_order
-                FROM queue_item
-                WHERE is_active = 1
-            )
-            UPDATE queue_item
-            SET display_order = (
-                SELECT new_order
-                FROM ranked
-                WHERE ranked.queue_id = queue_item.queue_id
-            )
-            WHERE is_active = 1
-            """
-            cursor.execute(reindex_query)
-            self.conn.commit()
-            print(f"Active items updated at {datetime.datetime.now()}")
-            
-        except sqlite3.Error as e:
-            print(f"Database error: {e}")
+    def is_design_scheduled(self, design_id):
+        cursor = self.conn.cursor()
+        query = "SELECT scheduled FROM queue_item WHERE design_id = ?"
+        try:
+            cursor.execute(query, (design_id,))
+            results = cursor.fetchall()
+            return any(bool(row[0]) for row in results)
+        except sqlite3.Error:
+            return False
         finally:
             cursor.close()
