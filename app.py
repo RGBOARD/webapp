@@ -318,11 +318,13 @@ def schedule_image():
     handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
     return handler.schedule_image()
 
-@app.route("/rotation/reorder", methods=['POST'])
+@app.route("/rotation/<int:item_id>/reorder", methods=['PUT'])
 @jwt_required()
-def reorder_images():
-    handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
-    return handler.reorder_images()
+def reorder_images(item_id):
+    data = request.get_json()
+    new_order = data.get('new_order')
+    handler = RotationSystem(email=get_jwt_identity())
+    return handler.reorder_images(item_id=item_id, new_order=new_order)
 
 @app.route("/rotation/rotate", methods=['POST'])
 @jwt_required()
