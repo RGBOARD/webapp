@@ -65,7 +65,7 @@ class UserDAO:
         query = "SELECT password FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (email, ))
+            cursor.execute(query, (email,))
             password = cursor.fetchone()
             return password[0] if password else None
 
@@ -80,7 +80,7 @@ class UserDAO:
         query = "SELECT is_admin FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (email, ))
+            cursor.execute(query, (email,))
             is_admin = cursor.fetchone()
             return is_admin[0]
 
@@ -95,11 +95,15 @@ class UserDAO:
         query = "SELECT user_id FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (email, ))
-            user_id = cursor.fetchone()
-            return user_id[0]
+            cursor.execute(query, (email,))
+            result = cursor.fetchone()
 
-        except sqlite3.Error:
+            if result is not None:
+                return result[0]
+            else:
+                return None
+
+        except sqlite3.Error as e:
             return None
 
         finally:
@@ -138,7 +142,6 @@ class UserDAO:
             cursor.close()
             return status
 
-
     def add_new_user(self, email, password):
 
         cursor = self.conn.cursor()
@@ -157,7 +160,6 @@ class UserDAO:
 
         finally:
             cursor.close()
-
 
     def updateUserById(self, user_id, data):
 

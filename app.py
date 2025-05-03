@@ -1,18 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import JWTManager
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
+from controller.design import Design
+from controller.queue_item import QueueItem
+from controller.setting import authorize_mail, authorize_callback
 from controller.upload_history import UploadHistory
 from controller.user import User
-from controller.design import Design
-
-from controller.setting import authorize_mail, authorize_callback
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
@@ -62,6 +59,16 @@ def create_user():
 def login_user():
     handler = User(json_data=request.json)
     return handler.login_user()
+
+
+@app.route("/temp-password", methods=['POST'])
+def get_temp_password():
+    handler = User(email=request.get_json().get("email"))
+    return handler.get_new_temp_password()
+
+@app.route("/reset-password", methods=['POST'])
+def reset_password():
+
 
 
 @app.route("/verify-email", methods=['POST'])
@@ -148,6 +155,7 @@ def get_design(design_id):
     handler = Design(email=get_jwt_identity())
     # Use the URL param, not request.form
     return handler.get_design(design_id=design_id)
+
 
 @app.route("/designs", methods=['GET'])
 @jwt_required()
@@ -299,13 +307,13 @@ def update_item_order(queue_id):
     return handler.update_item_order(queue_id=queue_id, new_order=new_order)
 
 
-
 # ————— GET all queue items (public) —————
 @app.route("/queue_item", methods=['GET'])
 def handleGetQueueItems():
     handler = QueueItem()
     items = handler.getAllQueueItem()
     return jsonify(items), 200
+
 
 # ————— Create a new queue item (auth required) —————
 @app.route("/queue_item", methods=['POST'])
@@ -331,6 +339,7 @@ def handleCreateQueueItem():
     except Exception as e:
         print("Error processing request:", e)
         return jsonify("Invalid JSON data provided"), 400
+
 
 @app.route("/queue_item/<int:queue_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleQueueItemById(queue_id):
@@ -365,7 +374,6 @@ def handleQueueItemById(queue_id):
 @app.route("/queue_item/scheduled", methods=['GET'])
 @jwt_required()
 def get_scheduled_designs():
-
     handler = QueueItem()
     scheduled_items = handler.getScheduledDesigns()
     return jsonify(scheduled_items), 200
@@ -378,10 +386,12 @@ def get_scheduled_designs():
 def get_upload_history_for_current_user():
     return jsonify(UploadHistory().getAllUploadHistory()), 200
 
+
 @app.route("/upload_history/pagination", methods=['GET'])
 @jwt_required()
 def get_upload_history_paginated():
     return UploadHistory().getAllUploadHistoryPaginated()
+
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):

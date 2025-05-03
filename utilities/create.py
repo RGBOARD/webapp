@@ -18,6 +18,17 @@ cur.execute("""
             """)
 
 cur.execute("""
+            CREATE TABLE IF NOT EXISTS temp_password
+            (
+                tp_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id       INTEGER NOT NULL,
+                temp_password TEXT    NOT NULL,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
+            );
+            """)
+
+cur.execute("""
             CREATE TABLE IF NOT EXISTS verification_code
             (
                 code_id    INTEGER PRIMARY KEY AUTOINCREMENT,

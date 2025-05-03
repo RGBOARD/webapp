@@ -1,18 +1,19 @@
-import re
-import bcrypt
+import base64
 import json
 import random
-from datetime import datetime, timedelta, timezone
-from flask import jsonify
-from flask_jwt_extended import create_access_token
-
-import base64
+import re
+import string
+from datetime import datetime, timedelta, timezone, tzinfo
 from email.message import EmailMessage
 
+import bcrypt
+from flask import jsonify
+from flask_jwt_extended import create_access_token
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from model.temp_password import TempPasswordDAO
 from model.user import UserDAO
 from model.verification_code import VerificationCodeDAO
 
@@ -31,6 +32,7 @@ def make_json_one(user):
 
     return result
 
+
 def make_json(tuples):
     result = []
     for t in tuples:
@@ -46,6 +48,7 @@ def make_json(tuples):
 
     return result
 
+
 def load_credentials():
     with open(CREDENTIALS_FILE, 'r') as f:
         data = json.load(f)
@@ -59,8 +62,45 @@ def load_credentials():
         )
     return creds
 
+
+def generate_temp_password(min_length=8, max_length=32):
+    if min_length < 4:
+        raise ValueError("Minimum length must be at least 4")
+
+    # Character sets
+    uppercase = string.ascii_uppercase
+    lowercase = string.ascii_lowercase
+    letters = uppercase + lowercase
+    digits = string.digits
+    special_chars = "!@#$%^&*()-_=+[]{};:'\",.<>?/\\|`~"
+
+    all_chars = letters + digits + special_chars
+
+    # Ensure the first character is a letter
+    first_char = random.choice(letters)
+
+    # Ensure at least one of each required type
+    digit = random.choice(digits)
+    special = random.choice(special_chars)
+    letter = random.choice(letters)
+
+    total_length = random.randint(min_length, max_length)
+
+    # Remaining characters (excluding the first letter and the three guaranteed chars)
+    remaining_length = total_length - 4
+    remaining_chars = [random.choice(all_chars) for _ in range(remaining_length)]
+
+    # Build the password
+    password_list = [letter, digit, special] + remaining_chars
+    random.shuffle(password_list)
+
+    # Prepend the first char (letter)
+    password = first_char + ''.join(password_list)
+    return password
+
+
 class User:
-    def __init__(self, email = None, json_data = None):
+    def __init__(self, email=None, json_data=None):
         if email:
             self.email = email
         else:
@@ -69,7 +109,7 @@ class User:
 
     def is_admin(self) -> bool:
         dao = UserDAO()
-        response = dao.get_admin_by_email(email = self.email)
+        response = dao.get_admin_by_email(email=self.email)
 
         if response is None:  # User was not found
             return False
@@ -81,7 +121,7 @@ class User:
 
     def is_email_verified(self) -> bool:
         dao = UserDAO()
-        response = dao.get_email_verification_by_email(email = self.email)
+        response = dao.get_email_verification_by_email(email=self.email)
 
         if response is None:  # User was not found
             return False
@@ -91,7 +131,6 @@ class User:
 
         return False
 
-
     def get_all_users(self):
         if self.email is not None:
             if self.is_admin():
@@ -100,10 +139,11 @@ class User:
                 body = make_json(response)
                 return body, 200
             else:
-               return jsonify(error="Unauthorized. Not admin."), 401
+                return jsonify(error="Unauthorized. Not admin."), 401
 
         else:
             return jsonify(error="Unauthorized. No token."), 401
+
     def get_all_users_paginated(self, page, page_size):
         if self.email is not None:
             if self.is_admin():
@@ -125,9 +165,9 @@ class User:
     def get_user_email_verification_status(self):
         if self.email is not None:
             if self.is_email_verified():
-                return jsonify(message = "User is verified."), 200
+                return jsonify(message="User is verified."), 200
             else:
-                return jsonify(error = "User is not verified."), 403
+                return jsonify(error="User is not verified."), 403
         else:
             return jsonify(error="Missing authentication."), 401
 
@@ -177,7 +217,7 @@ class User:
         response = dao.add_new_user(self.email, password_hash)
 
         match response:
-            case 0: #TODO: This could be better written
+            case 0:  # TODO: This could be better written
                 verification_code = self.generate_verification_code()
                 if verification_code is not None:
                     self.send_verification_email(verification_code)
@@ -208,7 +248,8 @@ class User:
         is_admin = self.is_admin()
         user_id = self.get_user_id()
         if bcrypt.checkpw(password_encoded, hashed_password):
-            access_token = create_access_token(identity=self.email, additional_claims={"user_id": user_id, "role": is_admin})
+            access_token = create_access_token(identity=self.email,
+                                               additional_claims={"user_id": user_id, "role": is_admin})
             return jsonify(access_token=access_token), 200
         else:
             return jsonify(error="Wrong password"), 400
@@ -258,7 +299,7 @@ class User:
 
     def get_new_verification_code(self):
         if self.is_email_verified():
-            return jsonify(error = "User is already verified."), 400
+            return jsonify(error="User is already verified."), 400
 
         user_dao = UserDAO()
         user_id = user_dao.get_userid_by_email(self.email)
@@ -272,14 +313,14 @@ class User:
                 time_since = datetime.strptime(time_since_str, "%Y-%m-%d %H:%M:%S")
                 time_since = time_since.replace(tzinfo=timezone.utc)
             except ValueError:
-                return jsonify(error = "Invalid timestamp format."), 500
+                return jsonify(error="Invalid timestamp format."), 500
 
             now = datetime.now(timezone.utc)
             cooldown = timedelta(seconds=60)
 
             if now - time_since < cooldown:
                 seconds_remaining = int((cooldown - (now - time_since)).total_seconds())
-                return jsonify(error = f"Please wait {seconds_remaining} seconds before requesting a new code."),  429
+                return jsonify(error=f"Please wait {seconds_remaining} seconds before requesting a new code."), 429
 
             is_deleted = verification_code_dao.delete_verification_code(user_id)
 
@@ -302,19 +343,69 @@ class User:
 
         return jsonify(error="Couldn't create new code"), 500
 
+    def get_new_temp_password(self):
+        user_dao = UserDAO()
+        user_id = user_dao.get_userid_by_email(self.email)
+
+        if user_id is None:
+            return jsonify(error="Couldn't find user"), 404
+
+        tp_dao = TempPasswordDAO()
+
+        # check if there is already a temp password and make the user wait for a new one if so
+        time_since_str = tp_dao.get_password_timestamp(user_id)
+
+        if time_since_str:  # a temp password was created before and never used
+            try:
+                time_since = datetime.strptime(time_since_str, "%Y-%m-%d %H:%M:%S")
+                time_since = time_since.replace(tzinfo=timezone.utc)
+            except ValueError:
+                return jsonify(error="Invalid timestamp format."), 500
+
+            now = datetime.now(timezone.utc)
+            cooldown = timedelta(seconds=60)
+
+            if now - time_since < cooldown:
+                seconds_remaining = int((cooldown - (now - time_since)).total_seconds())
+                return jsonify(error=f"Please wait {seconds_remaining} seconds before requesting a new temporary password."), 429
+
+            # delete the old one and get a new one
+            is_deleted = tp_dao.delete_temp_password(user_id)
+
+            if is_deleted != 0:
+                return jsonify(error="Couldn't delete previous temporary password."), 500
+
+        temp_password = generate_temp_password(min_length=8, max_length=10)
+
+        # turn into bytes
+        encoded_temp_password = temp_password.encode("utf-8")
+
+        salt = bcrypt.gensalt()
+
+        # salt and hash the temp password
+        temp_password_hash = bcrypt.hashpw(encoded_temp_password, salt)
+
+        response = tp_dao.add_temp_password(user_id, temp_password_hash)
+
+        if response != 0:
+            return jsonify(error = "Couldn't create a new temporary password"), 500
+
+        self.send_temp_password(temp_password)
+
+        return jsonify(message="Temporary Password Created"), 201
 
     def verify_email(self, json_data):
         user_dao = UserDAO()
         user_id = user_dao.get_userid_by_email(self.email)
 
         if user_id is None:
-            return jsonify(error = "Not a valid user."), 404
+            return jsonify(error="Not a valid user."), 404
 
         verification_code_dao = VerificationCodeDAO()
         verification_code = verification_code_dao.get_verification_code(user_id)
 
         if verification_code is None:
-            return jsonify(error = "Could not get verification code."), 500
+            return jsonify(error="Could not get verification code."), 500
 
         given_code = json_data.get("code", None)
 
@@ -327,10 +418,13 @@ class User:
                 verification_code_dao.delete_verification_code(user_id)
                 return jsonify("User has been verified."), 200
             else:
-                return jsonify(error = "Could not verify user"), 500
+                return jsonify(error="Could not verify user"), 500
 
-        return jsonify(error = "Incorrect verification code."), 400
+        return jsonify(error="Incorrect verification code."), 400
 
+    def reset_password(self, password, new_password):
+        user_dao = UserDAO()
+        user_id = user_dao.get_userid_by_email(self.email)
 
     def send_verification_email(self, verification_code):
         try:
@@ -362,3 +456,37 @@ class User:
 
         return send_message
 
+    def send_temp_password(self, temp_password):
+        try:
+            creds = load_credentials()
+        except FileNotFoundError:
+            # Credentials missing. Don't do anything
+            return
+
+        try:
+            service = build("gmail", "v1", credentials=creds)
+            message = EmailMessage()
+
+            content = (
+                f"Your RGBOARD temporary password is: {temp_password}\n\n"
+                "Please use it to log in and reset your password as soon as possible.\n\n"
+                "If you did not request a temporary password, please ignore this email and contact an RGBoard admin."
+            )
+
+            message.set_content(content)
+
+            message["To"] = self.email
+            message["Subject"] = 'RGBOARD Temporary Password'
+
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+            create_message = {"raw": encoded_message}
+
+            send_message = (
+                service.users().messages().send(userId="me", body=create_message).execute()
+            )
+
+        except HttpError:
+            send_message = None
+
+        return send_message
