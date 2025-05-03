@@ -84,3 +84,19 @@ To run app.py:
 1. **Without credentials file:** Open your database application and check the `VerificationCode` table to find the code associated with the newly created account.
 
 2. **With credentials file:** You should receive an email containing the verification code.
+
+#### Fetching PRs
+1. Fetch the PR and create a local branch on your device. For example, PR #15:
+    ```sh
+    git fetch origin pull/15/head:pr-15
+    ```
+
+2. Switch to the PR branch.
+    ```sh
+    git checkout pr-63
+    ```
+
+3. To refresh a PR branch with the latest changes:
+    ```sh
+    git pull origin pull/66/head
+    ```

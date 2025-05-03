@@ -153,3 +153,7 @@ class QueueItem:
                 return jsonify(error="Unauthorized. Not admin."), 401
 
             return jsonify(error="Unauthorized. No token."), 401
+
+        def update_active_items(self):
+            dao = QueueItemDAO()
+            dao.updateActiveItems()

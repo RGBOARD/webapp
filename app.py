@@ -1,3 +1,6 @@
+import atexit
+import signal
+import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -6,22 +9,45 @@ from flask_jwt_extended import JWTManager
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from controller.queue_item import QueueItem
 from controller.admin_action import AdminAction
 from controller.upload_history import UploadHistory
 from controller.user import User
 from controller.design import Design
-
+from controller.rotation_system import RotationSystem
 from controller.setting import authorize_mail, authorize_callback
+from services.scheduler_service import scheduler_service
 
-app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
-app.secret_key = "super-secret"  # Change this
-CORS(app)
+def create_app():
+    app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+    app.secret_key = "super-secret"  # Change this in production
+    CORS(app)
+    app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this in production
+    jwt = JWTManager(app)
+   
+    # Register signal handlers for clean shutdown
+    def signal_handler(sig, frame):
+        print(f"Received shutdown signal {sig}")
+        # Since scheduler_service has its own shutdown logic in atexit handler,
+        # we don't need to manually shut it down here
+        sys.exit(0)
+   
+    # Register the signal handler for SIGINT (Ctrl+C) and SIGTERM
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+   
+    # Initialize the scheduler service
+    try:
+        print("Initializing scheduler service")
+        scheduler_service.init_app(app)
+        # No need to register a separate atexit handler here
+        # The scheduler_service already registers its own in init_app
+    except Exception as e:
+        print(f"Failed to initialize scheduler: {e}")
+   
+    return app
 
-app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this
-jwt = JWTManager(app)
-
+app = create_app()
 
 @app.route('/')
 def hello_world():  # put application's code here
@@ -136,16 +162,16 @@ def update_design_image(design_id):
 
 @app.route("/design/<int:design_id>", methods=['GET'])
 @jwt_required()
-def get_design():
+def get_design(design_id):
     handler = Design(email=get_jwt_identity())
-    return handler.get_design(design_id=request.form.get('design_id'))
+    return handler.get_design(design_id=design_id)
 
 
 @app.route("/design/<int:design_id>/title", methods=['PUT'])
 @jwt_required()
-def update_design_title():
+def update_design_title(design_id):
     handler = Design(email=get_jwt_identity())
-    return handler.update_design_title(design_id=request.form.get('design_id'), title=request.form.get('title'))
+    return handler.update_design_title(design_id=design_id, title=request.form.get('title'))
 
 
 @app.route("/design/<int:design_id>/approval", methods=['PUT'])
@@ -247,93 +273,87 @@ def handleAdminActionById(action_id):
             return jsonify("Cannot delete record because it is referenced by other records"), 400
 
 
-# QueueItem-----------------------------------------------------------------------------------------------------------
-
-@app.route("/queue_item/pagination", methods=['GET'])
+# Rotation System-----------------------------------------------------------------------------------------------------------
+@app.route("/rotation/current", methods=['GET'])
 @jwt_required()
-def get_queue_paginated():
+def get_current_image():
+    handler = RotationSystem(email=get_jwt_identity())
+    return handler.get_current_image()
+
+@app.route("/rotation/add", methods=['POST'])
+@jwt_required()
+def add_unscheduled_image():
+    handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
+    return handler.add_unscheduled_image()
+
+@app.route("/rotation/schedule", methods=['POST'])
+@jwt_required()
+def schedule_image():
+    handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
+    return handler.schedule_image()
+
+@app.route("/rotation/reorder", methods=['POST'])
+@jwt_required()
+def reorder_images():
+    handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
+    return handler.reorder_images()
+
+@app.route("/rotation/rotate", methods=['POST'])
+@jwt_required()
+def rotate_to_next():
+    handler = RotationSystem(email=get_jwt_identity())
+    return handler.rotate_to_next()
+
+@app.route("/rotation/items", methods=['GET'])
+@jwt_required()
+def get_all_rotation_items():
+    handler = RotationSystem(email=get_jwt_identity())
+    return handler.get_all_items()
+
+@app.route("/rotation/items/pagination", methods=['GET'])
+@jwt_required()
+def get_rotation_items_paginated():
     try:
+
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('size', 6))
-        handler = QueueItem(email=get_jwt_identity())
-
-        result = handler.get_all_items_paginated(page, page_size)
-        return jsonify(result), 200
+        handler = RotationSystem(email=get_jwt_identity())
+        return handler.get_items_paginated(page, page_size)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route("/queue_item/<int:queue_id>/order", methods=['PUT'])
+@app.route("/rotation/item/<int:item_id>", methods=['DELETE'])
 @jwt_required()
-def update_item_order(queue_id):
-    data = request.get_json()
-    new_order = data.get('new_order')
-    handler = QueueItem(email=get_jwt_identity())
-    return handler.update_item_order(queue_id=queue_id, new_order=new_order)
-    
-@app.route("/queue_item", methods=['GET', 'POST'])
-def handleQueueItem():
-    if request.method == 'GET':
-        handler = QueueItem()
-        return handler.getAllQueueItem()
-    else:
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
+def remove_rotation_item(item_id):
+    handler = RotationSystem(email=get_jwt_identity())
+    return handler.remove_item(item_id)
 
-            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration',
-                          'scheduled', 'scheduled_at'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
-
-            handler = QueueItem()
-            return handler.addNewQueueItem(data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid JSON data provided:"), 400
-
-
-@app.route("/queue_item/<int:queue_id>", methods=['GET', 'PUT', 'DELETE'])
-def handleQueueItemById(queue_id):
-    if request.method == 'GET':
-        handler = QueueItem()
-        return handler.getQueueItemById(queue_id)
-    elif request.method == 'PUT':
-        try:
-            data = request.json
-            if not data:
-                return jsonify("No data provided"), 400
-
-            valid_keys = {'design_id', 'start_time', 'end_time', 'display_duration', 'display_order',
-                          'scheduled', 'scheduled_at'}
-            if not any(key in data for key in valid_keys):
-                return jsonify("Missing a key"), 400
-
-            handler = QueueItem()
-            return handler.updateQueueItemById(queue_id, data)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Invalid data provided"), 400
-    else:
-        try:
-            handler = QueueItem()
-            return handler.deleteQueueItemById(queue_id)
-        except Exception as e:
-            print("Error processing request:", e)
-            return jsonify("Can not delete record because it is referenced by other records"), 400
-
-
-
-@app.route("/queue_item/scheduled", methods=['GET'])
+@app.route("/rotation/scheduled", methods=['GET'])
 @jwt_required()
-def get_scheduled_designs():
-    # If needed, you can also pass the identity to restrict results
-    # For example: identity = get_jwt_identity()
-    handler = QueueItem()  # Assumes your QueueItem controller exists similarly to Design.
-    scheduled_items = handler.getScheduledDesigns()
-    return jsonify(scheduled_items), 200
+def get_scheduled_items():
+    handler = RotationSystem(email=get_jwt_identity())
+    return handler.get_scheduled_items()
 
+@app.route("/rotation/scheduled/pagination", methods=['GET'])
+@jwt_required()
+def get_scheduled_items_paginated():
+    try:
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('size', 6))
+        handler = RotationSystem(email=get_jwt_identity())
+        return handler.get_scheduled_items_paginated(page, page_size)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/rotation/scheduled/<int:schedule_id>", methods=['DELETE'])
+@jwt_required()
+def remove_scheduled_item(schedule_id):
+    try:
+        handler = RotationSystem(email=get_jwt_identity())
+        return handler.remove_scheduled_item(schedule_id)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # UploadHistory-----------------------------------------------------------------------------------------------------------
 @app.route("/upload_history", methods=['GET', 'POST'])

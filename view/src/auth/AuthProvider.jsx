@@ -167,29 +167,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-    // Get paginated users (admin only)
-  const getpageimages = async (pageNum, pageSize) => {
-    try {
-      const response = await axios.get('/queue_item/pagination', {
-        params: {
-          page: pageNum,
-          pageSize: pageSize,
-        },
-      });
-      return {
-        success: true,
-        data: response.data // Make sure you return 'data' to match what you're trying to access in the component
-      };
-    } catch (error) {
-      console.error('Fetch users error:', error);
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Failed to fetch users'
-      };
-    }
-  };
-
-    // Toggle approval status
+  // Toggle approval status
   const toggleapproval = async (designId, approval) => {
     try {
       await axios.put(`/design/${designId}/approval`, { approval });
@@ -202,38 +180,154 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
-  // Update order of queue item
-  const updateorder = async (queueId, newOrder)  => {
-    try {
-      await axios.put(`/queue_item/${queueId}/order`, { new_order: newOrder });
-      return { success: true };
-    } catch (error) {
-      console.error('Order update error:', error);
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Failed to update admin status'
-      };
-    }
-  };
-
-  const deletequeueitem = async (queueId) => {
-    try {
-      await axios.delete(`/queue_item/${queueId}`);
-      return { success: true };
-    } catch (error) {
-      console.error('Delete design error:', error);
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Failed to delete user'
-      };
-    }
-  };
 
   // Logout function
   const logout = () => {
     removeToken();
     setCurrentUser(null);
     setIsAuthenticated(false);
+  };
+
+  const getRotationItems = async (pageNum, pageSize) => {
+    try {
+      const response = await axios.get('/rotation/items/pagination', {
+        params: {
+          page: pageNum,
+          pageSize: pageSize || 6,
+        },
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Fetch rotation items error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch rotation items'
+      };
+    }
+  };
+  
+  // Remove an item from rotation
+  const removeFromRotation = async (itemId) => {
+    try {
+      await axios.delete(`/rotation/item/${itemId}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Remove from rotation error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to remove item'
+      };
+    }
+  };
+
+  const getScheduledItems = async (pageNum, pageSize) => {
+    try {
+      const response = await axios.get('/rotation/scheduled/pagination', {
+        params: {
+          page: pageNum,
+          pageSize: pageSize || 6,
+        },
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Fetch scheduled items error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch scheduled items'
+      };
+    }
+  };
+  
+  // For removing scheduled items
+  const removeScheduledItem = async (scheduleId) => {
+    try {
+      const response = await axios.delete(`/rotation/scheduled/${scheduleId}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Remove scheduled item error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to remove scheduled item'
+      };
+    }
+  };
+  
+  // Update rotation order for an item
+  const updateRotationOrder = async (itemId, newOrder) => {
+    try {
+      // We'll reuse the reorder endpoint with a custom order array
+      const response = await axios.get('/rotation/items', {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      
+      if (response.data && Array.isArray(response.data.items)) {
+        // Get all design IDs in current order
+        const currentItems = response.data.items;
+        
+        // Find the item we want to move
+        const targetItem = currentItems.find(item => item.item_id === itemId);
+        if (!targetItem) {
+          throw new Error('Item not found');
+        }
+        
+        // Remove the item from its current position
+        const filteredItems = currentItems.filter(item => item.item_id !== itemId);
+        
+        // Create a new array with the item at the new position
+        const newOrderedItems = [
+          ...filteredItems.slice(0, newOrder - 1),
+          targetItem,
+          ...filteredItems.slice(newOrder - 1)
+        ];
+        
+        // Extract just the design IDs in the new order
+        const orderedDesignIds = newOrderedItems.map(item => item.design_id);
+        
+        // Make the reorder request
+        await axios.post('/rotation/reorder', { 
+          order: orderedDesignIds 
+        }, {
+          headers: {
+            'Authorization': `Bearer ${getToken()}`
+          }
+        });
+        
+        return { success: true };
+      } else {
+        throw new Error('Failed to get current rotation items');
+      }
+    } catch (error) {
+      console.error('Update rotation order error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to update rotation order'
+      };
+    }
   };
 
   // Auth context value
@@ -247,13 +341,15 @@ export const AuthProvider = ({ children }) => {
     getpageusers,
     deleteuser,
     toggleadmin,
-    getpageimages,
     toggleapproval,
-    updateorder,
-    deletequeueitem,
     logout,
     hasRole, 
-    hasAnyRole
+    hasAnyRole,
+    getRotationItems, 
+    removeFromRotation,
+    updateRotationOrder,
+    getScheduledItems,
+    removeScheduledItem
   };
 
   return (

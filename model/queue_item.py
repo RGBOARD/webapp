@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 class QueueItemDAO:
@@ -85,19 +86,39 @@ class QueueItemDAO:
         status = 1
         query = None
         cursor = self.conn.cursor()
-        old_order = self.getQueueItemById(queue_id)[5]
-        if new_order < old_order:
-            query = "UPDATE queue_item SET display_order = display_order + 1 WHERE display_order >= ? AND display_order < ?"
-        elif new_order > old_order:
-            query = "UPDATE queue_item SET display_order = display_order - 1 WHERE display_order <= ? AND display_order > ?"
+        
         try:
+            # Get current display_order of the target item
+            cursor.execute("SELECT display_order FROM queue_item WHERE queue_id = ?", (queue_id,))
+            old_order = cursor.fetchone()[0]
+            
+            # Only reorder among active items
+            if new_order < old_order:
+                query = """
+                    UPDATE queue_item 
+                    SET display_order = display_order + 1 
+                    WHERE is_active = 1 
+                    AND display_order >= ? AND display_order < ?
+                """
+            elif new_order > old_order:
+                query = """
+                    UPDATE queue_item 
+                    SET display_order = display_order - 1 
+                    WHERE is_active = 1
+                    AND display_order <= ? AND display_order > ?
+                """
+                
             if query:
                 cursor.execute(query, (new_order, old_order))
+                
+            # Update the target item's display_order
             shift = "UPDATE queue_item SET display_order = ? WHERE queue_id = ?"
-            cursor.execute(shift,(new_order, queue_id))
+            cursor.execute(shift, (new_order, queue_id))
+            
             self.conn.commit()
             status = 0
-        except sqlite3.Error:
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
             status = 1
         finally:
             cursor.close()
@@ -138,26 +159,26 @@ class QueueItemDAO:
 
     def getScheduledDesigns(self):
         cursor = self.conn.cursor()
-        # Join queue_item and design, only returning records where the design is approved.
         query = """
             SELECT q.queue_id,
-                   q.design_id,
-                   q.start_time,
-                   q.end_time,
-                   q.display_duration,
-                   q.display_order,
-                   q.scheduled,
-                   q.scheduled_at,
-                   d.pixel_data,
-                   d.is_approved,
-                   d.created_at,
-                   d.updated_at
+                q.design_id,
+                q.start_time,
+                q.end_time,
+                q.display_duration,
+                q.display_order,
+                q.scheduled,
+                q.scheduled_at,
+                d.pixel_data,
+                d.is_approved,
+                d.created_at,
+                d.updated_at
             FROM queue_item q
             JOIN design d ON q.design_id = d.design_id
-            WHERE d.is_approved = 1 AND q.scheduled = 1 
-            AND strftime('%Y-%m-%d %H:%M:%S', q.start_time) <= strftime('%Y-%m-%d %H:%M:%S', 'now')
-            AND strftime('%Y-%m-%d %H:%M:%S', q.end_time)   >= strftime('%Y-%m-%d %H:%M:%S', 'now')
-            ORDER BY q.display_order ASC;
+            WHERE d.is_approved = 1
+            AND q.is_active = 1
+            ORDER BY
+                q.scheduled ASC,
+                q.display_order ASC
         """
         try:
             cursor.execute(query)
@@ -175,17 +196,24 @@ class QueueItemDAO:
         try:
             query = """
             SELECT q.queue_id,
-                   q.design_id,
-                   q.start_time,
-                   q.display_order,
-                   q.scheduled,                  
-                   q.scheduled_at,
-                   d.pixel_data,
-                   d.title,
-                   d.is_approved
+                q.design_id,
+                q.start_time,
+                q.display_order,
+                q.scheduled,                  
+                q.scheduled_at,
+                d.pixel_data,
+                d.title,
+                d.is_approved
             FROM queue_item q
             JOIN design d ON q.design_id = d.design_id
-            ORDER BY q.display_order ASC
+            WHERE q.is_active = 1
+            ORDER BY
+                q.scheduled ASC,
+                CASE 
+                    WHEN q.scheduled = 0 THEN q.scheduled_at 
+                    ELSE q.start_time 
+                END ASC,
+                q.display_order ASC
             LIMIT ? OFFSET ?;
             """
             cursor.execute(query, (page_size, offset))
@@ -218,3 +246,53 @@ class QueueItemDAO:
                 "success": False,
                 "error": str(e)
             }
+    
+    def updateActiveItems(self):
+        try:
+            cursor = self.conn.cursor()
+
+            # First, update which items are active
+            active_update_query = """
+            UPDATE queue_item
+            SET is_active = (
+                (scheduled = 1 AND strftime('%Y-%m-%d %H:%M:%S', end_time) >= strftime('%Y-%m-%d %H:%M:%S', 'now'))
+                OR
+                (scheduled = 0 AND strftime('%Y-%m-%d %H:%M:%S', 'now') >= strftime('%Y-%m-%d %H:%M:%S', scheduled_at) AND scheduled_at IS NOT NULL)
+            ),
+            updated_at = datetime('now')
+            """
+            cursor.execute(active_update_query)
+
+            # Then reindex display_order for active items
+            reindex_query = """
+            WITH ranked AS (
+                SELECT
+                    queue_id,
+                    ROW_NUMBER() OVER (
+                        ORDER BY 
+                            scheduled ASC,  -- Unscheduled first (0 then 1)
+                            CASE 
+                                WHEN scheduled = 1 THEN start_time  -- Scheduled items sorted by start_time
+                                ELSE scheduled_at  -- Unscheduled items sorted by scheduled_at
+                            END ASC,
+                            display_order ASC  -- Secondary sort by display_order
+                    ) as new_order
+                FROM queue_item
+                WHERE is_active = 1
+            )
+            UPDATE queue_item
+            SET display_order = (
+                SELECT new_order
+                FROM ranked
+                WHERE ranked.queue_id = queue_item.queue_id
+            )
+            WHERE is_active = 1
+            """
+            cursor.execute(reindex_query)
+            self.conn.commit()
+            print(f"Active items updated at {datetime.datetime.now()}")
+            
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+        finally:
+            cursor.close()
