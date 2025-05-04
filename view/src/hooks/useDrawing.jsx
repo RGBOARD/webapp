@@ -243,6 +243,7 @@ function useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSi
 
   return {
     pixels,
+    setPixels,
     isDrawing,
     selectedTool,
     handleToolSelect,

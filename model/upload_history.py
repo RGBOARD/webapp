@@ -7,6 +7,7 @@ class UploadHistoryDAO:
         try:
             self.conn = sqlite3.connect(database_path)
             self.conn.execute("PRAGMA foreign_keys = ON")
+            self.conn.execute("PRAGMA busy_timeout = 5000;")
         except sqlite3.Error as e:
             print(f"Database connection error: {e}")
             raise
