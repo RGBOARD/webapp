@@ -29,7 +29,7 @@ const Developers = () => {
     {
       name: 'Irsaris Pérez Rodríguez',
       degree: 'Software Engineering',
-      excerpt: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur justo nec nisl aliquet, a suscipit libero lacinia. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur justo nec nisl aliquet, a suscipit libero lacinia.',
+      excerpt: 'Software engineer by day, bug whisperer by night. Fluent in sarcasm, semicolons, and the occasional segfault. I refactor for fun and clean up like company\'s coming, and yes—I’ve named every rubber duck I’ve ever debugged with.',
       photo: irsaris,
       linkedin: 'https://www.linkedin.com/in/irsaris-perez/',
       borderColor: "border-b-5 border-blue-500",
