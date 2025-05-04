@@ -454,7 +454,7 @@ class User:
         response = user_dao.set_user_password(user_id, new_password_hash)
 
         if response != 0:
-            jsonify(error = "Couldn't reset password."), 500
+            return jsonify(error="Couldn't reset password."), 500
 
         # clean up but don't care
         tp_dao.delete_temp_password(user_id)
