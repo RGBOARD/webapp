@@ -189,6 +189,12 @@
   max-height: 512px;
 }
 
+.override-row {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+}
+
 @media (max-width: 1024px) {
   .upload-menu-wrapper {
     flex-direction: column;

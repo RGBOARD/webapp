@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 
@@ -89,19 +90,39 @@ class QueueItemDAO:
         status = 1
         query = None
         cursor = self.conn.cursor()
-        old_order = self.getQueueItemById(queue_id)[5]
-        if new_order < old_order:
-            query = "UPDATE queue_item SET display_order = display_order + 1 WHERE display_order >= ? AND display_order < ?"
-        elif new_order > old_order:
-            query = "UPDATE queue_item SET display_order = display_order - 1 WHERE display_order <= ? AND display_order > ?"
+        
         try:
+            # Get current display_order of the target item
+            cursor.execute("SELECT display_order FROM queue_item WHERE queue_id = ?", (queue_id,))
+            old_order = cursor.fetchone()[0]
+            
+            # Only reorder among active items
+            if new_order < old_order:
+                query = """
+                    UPDATE queue_item 
+                    SET display_order = display_order + 1 
+                    WHERE is_active = 1 
+                    AND display_order >= ? AND display_order < ?
+                """
+            elif new_order > old_order:
+                query = """
+                    UPDATE queue_item 
+                    SET display_order = display_order - 1 
+                    WHERE is_active = 1
+                    AND display_order <= ? AND display_order > ?
+                """
+                
             if query:
                 cursor.execute(query, (new_order, old_order))
+                
+            # Update the target item's display_order
             shift = "UPDATE queue_item SET display_order = ? WHERE queue_id = ?"
             cursor.execute(shift, (new_order, queue_id))
+            
             self.conn.commit()
             status = 0
-        except sqlite3.Error:
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
             status = 1
         finally:
             cursor.close()
@@ -142,28 +163,27 @@ class QueueItemDAO:
 
     def getScheduledDesigns(self):
         cursor = self.conn.cursor()
-        # Join queue_item and design, only returning records where the design is approved.
         query = """
-                SELECT q.queue_id,
-                       q.design_id,
-                       q.start_time,
-                       q.end_time,
-                       q.display_duration,
-                       q.display_order,
-                       q.scheduled,
-                       q.scheduled_at,
-                       d.pixel_data,
-                       d.is_approved,
-                       d.created_at,
-                       d.updated_at
-                FROM queue_item q
-                         JOIN design d ON q.design_id = d.design_id
-                WHERE d.is_approved = 1
-                  AND q.scheduled = 1
-                  AND strftime('%Y-%m-%d %H:%M:%S', q.start_time) <= strftime('%Y-%m-%d %H:%M:%S', 'now')
-                  AND strftime('%Y-%m-%d %H:%M:%S', q.end_time) >= strftime('%Y-%m-%d %H:%M:%S', 'now')
-                ORDER BY q.display_order ASC; \
-                """
+            SELECT q.queue_id,
+                q.design_id,
+                q.start_time,
+                q.end_time,
+                q.display_duration,
+                q.display_order,
+                q.scheduled,
+                q.scheduled_at,
+                d.pixel_data,
+                d.is_approved,
+                d.created_at,
+                d.updated_at
+            FROM queue_item q
+            JOIN design d ON q.design_id = d.design_id
+            WHERE d.is_approved = 1
+            AND q.is_active = 1
+            ORDER BY
+                q.scheduled ASC,
+                q.display_order ASC
+        """
         try:
             cursor.execute(query)
             result = cursor.fetchall()
@@ -179,20 +199,27 @@ class QueueItemDAO:
 
         try:
             query = """
-                    SELECT q.queue_id,
-                           q.design_id,
-                           q.start_time,
-                           q.display_order,
-                           q.scheduled,
-                           q.scheduled_at,
-                           d.pixel_data,
-                           d.title,
-                           d.is_approved
-                    FROM queue_item q
-                             JOIN design d ON q.design_id = d.design_id
-                    ORDER BY q.display_order ASC
-                    LIMIT ? OFFSET ?; \
-                    """
+            SELECT q.queue_id,
+                q.design_id,
+                q.start_time,
+                q.display_order,
+                q.scheduled,                  
+                q.scheduled_at,
+                d.pixel_data,
+                d.title,
+                d.is_approved
+            FROM queue_item q
+            JOIN design d ON q.design_id = d.design_id
+            WHERE q.is_active = 1
+            ORDER BY
+                q.scheduled ASC,
+                CASE 
+                    WHEN q.scheduled = 0 THEN q.scheduled_at 
+                    ELSE q.start_time 
+                END ASC,
+                q.display_order ASC
+            LIMIT ? OFFSET ?;
+            """
             cursor.execute(query, (page_size, offset))
             queue = cursor.fetchall()
 

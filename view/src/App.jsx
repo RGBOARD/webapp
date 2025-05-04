@@ -9,6 +9,7 @@ import LogIn from './pages/Login';
 import SignUp from './pages/SignUp';
 import UploadPage from './pages/UploadPage';
 import CreatePage from './pages/CreatePage';
+import EditPage from './pages/EditPage';
 import ViewPage from './pages/ViewPage';
 import QueueAdminPage from './pages/QueueAdminPage';
 import UserAdminPage from './pages/UserAdminPage';
@@ -80,6 +81,14 @@ function AppContent() {
             element={
               <RequireAuth>
                 <CreatePage />
+              </RequireAuth>
+            } 
+          />
+          <Route 
+            path="/edit" 
+            element={
+              <RequireAuth>
+                <EditPage />
               </RequireAuth>
             } 
           />

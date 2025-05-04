@@ -1,7 +1,8 @@
-import ActionButton from '../components/ActionButton'
-import Carousel from '../components/Carousel'
-import '../components/styles/Menu.css'
-import { useAuth } from '../auth/authContext'
+import React from 'react';
+import ActionButton from '../components/ActionButton';
+import Carousel from '../components/Carousel';
+import '../components/styles/Menu.css';
+import { useAuth } from '../auth/authContext';
 
 function AdminHome() {
   const { currentUser } = useAuth();
@@ -19,18 +20,18 @@ function AdminHome() {
         </div>
         <div className="menu-column">
           <div className="button-menu">
-            <ActionButton 
-              icon="upload" 
+            <ActionButton
+              icon="upload"
               text="Save Image"
               route="/upload"
             />
-            <ActionButton 
-              icon="create" 
+            <ActionButton
+              icon="create"
               text="Create Image"
               route="/create"
             />
-            <ActionButton 
-              icon="view" 
+            <ActionButton
+              icon="view"
               text="View Saved Images"
               route="/view"
             />
@@ -39,22 +40,24 @@ function AdminHome() {
               text="View Upload History"
               route="/upload-history"
             />
-            <ActionButton 
-              icon="quote" 
+            <ActionButton
+              icon="quote"
               text="Manage Queue"
               route="/queue-admin"
             />
-            <ActionButton 
-              icon="users" 
+            <ActionButton
+              icon="users"
               text="Manage Users"
               route="/user-admin"
             />
           </div>
         </div>
       </div>
-      <Carousel userRole="admin"/>
+
+      {/* Show the upcoming images carousel */}
+      <Carousel userRole="admin" />
     </div>
-  )
+  );
 }
 
 export default AdminHome;
