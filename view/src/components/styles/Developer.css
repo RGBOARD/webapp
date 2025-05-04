@@ -1,0 +1,30 @@
+.developer-card{
+  display: flex;
+  flex-direction: column;
+  background-color: gray;
+  border-radius: 0.5rem;
+  max-width: 400px;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem;
+  padding: 1rem;
+}
+
+.dev-name{
+  display: flex;
+  flex-direction: row;
+
+}
+
+.dev-excerpt {
+  flex-grow: 1;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.developer-photo {
+  width: 120px;         /* or whatever size you want */
+  height: 120px;
+  object-fit: cover;    /* ensures the image fills the circle */
+  border-radius: 50%;   /* makes it a perfect circle */
+}

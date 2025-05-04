@@ -1,0 +1,31 @@
+/* Developers page container: Centering horizontally and vertically */
+.developers-page {
+  display: flex;
+  justify-content: center;  /* Center horizontally */
+  align-items: flex-start;  /* Align vertically at the top */
+  width: 100%;              /* Take full width */
+  padding: 2rem;            /* Padding for spacing */
+  box-sizing: border-box;   /* Ensure padding doesn't affect layout */
+  overflow: hidden;         /* Ensure no extra scrollbars on the page */
+}
+
+/* Wrapper for developer cards to allow vertical scrolling */
+.developers-wrapper {
+  display: flex;
+  flex-direction: column;     /* Align the cards vertically */
+  justify-content: flex-start; /* Align the cards at the top */
+  max-height: 100vh;          /* Ensure the wrapper does not exceed the viewport height */
+  overflow-y: auto;           /* Allow vertical scrolling */
+  width: 100%;                /* Stretch to fill available space */
+  gap: 1.5rem;                /* Space between cards */
+}
+
+/* Developer container for centering the cards */
+.developers-container {
+  display: flex;
+  flex-wrap: wrap;            /* Allow wrapping of cards into rows */
+  justify-content: center;    /* Center cards horizontally */
+  gap: 1.5rem;
+  width: 100%;                /* Stretch to fill available width */
+  align-items: flex-start;    /* Align items to the top */
+}
