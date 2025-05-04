@@ -23,16 +23,18 @@ class DesignDAO:
 
     def get_designs_by_id(self, user_id: int, page: int, page_size: int):
         cursor = self.conn.cursor()
-        query = (
-            "SELECT d.*, "
-            "CASE WHEN q.scheduled THEN 1 ELSE 0 END AS is_scheduled, "
-            "CASE WHEN q.queue_id IS NOT NULL THEN 1 ELSE 0 END AS is_in_queue "
-            "FROM design d "
-            "LEFT JOIN queue_item q ON d.design_id = q.design_id "
-            "WHERE d.user_id = ? "
-            "ORDER BY d.updated_at DESC "
-            "LIMIT ? OFFSET ?;"
-        )
+        query = """
+            SELECT d.*, 
+                CASE WHEN rq.design_id IS NOT NULL THEN 1 ELSE 0 END AS is_in_queue, 
+                CASE WHEN si.design_id IS NOT NULL THEN 1 ELSE 0 END AS is_scheduled 
+            FROM design d 
+            LEFT JOIN rotation_queue rq ON d.design_id = rq.design_id 
+            LEFT JOIN scheduled_items si ON d.design_id = si.design_id 
+            WHERE d.user_id = ? 
+            GROUP BY d.design_id 
+            ORDER BY d.updated_at DESC 
+            LIMIT ? OFFSET ?;
+            """
 
         try:
             cursor.execute(query, (user_id, page_size, (page - 1) * page_size))
