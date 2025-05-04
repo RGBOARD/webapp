@@ -3,7 +3,7 @@ import json
 import random
 import re
 import string
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 
 import bcrypt
@@ -367,7 +367,8 @@ class User:
 
             if now - time_since < cooldown:
                 seconds_remaining = int((cooldown - (now - time_since)).total_seconds())
-                return jsonify(error=f"Please wait {seconds_remaining} seconds before requesting a new temporary password."), 429
+                return jsonify(
+                    error=f"Please wait {seconds_remaining} seconds before requesting a new temporary password."), 429
 
             # delete the old one and get a new one
             is_deleted = tp_dao.delete_temp_password(user_id)
@@ -388,7 +389,7 @@ class User:
         response = tp_dao.add_temp_password(user_id, temp_password_hash)
 
         if response != 0:
-            return jsonify(error = "Couldn't create a new temporary password"), 500
+            return jsonify(error="Couldn't create a new temporary password"), 500
 
         self.send_temp_password(temp_password)
 
@@ -425,6 +426,40 @@ class User:
     def reset_password(self, password, new_password):
         user_dao = UserDAO()
         user_id = user_dao.get_userid_by_email(self.email)
+
+        if user_id is None:
+            return jsonify(error="Not a valid user"), 404
+
+        tp_dao = TempPasswordDAO()
+        temp_password_hashed = tp_dao.get_temp_password(user_id)
+
+        if temp_password_hashed is None:
+            return jsonify(error="Couldn't get temporary password"), 404
+
+        password_encoded = password.encode("utf-8")
+
+        if not bcrypt.checkpw(password_encoded, temp_password_hashed):
+            return jsonify(error="Wrong temporary password"), 403
+
+        password_rule = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]).{8,32}$'
+        if not bool(re.match(password_rule, new_password)):
+            return jsonify(error="Invalid password format"), 400
+
+        new_password_encoded = new_password.encode("utf-8")
+
+        salt = bcrypt.gensalt()
+
+        new_password_hash = bcrypt.hashpw(new_password_encoded, salt)
+
+        response = user_dao.set_user_password(user_id, new_password_hash)
+
+        if response != 0:
+            jsonify(error = "Couldn't reset password."), 500
+
+        # clean up but don't care
+        tp_dao.delete_temp_password(user_id)
+
+        return jsonify(message="Password has been reset"), 200
 
     def send_verification_email(self, verification_code):
         try:

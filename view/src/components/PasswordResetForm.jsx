@@ -193,7 +193,7 @@ export default function PasswordResetForm() {
             >
                 {isLoading
                     ? step === 1 ? 'Requesting...' : 'Resetting...'
-                    : step === 1 ? 'Request Temp Password' : 'Reset Password'}
+                    : step === 1 ? 'Request Temporary Password' : 'Reset Password'}
             </button>
         </form>
     );

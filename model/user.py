@@ -128,10 +128,26 @@ class UserDAO:
     def set_user_email_verified_by_id(self, user_id: int, is_verified: int):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE user SET is_email_verified = ? WHERE user_id = ?;"
+        query = "UPDATE user SET is_email_verified = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?;"
 
         try:
             cursor.execute(query, (is_verified, user_id))
+            self.conn.commit()
+            status = 0
+
+        except sqlite3.Error:
+            status = 1
+
+        finally:
+            cursor.close()
+            return status
+
+    def set_user_password(self, user_id: int, password):
+        status = 1
+        cursor = self.conn.cursor()
+        query = "UPDATE user SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?;"
+        try:
+            cursor.execute(query, (password, user_id))
             self.conn.commit()
             status = 0
 
