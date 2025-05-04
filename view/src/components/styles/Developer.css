@@ -1,7 +1,7 @@
 .developer-card{
   display: flex;
   flex-direction: column;
-  background-color: gray;
+  background-color: #e6e6e6;
   border-radius: 0.5rem;
   max-width: 400px;
   align-items: center;
@@ -13,7 +13,14 @@
 .dev-name{
   display: flex;
   flex-direction: row;
+  font-weight: bold;
+  font-size: large;
+  gap: 0.5rem;
+}
 
+.dev-degree{
+  font-family: "Pixelify Sans", sans-serif;
+  font-size: 1.15rem;
 }
 
 .dev-excerpt {

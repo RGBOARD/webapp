@@ -1,12 +1,11 @@
 import React from 'react';
 import './styles/Footer.css'
-import SimpleIcon from './SimpleIcon'
 import './styles/Developer.css';
 import { Linkedin } from 'lucide-react';
 
-const Developer = ({ name, degree, excerpt, photo, linkedin }) => {
+const Developer = ({ name, degree, excerpt, photo, linkedin, borderColor }) => {
   return (
-      <div className="developer-card">
+      <div className={`developer-card ${borderColor}`}>
           {photo && <img src={photo} alt={`${name}'s photo`} className="developer-photo"/>}
           <div className="dev-name">
               <h3>{name}</h3>
@@ -14,7 +13,7 @@ const Developer = ({ name, degree, excerpt, photo, linkedin }) => {
                   <Linkedin/>
               </a>
           </div>
-          <p>{degree}</p>
+          <p className="dev-degree">{degree}</p>
           <p className="dev-excerpt">{excerpt}</p>
       </div>
   );
