@@ -37,7 +37,7 @@ const Developers = () => {
     {
       name: 'Jandel Rodríguez Vázquez',
       degree: 'Computer Science and Engineering',
-      excerpt: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur justo nec nisl aliquet, a suscipit libero lacinia. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur justo nec nisl aliquet, a suscipit libero lacinia.',
+      excerpt: 'I’m all about chasing challenges — whether it’s shaving seconds off a run, geeking out over F1 strategy, or working on my project car until it (finally) cooperates. That same curiosity and drive shape how I approach coding: always eager to learn, improve, and build something I’m proud of.',
       photo: jandel,
       linkedin: 'https://www.linkedin.com/in/jandelrodriguez/',
       borderColor: "border-b-5 border-yellow-400",
