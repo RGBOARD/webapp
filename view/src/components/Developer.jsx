@@ -6,13 +6,13 @@ import { Linkedin } from 'lucide-react';
 const Developer = ({ name, degree, excerpt, photo, linkedin, borderColor }) => {
   return (
       <div className={`developer-card ${borderColor}`}>
-          {photo && <img src={photo} alt={`${name}'s photo`} className="developer-photo"/>}
-          <div className="dev-name">
-              <h3>{name}</h3>
-              <a href={linkedin} target="_blank" rel="noopener noreferrer">
+          <div className="photo-block">
+              {photo && <img src={photo} alt={`${name}'s photo`} className="developer-photo"/>}
+              <a href={linkedin} className="linkedin-link" target="_blank" rel="noopener noreferrer">
                   <Linkedin/>
               </a>
           </div>
+          <h3 className="dev-name">{name}</h3>
           <p className="dev-degree">{degree}</p>
           <p className="dev-excerpt">{excerpt}</p>
       </div>

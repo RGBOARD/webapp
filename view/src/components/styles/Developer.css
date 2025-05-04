@@ -1,4 +1,5 @@
 .developer-card{
+  position: relative;
   display: flex;
   flex-direction: column;
   background-color: #e6e6e6;
@@ -10,12 +11,21 @@
   padding: 1rem;
 }
 
-.dev-name{
+.photo-block{
   display: flex;
   flex-direction: row;
+}
+
+.linkedin-link {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  text-decoration: none;
   font-weight: bold;
+}
+
+.dev-name{
   font-size: large;
-  gap: 0.5rem;
 }
 
 .dev-degree{
@@ -30,8 +40,8 @@
 }
 
 .developer-photo {
-  width: 120px;         /* or whatever size you want */
+  width: 120px;
   height: 120px;
-  object-fit: cover;    /* ensures the image fills the circle */
-  border-radius: 50%;   /* makes it a perfect circle */
+  object-fit: cover;
+  border-radius: 50%;
 }
