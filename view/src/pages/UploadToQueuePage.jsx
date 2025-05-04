@@ -96,7 +96,7 @@ export default function UploadToQueuePage() {
               scheduleData={scheduleData}
               setScheduleData={setScheduleData}
               onSubmit={handleAddToQueue}
-              submitLabel="Schedule"
+              submitLabel="Add to Queue"
               error={queueMessage}
             />
           </div>

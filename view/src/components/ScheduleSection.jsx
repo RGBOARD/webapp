@@ -9,7 +9,7 @@ export default function ScheduleSection({
 }) {
   return (
     <div className="scheduling-section p-4 border rounded-lg space-y-3">
-      <h3 className="text-xl font-bold">Schedule</h3>
+      <h3 className="text-xl font-bold">Add to Queue</h3>
 
       {error && <p className="text-red-500">{error}</p>}
 
@@ -40,9 +40,9 @@ export default function ScheduleSection({
       <button
         type="button"
         onClick={onSubmit}
-        className="mt-3 w-full bg-yellow-500 text-black py-2 rounded hover:bg-yellow-600"
+        className="upload-button queue-button"
       >
-        {submitLabel}
+        <span className="button-text">{submitLabel}</span>
       </button>
     </div>
   );
