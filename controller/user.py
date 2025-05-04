@@ -504,7 +504,7 @@ class User:
 
             content = (
                 f"Your RGBOARD temporary password is: {temp_password}\n\n"
-                "Please use it to log in and reset your password as soon as possible.\n\n"
+                "Please use it to reset your password as soon as possible.\n\n"
                 "If you did not request a temporary password, please ignore this email and contact an RGBoard admin."
             )
 
