@@ -13,7 +13,7 @@ const Developers = () => {
     {
       name: 'Marianyelis Jimenez Mercedes',
       degree: 'Software Engineering',
-      excerpt: 'There’s something special about seeing all the pieces come together after putting in the work. I enjoy coding with a backdrop of city pop or video game soundtracks—Pokémon always made the perfect soundtrack for this project.',
+      excerpt: 'There’s something special about seeing all the puzzle pieces come together after putting in the work. I enjoy coding with a backdrop of city pop or video game soundtracks—Pokémon always made the perfect soundtrack for this project.',
       photo: marianyelis,
       linkedin: 'https://www.linkedin.com/in/marianyelis-jimenez-mercedes/',
       borderColor: "border-b-5 border-red-500",
@@ -21,7 +21,7 @@ const Developers = () => {
     {
       name: 'Edimar Valentín Kery',
       degree: 'Computer Science and Engineering',
-      excerpt: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur justo nec nisl aliquet, a suscipit libero lacinia. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus efficitur justo nec nisl aliquet, a suscipit libero lacinia.',
+      excerpt: 'They asked how well I understood theoretical computer science. I said I had a theoretical degree in computer science. They said welcome aboard. Fallout: New Vegas fans will get it—I enjoy working with embedded systems and robotics. My favorite language is C, but I always end up using C++.',
       photo: edimar,
       linkedin: 'https://www.linkedin.com/in/edimar-valent%C3%ADn-kery-26992299/',
       borderColor: "border-b-5 border-green-500",
