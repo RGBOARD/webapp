@@ -61,29 +61,30 @@ class QueueItemDAO:
         cursor = self.conn.cursor()
 
         for key, value in data.items():
-            query = "update queue_item set"
+            query = "UPDATE queue_item SET"
 
             if key == "design_id":
-                query += " design_id = ? where queue_id = ?;"
+                query += " design_id = ? WHERE queue_id = ?;"
             elif key == "start_time":
-                query += " start_time = ? where queue_id = ?;"
+                query += " start_time = ? WHERE queue_id = ?;"
             elif key == "end_time":
-                query += " end_time = ? where queue_id = ?;"
+                query += " end_time = ? WHERE queue_id = ?;"
             elif key == "display_duration":
-                query += " display_duration = ? where queue_id = ?;"
+                query += " display_duration = ? WHERE queue_id = ?;"
             elif key == "display_order":
-                query += " display_order = ? where queue_id = ?;"
+                query += " display_order = ? WHERE queue_id = ?;"
             elif key == "scheduled":
-                query += " scheduled = ? where queue_id = ?;"
+                query += " scheduled = ? WHERE queue_id = ?;"
             else:
-                query += " scheduled_at = ? where queue_id = ?;"
-            cursor.execute(query, (value, queue_id,))
+                query += " scheduled_at = ? WHERE queue_id = ?;"
+
+            cursor.execute(query, (value, queue_id))
             self.conn.commit()
-        query = "select * from queue_item where queue_id = ?;"
-        cursor.execute(query, (queue_id,))
+
+        cursor.execute("SELECT * FROM queue_item WHERE queue_id = ?;", (queue_id,))
         result = cursor.fetchone()
         cursor.close()
-        return
+        return result
 
     def update_item_order(self, queue_id: int, new_order: int):
         status = 1

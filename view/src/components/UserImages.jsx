@@ -8,6 +8,9 @@ import {renderPixelDataToImage} from '../utils/pixelRenderer';
 // modal component
 import Modal from "../components/Modal";
 
+
+import { useNavigate } from 'react-router-dom';
+
 async function getDesigns(page, page_size) {
     try {
         return await axios.get('/designs', {params: {page, page_size}});
@@ -43,6 +46,7 @@ function UserImages() {
     const [AlertMessage, setAlertMessage] = useState(null);
     const [page, setPage] = useState(1);
     const pageSize = 8;
+    const navigate = useNavigate();
 
     useEffect(() => {
         async function fetchDesigns() {
@@ -69,6 +73,7 @@ function UserImages() {
             console.log("Queued design", selectedDesign.design_id);
             // TODO: Jandel: Go to queue view
             // Not putting anything here so you can mount the component your way
+            navigate(`/upload-to-queue/${selectedDesign.design_id}`);
         }
     };
 

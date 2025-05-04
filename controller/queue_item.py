@@ -84,11 +84,11 @@ class QueueItem:
         def updateQueueItemById(self, queue_id, data):
             dao = QueueItemDAO()
             queue_item = dao.updateQueueItemById(queue_id, data)
-            if not QueueItem:
-                return jsonify("Not Found"), 404
-            else:
-                result = self.make_json_one(queue_item)
-                return result
+
+            if not queue_item:
+                return jsonify(error="Not Found"), 404
+
+            return jsonify(self.make_json_one(queue_item)), 200
 
         def update_item_order(self, queue_id, new_order):
 

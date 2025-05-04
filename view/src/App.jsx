@@ -17,7 +17,7 @@ import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 
 import UploadHistoryPage from './pages/UploadHistoryPage';
-
+import UploadToQueuePage from './pages/UploadToQueuePage';
 // function UploadHistoryPage() {
 //     return null;
 // }
@@ -109,6 +109,14 @@ function AppContent() {
                 <UserAdminPage />
               </RequireAuth>
             } 
+          />
+          <Route
+            path="/upload-to-queue/:designId"
+            element={
+              <RequireAuth>
+                <UploadToQueuePage />
+              </RequireAuth>
+            }
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
