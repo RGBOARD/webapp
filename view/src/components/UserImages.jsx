@@ -4,6 +4,7 @@ import './styles/UserImages.css';
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf';
 import axios from '../api/axios';
 import {renderPixelDataToImage} from '../utils/pixelRenderer';
+import { Navigate } from 'react-router-dom';
 
 // modal component
 import Modal from "../components/Modal";
@@ -41,6 +42,7 @@ async function deleteDesign(design_id) {
 function UserImages() {
     const [designs, setDesigns] = useState([]);
     const [selectedDesign, setSelectedDesign] = useState(null);
+    const [redirectToEdit, setRedirectToEdit] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [AlertMessage, setAlertMessage] = useState(null);
@@ -80,10 +82,19 @@ function UserImages() {
     const handleEdit = () => {
         if (selectedDesign) {
             console.log("Edit design", selectedDesign.design_id);
-            // TODO: Irsa: Go to edit view
-            // Not putting anything here so you can mount the component your way
+            setRedirectToEdit({
+                design: {
+                    design_id: selectedDesign.design_id,
+                    title: selectedDesign.title,
+                    pixel_data: selectedDesign.pixel_data
+                }
+            });
         }
     };
+
+    if (redirectToEdit) {
+        return <Navigate to="/edit" state={redirectToEdit} replace />;
+    }
 
     const handleDeleteClick = () => {
         if (selectedDesign) {
@@ -235,7 +246,7 @@ function UserImages() {
                         >
                             {selectedDesign.is_approved ? (
                                 <>
-                                    {!selectedDesign.is_scheduled && (
+                                    {(!selectedDesign.is_scheduled && !selectedDesign.is_in_queue) && (
                                         <button
                                             onClick={handleQueue}
                                             className="cursor-pointer w-full border font-bold text-black border-gray-300 bg-yellow-400 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-yellow-400 hover:shadow-md transition-all duration-200 ease-in-out"
@@ -245,7 +256,7 @@ function UserImages() {
                                     )}
 
                                     <div className="flex flex-col sm:flex-row gap-4">
-                                        <button
+                                        {!selectedDesign.is_in_queue && (<button
                                             onClick={selectedDesign.is_scheduled ? handleQueue : handleEdit}
                                             className={`cursor-pointer flex-1 border font-bold text-black border-gray-300 py-2 rounded-md text-md font-pixelify hover:bg-black hover:shadow-md transition-all duration-200 ease-in-out ${
                                                 selectedDesign.is_scheduled
@@ -254,7 +265,7 @@ function UserImages() {
                                             }`}
                                         >
                                             {selectedDesign.is_scheduled ? 'Edit Schedule' : 'Edit'}
-                                        </button>
+                                        </button>)}
 
                                         <button
                                             onClick={handleDeleteClick}

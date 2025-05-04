@@ -1,6 +1,6 @@
 import sqlite3
 
-con = sqlite3.connect('../data.db')
+con = sqlite3.connect('data.db')
 cur = con.cursor()
 
 cur.execute("""
@@ -17,6 +17,8 @@ cur.execute("""
             );
             """)
 
+print("Created table: user")
+
 cur.execute("""
             CREATE TABLE IF NOT EXISTS verification_code
             (
@@ -27,6 +29,8 @@ cur.execute("""
                 FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
             );
             """)
+
+print("Created table: verification_code")
 
 cur.execute("""
     CREATE TABLE IF NOT EXISTS design
@@ -43,22 +47,55 @@ cur.execute("""
     );
 """)
 
+print("Created table: design")
+
 cur.execute("""
-            CREATE TABLE IF NOT EXISTS queue_item
+            CREATE TABLE IF NOT EXISTS rotation_queue
             (
-                queue_id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                design_id        INTEGER  NOT NULL,
-                start_time       DATETIME NOT NULL,
-                end_time         DATETIME NOT NULL,
-                display_duration INTEGER  NOT NULL,
-                display_order    INTEGER  NOT NULL,
-                scheduled        BOOLEAN  NOT NULL DEFAULT 0,
-                scheduled_at     DATETIME,
-                created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                item_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                design_id         INTEGER NOT NULL,
+                duration          INTEGER NOT NULL,  -- Duration in seconds
+                display_order     INTEGER NOT NULL,  -- For custom ordering
+                expiry_time       DATETIME NOT NULL, -- When to remove from rotation
+                created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE
             );
             """)
+
+print("Created table: rotation_queue")
+
+cur.execute("""
+            CREATE TABLE IF NOT EXISTS scheduled_items
+            (
+                schedule_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                design_id         INTEGER NOT NULL,
+                duration          INTEGER NOT NULL,  -- Duration in seconds (min 60)
+                start_time        DATETIME NOT NULL, -- When to insert into rotation
+                end_time          DATETIME,          -- When to remove from rotation (NULL = 1 day default)
+                override_current  BOOLEAN NOT NULL DEFAULT 0, -- Whether to make it active immediately
+                created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE
+            );
+            """)
+
+print("Created table: scheduled_items")
+
+cur.execute("""
+            CREATE TABLE IF NOT EXISTS active_item
+            (
+                id                INTEGER PRIMARY KEY DEFAULT 1,
+                item_id           INTEGER,
+                activated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (item_id) REFERENCES rotation_queue (item_id) ON DELETE SET NULL
+            );
+            """)
+
+print("Created table: active_item")
+
+cur.execute("INSERT INTO active_item (id, item_id, activated_at) VALUES (1, NULL, CURRENT_TIMESTAMP)")
+print("Created initial active_item entry")
 
 cur.execute("""
             CREATE TABLE IF NOT EXISTS admin_action
@@ -74,9 +111,11 @@ cur.execute("""
                 FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE,
                 FOREIGN KEY (target_user_id) REFERENCES user (user_id) ON DELETE SET NULL,
                 FOREIGN KEY (target_design_id) REFERENCES design (design_id) ON DELETE SET NULL,
-                FOREIGN KEY (target_queue_id) REFERENCES queue_item (queue_id) ON DELETE SET NULL
+                FOREIGN KEY (target_queue_id) REFERENCES rotation_queue (item_id) ON DELETE SET NULL
             );
             """)
+
+print("Created table: admin_action")
 
 cur.execute("""
             CREATE TABLE IF NOT EXISTS upload_history
@@ -91,3 +130,5 @@ cur.execute("""
             );
             """)
 
+print("Created table: upload_history")
+con.commit()

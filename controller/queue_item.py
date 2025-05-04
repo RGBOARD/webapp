@@ -169,6 +169,7 @@ class QueueItem:
 
             return jsonify(error="Unauthorized. No token."), 401
 
+## MOVE TO OTHER FILE
         @jwt_required()
         def getUserHistory(self):
             user_email = get_jwt_identity()
