@@ -122,14 +122,16 @@ export default function PasswordResetForm() {
         <form
             onSubmit={step === 1 ? handleEmailSubmit : handleResetSubmit}
             className="max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md space-y-5"
-            style={{fontFamily: '"Pixelify Sans", sans-serif'}}
         >
-            <h2 className="text-2xl font-bold text-center text-gray-800">
+            <h2 className="text-2xl font-bold text-center text-gray-800"
+                style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
                 {step === 1 ? 'Request Temporary Password' : 'Reset Your Password'}
             </h2>
 
             {message && (
-                <div className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                <div
+                    className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+                    style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
                     {message}
                 </div>
             )}
@@ -155,7 +157,8 @@ export default function PasswordResetForm() {
                     <div className="h-2"></div>
                     {/* Temporary Password Field */}
                     <div>
-                        <label htmlFor="temp_password" className="block text-sm font-medium text-gray-700">Temporary Password</label>
+                        <label htmlFor="temp_password" className="block text-sm font-medium text-gray-700">Temporary
+                            Password</label>
                         <input
                             id="temp_password"
                             name="temp_password"
@@ -172,7 +175,8 @@ export default function PasswordResetForm() {
                     <div className="h-2"></div>
                     {/* New Password Field */}
                     <div>
-                        <label htmlFor="new_password" className="block text-sm font-medium text-gray-700">New Password</label>
+                        <label htmlFor="new_password" className="block text-sm font-medium text-gray-700">New
+                            Password</label>
                         <input
                             id="new_password"
                             name="new_password"
@@ -192,6 +196,7 @@ export default function PasswordResetForm() {
             <button
                 type="submit"
                 className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500 cursor-pointer' : 'bg-blue-300 cursor-not-allowed'}`}
+                style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 disabled={isLoading || !isFormValid}
             >
                 {isLoading
