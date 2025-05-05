@@ -50,16 +50,18 @@ export default function PasswordResetForm() {
                 </>
             )
         }
-        return '';
     };
 
     const validate = () => {
         const newErrors = {};
+
         if (!formData.email) newErrors.email = 'Email is required';
 
         if (step === 2) {
             if (!formData.temp_password) newErrors.temp_password = 'Temporary password is required';
-            newErrors.new_password = validatePassword(formData.new_password)
+
+            const new_password_errors = validatePassword(formData.new_password)
+            if (new_password_errors) newErrors.new_password = new_password_errors
         }
 
         setErrors(newErrors);
