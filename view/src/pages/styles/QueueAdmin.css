@@ -14,6 +14,17 @@
   background-size: 8px 5px;
 }
 
+.queue-info{
+  padding-left: 1rem;
+}
+
+.queue-title{
+  max-width: 200px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
 .order-select:focus {
   outline: none;
   border-color: #2563eb;
@@ -26,6 +37,7 @@
   width: fit-content;
   padding: 5px;
 }
+
 
 .approval-label.approved {
   background-color: #38E837;
