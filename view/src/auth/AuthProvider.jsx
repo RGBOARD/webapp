@@ -297,57 +297,16 @@ export const AuthProvider = ({ children }) => {
   // Update rotation order for an item
   const updateRotationOrder = async (itemId, newOrder) => {
     try {
-      // We'll reuse the reorder endpoint with a custom order array
-      const response = await axios.get('/rotation/items', {
-        headers: {
-          'Authorization': `Bearer ${getToken()}`
-        }
-      });
-      
-      if (response.data && Array.isArray(response.data.items)) {
-        // Get all design IDs in current order
-        const currentItems = response.data.items;
-        
-        // Find the item we want to move
-        const targetItem = currentItems.find(item => item.item_id === itemId);
-        if (!targetItem) {
-          throw new Error('Item not found');
-        }
-        
-        // Remove the item from its current position
-        const filteredItems = currentItems.filter(item => item.item_id !== itemId);
-        
-        // Create a new array with the item at the new position
-        const newOrderedItems = [
-          ...filteredItems.slice(0, newOrder - 1),
-          targetItem,
-          ...filteredItems.slice(newOrder - 1)
-        ];
-        
-        // Extract just the design IDs in the new order
-        const orderedDesignIds = newOrderedItems.map(item => item.design_id);
-        
-        // Make the reorder request
-        await axios.post('/rotation/reorder', { 
-          order: orderedDesignIds 
-        }, {
-          headers: {
-            'Authorization': `Bearer ${getToken()}`
-          }
-        });
-        
-        return { success: true };
-      } else {
-        throw new Error('Failed to get current rotation items');
-      }
+      await axios.put(`/rotation/${itemId}/reorder`, {new_order: newOrder});
+      return {success: true};
     } catch (error) {
-      console.error('Update rotation order error:', error);
+      console.error('Order update error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to update rotation order'
+        error: error.response?.data?.error || 'Failed to update item order'
       };
     }
-  };
+  }
 
   // Auth context value
   const value = {

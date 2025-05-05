@@ -196,11 +196,11 @@ function QueueAdminPage() {
                         alt="Queued"
                         className="w-16 h-16 rounded-md object-cover"
                       />
-                      <div className="user-info">
+                      <div className="queue-info user-info">
                         <div className={`approval-label ${item.is_approved ? 'approved' : 'unapproved'}`}>
                           {item.is_approved ? 'Approved' : 'Unapproved'}
                         </div>
-                        <div className="text-lg">
+                        <div className="queue-title text-lg">
                           <strong>{item.title}</strong>
                         </div>
                         <div className="text-base">
@@ -310,11 +310,11 @@ function QueueAdminPage() {
                         alt="Scheduled"
                         className="w-16 h-16 rounded-md object-cover"
                       />
-                      <div className="user-info">
+                      <div className="queue-info user-info">
                         <div className={`approval-label ${item.is_approved ? 'approved' : 'unapproved'}`}>
                           {item.is_approved ? 'Approved' : 'Unapproved'}
                         </div>
-                        <div className="text-lg">
+                        <div className="queue-title text-lg">
                           <strong>{item.title}</strong>
                         </div>
                         <div className="text-base">
