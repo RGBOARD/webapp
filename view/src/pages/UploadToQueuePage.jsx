@@ -41,27 +41,32 @@ export default function UploadToQueuePage() {
 
   // Fetch design and all scheduled items for conflict checking
   useEffect(() => {
-    axios.get(`/design/${designId}`)
-      .then(res => setDesign(res.data))
-      .catch(console.error);
+  axios.get(`/design/${designId}`)
+    .then(res => setDesign(res.data))
+    .catch(console.error);
 
-    axios.get('/rotation/scheduled')
-      .then(res => {
-        const items = res.data.items || [];
-        setScheduledTimes(items);
-        const found = items.find(s => s.design_id === Number(designId));
-        if (found) {
-          setExistingScheduleId(found.schedule_id);
-          setScheduleData({
-            start_time: toLocalInput(found.start_time),
-            end_time:   found.end_time ? toLocalInput(found.end_time) : '',
-            duration:   found.duration,
-            override_current: found.override_current
-          });
-        }
-      })
-      .catch(console.error);
-  }, [designId]);
+  axios.get('/rotation/scheduled')
+    .then(res => {
+      // sort by start_time ascending
+      const items = (res.data.items || [])
+        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+      setScheduledTimes(items);
+
+      const found = items.find(s => s.design_id === Number(designId));
+      if (found) {
+        setExistingScheduleId(found.schedule_id);
+        setScheduleData({
+          start_time: toLocalInput(found.start_time),
+          end_time:   found.end_time ? toLocalInput(found.end_time) : '',
+          duration:   found.duration,
+          override_current: found.override_current
+        });
+      }
+    })
+    .catch(console.error);
+}, [designId]);
+
 
   // Scheduling helpers from Code 1
   const checkTimeConflict = (startTimeStr, scheduledItems, newItemDuration) => {
@@ -135,6 +140,17 @@ export default function UploadToQueuePage() {
     const { start_time, end_time, duration, override_current } = scheduleData;
     const now = new Date();
 
+
+    if (existingScheduleId && start_time) {
+      const scheduledStart = new Date(start_time);
+      if (scheduledStart <= now) {
+        showAlert(
+            'This schedule has already started and cannot be modified.',
+            () => navigate('/view-saved-images')
+        );
+        return;
+      }
+    }
     // Immediate add if no start_time
     if (!start_time) {
       try {
