@@ -1,0 +1,68 @@
+@font-face {
+  font-family: 'PixelifySans';
+  src: url('../../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animation {
+  animation: fadeSlideIn 0.6s ease-out both;
+}
+
+.developers-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.page-title{
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+}
+
+.page-desc{
+  text-align: center;
+  font-size: 1.1rem;
+  max-width: 1000px;
+  padding-bottom: 1rem;
+}
+
+
+.developers-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 1rem;
+  max-height: 100vh;
+  overflow-y: auto;
+  width: 100%;
+  gap: 1.5rem;
+}
+
+
+.developers-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  align-items: flex-start;
+}

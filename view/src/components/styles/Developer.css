@@ -1,0 +1,48 @@
+.developer-card{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #e6e6e6;
+  border-radius: 0.5rem;
+  max-width: 400px;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem;
+  padding: 1rem;
+}
+
+.photo-block{
+  display: flex;
+  flex-direction: row;
+}
+
+.linkedin-link {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.dev-name{
+  font-size: large;
+  font-weight: bold;
+}
+
+.dev-degree{
+  font-family: "Pixelify Sans", sans-serif;
+  font-size: 1.15rem;
+}
+
+.dev-excerpt {
+  flex-grow: 1;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.developer-photo {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+}

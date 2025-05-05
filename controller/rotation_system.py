@@ -2,6 +2,7 @@ from flask import jsonify
 from datetime import datetime, timedelta
 from model.rotation_system import RotationSystemDAO
 from utilities.validators import validate_required_fields
+from controller.user import User
 
 class RotationSystem:
     """
@@ -12,6 +13,8 @@ class RotationSystem:
     def __init__(self, email=None, json_data=None):
         """Initialize the handler with user email and request data."""
         self.email = email
+        if email:
+            self.user = User(email=email)
         self.json_data = json_data
         self.dao = RotationSystemDAO()
     
@@ -149,36 +152,22 @@ class RotationSystem:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
     
-    def reorder_images(self):
+    def reorder_images(self, item_id, new_order):
         """Set a custom display order for images in the rotation."""
-        try:
-            # Validate required fields
-            required_fields = ['order']
-            validation_result = validate_required_fields(self.json_data, required_fields)
-            if validation_result:
-                return validation_result
-            
-            order = self.json_data.get('order')
-            
-            # Validate order is a list
-            if not isinstance(order, list):
-                return jsonify({"error": "Order must be a list of design IDs"}), 400
-            
-            # Reorder images
-            success = self.dao.reorder_images(order)
-            
-            if success:
-                return jsonify({
-                    "success": True,
-                    "message": "Images reordered successfully"
-                }), 200
+
+        if item_id is None:
+            return jsonify(error="No id provided."), 400
+        if self.email is not None:
+            if self.user.is_admin():
+                response = self.dao.reorder_images(item_id, new_order)
+                if response == 0:
+                    return jsonify("Order updated"), 200
+                else:
+                    return jsonify(error="Couldn't update Order"), 500
             else:
-                return jsonify({
-                    "error": "Failed to reorder images"
-                }), 500
-                
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+                return jsonify(error="Unauthorized."),
+
+        return jsonify(error="Unauthorized. No token."), 401
     
     def rotate_to_next(self):
         """Manually rotate to the next image."""

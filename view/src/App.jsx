@@ -2,6 +2,7 @@ import {BrowserRouter, Navigate, Route, Routes, useLocation} from 'react-router-
 import './App.css';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Developers from './pages/Developers';
 import UserHome from './pages/UserHome';
 import AdminHome from './pages/AdminHome';
 import LogIn from './pages/Login';
@@ -59,6 +60,10 @@ function AppContent() {
                             !isAuthenticated ? <LandingPage/> :
                                 hasRole('admin') ? <AdminHome/> : <UserHome/>
                         }
+                    />
+                    <Route
+                        path="/developers"
+                        element={<Developers/>}
                     />
                     <Route
                         path="/signup"

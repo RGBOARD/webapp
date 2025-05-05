@@ -15,6 +15,8 @@ const Carousel = ({ userRole }) => {
   const [scrollAmount, setScrollAmount] = useState(200);
 
   // const [redirectToEdit, setRedirectToEdit] = useState(null);
+  const queueRef = useRef([]); // persistent visual queue
+  const previousActiveIdRef = useRef(null);
 
   useEffect(() => {
     // Adjust scroll amount based on first item's width and gap
@@ -36,62 +38,66 @@ const Carousel = ({ userRole }) => {
     return () => clearInterval(intervalId);
   }, []);
 
-  const fetchRotationItems = async () => {
-    try {
-      // Get the current image first
-      const currentResponse = await axios.get('/rotation/current');
-      if (currentResponse.status === 200) {
-        setCurrentImage(currentResponse.data);
-      }
-      
-      // Then get all items in the rotation
-      const response = await axios.get('/rotation/items');
-      const data = response.data.items;
-      
-      if (!data || !Array.isArray(data)) {
-        console.error('Invalid data format received:', response.data);
-        return;
-      }
-      
-      // Filter out the current active item
-      const activeItemId = currentResponse.data?.image?.item_id;
-      const upcomingItems = activeItemId
-        ? data.filter(item => item.item_id !== activeItemId)
-        : data;
-      
-      // Sort by display_order
-      upcomingItems.sort((a, b) => a.display_order - b.display_order);
-      
-      const transformedItems = upcomingItems.map((item) => {
-        // Parse the pixel data if it's a string
-        let pixelData = {};
-        if (item.pixel_data) {
-          try {
-            pixelData = typeof item.pixel_data === 'string'
-              ? JSON.parse(item.pixel_data)
-              : item.pixel_data;
-          } catch (error) {
-            console.error('Error parsing pixel data:', error);
-          }
-        }
-        
-        return {
-          id: item.item_id,
-          design_id: item.design_id,
-          title: item.title,
-          pixel_data: pixelData,
-          duration: item.duration,
-          display_order: item.display_order,
-          expiry_time: item.expiry_time,
-          imageUrl: renderPixelDataToImage(pixelData, 64, 64, 1)
-        };
-      });
-      
-      setItems(transformedItems);
-    } catch (error) {
-      console.error('Error fetching rotation items:', error);
+const fetchRotationItems = async () => {
+  try {
+    const currentResponse = await axios.get('/rotation/current');
+    const activeItem = currentResponse.data?.image;
+    const activeItemId = activeItem?.item_id;
+    setCurrentImage(activeItem);
+
+    const response = await axios.get('/rotation/items');
+    const data = response.data.items || [];
+
+    const sorted = [...data].sort((a, b) => a.display_order - b.display_order);
+
+    if (queueRef.current.length === 0) {
+      queueRef.current = sorted.filter(item => item.item_id !== activeItemId);
+      previousActiveIdRef.current = activeItemId;
     }
-  };
+
+    // If active item changed
+    if (previousActiveIdRef.current !== activeItemId) {
+      // Remove new active item
+      queueRef.current = queueRef.current.filter(item => item.item_id !== activeItemId);
+
+      // Add the old active item back to the end if it's not already in the queue
+      const oldActive = sorted.find(item => item.item_id === previousActiveIdRef.current);
+      if (oldActive && !queueRef.current.find(i => i.item_id === oldActive.item_id)) {
+        queueRef.current.push(oldActive);
+      }
+
+      previousActiveIdRef.current = activeItemId;
+    }
+
+    // Parse and map for rendering
+    const transformed = queueRef.current.map((item) => {
+      let pixelData = {};
+      try {
+        pixelData =
+          typeof item.pixel_data === 'string'
+            ? JSON.parse(item.pixel_data)
+            : item.pixel_data;
+      } catch (e) {
+        console.error('Failed to parse pixel data', e);
+      }
+
+      return {
+        id: item.item_id,
+        design_id: item.design_id,
+        title: item.title,
+        pixel_data: pixelData,
+        duration: item.duration,
+        display_order: item.display_order,
+        expiry_time: item.expiry_time,
+        imageUrl: renderPixelDataToImage(pixelData, 64, 64, 1),
+      };
+    });
+
+    setItems(transformed);
+  } catch (error) {
+    console.error('Error fetching rotation items:', error);
+  }
+};
 
   const scrollPrev = () => {
     if (carouselRef.current) {

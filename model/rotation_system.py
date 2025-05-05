@@ -20,6 +20,16 @@ class RotationSystemDAO:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.execute("PRAGMA busy_timeout = 5000;")
         return conn
+
+    def get_rotation_item_byid(self, item_id):
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        query = "select * from rotation_queue where item_id = ?;"
+        cursor.execute(query, (item_id,))
+        result = cursor.fetchone()
+        cursor.close()
+        return result
     
     def get_active_image(self) -> Optional[Dict]:
         """
@@ -420,90 +430,31 @@ class RotationSystemDAO:
             if 'conn' in locals() and conn:
                 conn.close()
 
-    def reorder_images(self, ordered_design_ids: List[int]) -> bool:
-        """
-        Set a custom display order for images in the rotation.
-        
-        Args:
-            ordered_design_ids: List of design IDs in the desired order
-                
-        Returns:
-            Success status
-        """
-        if not ordered_design_ids:
-            print("Cannot reorder: empty list provided")
-            return False
-        
-        # Ensure no duplicate IDs in the input list
-        if len(ordered_design_ids) != len(set(ordered_design_ids)):
-            print("Cannot reorder: duplicate design IDs in the list")
-            return False
-        
-        conn = None
-        cur = None
-        
+    def reorder_images(self, item_id: int, new_order: int):
+
+        status = 1
+        query = None
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        old_order = self.get_rotation_item_byid(item_id)[3]
+        now = datetime.now()
+        if new_order < old_order:
+            query = "UPDATE rotation_queue SET display_order = display_order + 1, updated_at = ? WHERE display_order >= ? AND display_order < ?"
+        elif new_order > old_order:
+            query = "UPDATE rotation_queue SET display_order = display_order - 1, updated_at = ? WHERE display_order <= ? AND display_order > ?"
         try:
-            conn = self._get_connection()
-            cur = conn.cursor()
-            
-            # Start a transaction
-            cur.execute("BEGIN TRANSACTION")
-            
-            # First, get all items
-            cur.execute("SELECT item_id, design_id FROM rotation_queue")
-            all_items = cur.fetchall()
-            
-            if not all_items:
-                print("No items found in rotation queue")
-                return False
-                
-            items = {row['design_id']: row['item_id'] for row in all_items}
-            
-            # Validate that all design IDs in the ordered list exist in the database
-            missing_designs = [design_id for design_id in ordered_design_ids if design_id not in items]
-            if missing_designs:
-                print(f"Some design IDs not found in database: {missing_designs}")
-                return False
-            
-            # Create a timestamp once for all updates
-            now = datetime.now()
-            
-            # Now update display_order for each item in the ordered list
-            for i, design_id in enumerate(ordered_design_ids):
-                cur.execute("""
-                UPDATE rotation_queue
-                SET display_order = ?, updated_at = ?
-                WHERE item_id = ?
-                """, (i+1, now, items[design_id]))
-            
-            # Update any remaining items with higher order values
-            remaining_designs = set(items.keys()) - set(ordered_design_ids)
-            next_order = len(ordered_design_ids) + 1
-            
-            for design_id in remaining_designs:
-                cur.execute("""
-                UPDATE rotation_queue
-                SET display_order = ?, updated_at = ?
-                WHERE item_id = ?
-                """, (next_order, now, items[design_id]))
-                next_order += 1
-            
+            if query:
+                cursor.execute(query, (now, new_order, old_order))
+            shift = "UPDATE rotation_queue SET display_order = ?, updated_at = ? WHERE item_id = ?"
+            cursor.execute(shift,(new_order, now, item_id))
             conn.commit()
-            print(f"Successfully reordered {len(ordered_design_ids)} images")
-            return True
-                    
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            print(f"Error reordering images: {e}")
-            return False
-            
+            status = 0
+        except sqlite3.Error:
+            status = 1
         finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
-    
+            cursor.close()
+            return status
+
     def get_time_left_for_current(self) -> Optional[float]:
         """
         Get the number of seconds left for the current active image.
@@ -633,8 +584,15 @@ class RotationSystemDAO:
             # If we deleted the active item, select a new one
             if success and item_id == active_item_id:
                 self._select_new_active_item(conn)
-            
-            # TODO: update order numbering
+
+
+            cur.execute("SELECT item_id FROM rotation_queue ORDER BY display_order ASC")
+            items = cur.fetchall()
+            for index, item in enumerate(items):
+                cur.execute(
+                "UPDATE rotation_queue SET display_order = ? WHERE item_id = ?",
+                (index + 1, item[0])
+                )
 
             conn.commit()
             return success
