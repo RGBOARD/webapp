@@ -194,7 +194,7 @@ export default function LogInForm() {
 
             <button
                 type="submit"
-                className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-300 cursor-not-allowed'}`}
+                className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500 cursor-pointer' : 'bg-blue-300 cursor-not-allowed'}`}
                 style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 disabled={isLoading || !isFormValid}
             >
