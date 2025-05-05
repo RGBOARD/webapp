@@ -62,7 +62,7 @@ export default function UploadHistoryPage() {
                     alt={item.title || 'Upload'}
                     className="w-28 h-28 rounded-md mx-4 object-cover"
                   />
-                  <div className="user-info mx-4">
+                  <div className="queue-info mx-4">
                     <div className="text-lg">
                       <strong>{item.title || 'Untitled'}</strong>
                     </div>
