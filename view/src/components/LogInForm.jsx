@@ -123,14 +123,15 @@ export default function LogInForm() {
     return (
         <form
             onSubmit={handleSubmit}
-            className="max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md space-y-5"
-            style={{fontFamily: '"Pixelify Sans", sans-serif'}}
+            className={"max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md space-y-5"}
         >
-            <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
+            <h2 className="text-2xl font-bold text-center text-gray-800"
+                style={{fontFamily: '"Pixelify Sans", sans-serif'}}>Login</h2>
 
             {message && (
                 <div
-                    className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+                    style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
                     {message}
                 </div>
             )}
@@ -194,6 +195,7 @@ export default function LogInForm() {
             <button
                 type="submit"
                 className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-300 cursor-not-allowed'}`}
+                style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 disabled={isLoading || !isFormValid}
             >
                 {isLoading ? 'Logging in...' : 'Login'}
