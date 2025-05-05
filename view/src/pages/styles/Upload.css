@@ -84,10 +84,17 @@
   color: #333;
 }
 
+.upload-menu .choose-row {
+  display: flex;
+  justify-content: center; /* Center the buttons */
+  width: 100%;
+}
 
 .choose-row{
   display: flex;
   flex-direction: row;
+  flex-grow: 1;
+  gap: 1rem;
 }
 
 .button-row{
@@ -105,11 +112,9 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 300px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: 'PixelifySans', sans-serif;
-    margin: 0.35rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
 }
@@ -126,7 +131,10 @@
 
 
 .choose-button{
-    background-color: #009AFF;
+  width: 100%;
+  flex-grow: 2;
+  background-color: #009AFF;
+  margin-bottom: 0.5rem;
 }
 
 .choose-button:hover {
@@ -136,6 +144,7 @@
 .delete-button{
   background-color: #F00000;
   color: white;
+  max-width: 300px;
 }
 
 .delete-button:hover {
@@ -144,6 +153,7 @@
 
 .submit-button{
     background-color: #38E837;
+    max-width: 300px;
 }
 
 .submit-button:hover {
@@ -152,6 +162,7 @@
 
 .queue-button{
     background-color: #FFDD27;
+    max-width: 300px;
 }
 
 .queue-button:hover {
