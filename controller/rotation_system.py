@@ -1,5 +1,8 @@
 from flask import jsonify
 from datetime import datetime, timedelta
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from model.rotation_system import RotationSystemDAO
 from utilities.validators import validate_required_fields
 from controller.user import User
@@ -284,3 +287,28 @@ class RotationSystem:
             return jsonify({"message": "Scheduled item removed successfully"}), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @jwt_required()
+    def get_user_history(self):
+        """
+        Retrieve the rotation queue history for the authenticated user.
+        """
+        user_email = get_jwt_identity()
+        # Fetch records from DAO
+        rows = self.dao.get_user_history(user_email)
+
+        # Transform to JSON-friendly format
+        history = []
+        for row in rows:
+            history.append({
+                'history_id': row['history_id'],
+                'item_id': row['item_id'],
+                'created_at': row['created_at'],
+                'duration': row['duration'],
+                'display_order': row['display_order'],
+                'expiry_time': row['expiry_time'],
+                'status': row['status'],
+                'title': row['title'],
+                'pixel_data': row['pixel_data'],
+            })
+        return jsonify(history), 200
