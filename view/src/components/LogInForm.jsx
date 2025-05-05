@@ -156,6 +156,7 @@ export default function LogInForm() {
                 )}
             </div>
 
+            <div className="h-2"></div>
             <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password
@@ -176,15 +177,17 @@ export default function LogInForm() {
                 )}
             </div>
 
-            <div className="text-center mt-4">
-                <p className="text-gray-600">
-                    Don't have your password?{' '}
+            <div className="h-8"></div>
+
+            <div className="text-left mt-4">
+                <p className="text-gray-600 text-sm">
                     <span
                         className="text-blue-600 cursor-pointer hover:underline"
                         onClick={() => navigate('/reset')}
                     >
-            Reset your password
-          </span>
+                        Forgot Password?
+                    </span>
+                    <span className="text-gray-500 text-xs ml-1">(might need check spam/quarantine)</span>
                 </p>
             </div>
 
