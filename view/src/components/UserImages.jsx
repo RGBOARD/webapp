@@ -5,7 +5,7 @@ import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf';
 import axios from '../api/axios';
 import {renderPixelDataToImage} from '../utils/pixelRenderer';
 import { Navigate } from 'react-router-dom';
-
+import { useNavigate } from 'react-router-dom';
 // modal component
 import Modal from "../components/Modal";
 
@@ -45,6 +45,7 @@ function UserImages() {
     const [AlertMessage, setAlertMessage] = useState(null);
     const [page, setPage] = useState(1);
     const pageSize = 8;
+    const navigate = useNavigate();
 
     useEffect(() => {
         async function fetchDesigns() {
@@ -69,6 +70,7 @@ function UserImages() {
     const handleQueue = () => {
         if (selectedDesign) {
             console.log("Queued design", selectedDesign.design_id);
+            navigate(`/upload-to-queue/${selectedDesign.design_id}`);
             // TODO: Jandel: Go to queue view
             // Not putting anything here so you can mount the component your way
         }
