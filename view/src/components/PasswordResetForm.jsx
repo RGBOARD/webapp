@@ -31,17 +31,35 @@ export default function PasswordResetForm() {
         setTouched(prev => ({...prev, [name]: true}));
     };
 
+    const validatePassword = (password) => {
+        // Must contain at least: 1 uppercase, 1 lowercase, 1 digit, 1 special char
+        // Length: 8-32 chars
+        const passwordRule = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]).{8,32}$/;
+        if (!password) return 'Password is required';
+        if (!passwordRule.test(password)) {
+            return (
+                <>
+                    Password must be:
+                    <ul>
+                        <li>• 8-32 characters long</li>
+                        <li>• At least one uppercase letter</li>
+                        <li>• At least one lowercase letter</li>
+                        <li>• At least one number</li>
+                        <li>• At least one special character</li>
+                    </ul>
+                </>
+            )
+        }
+        return '';
+    };
+
     const validate = () => {
         const newErrors = {};
         if (!formData.email) newErrors.email = 'Email is required';
 
         if (step === 2) {
             if (!formData.temp_password) newErrors.temp_password = 'Temporary password is required';
-            if (!formData.new_password) {
-                newErrors.new_password = 'New password is required';
-            } else if (formData.new_password.length < 8) {
-                newErrors.new_password = 'Password must be at least 8 characters';
-            }
+            newErrors.new_password = validatePassword(formData.new_password)
         }
 
         setErrors(newErrors);
