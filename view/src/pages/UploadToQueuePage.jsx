@@ -1,10 +1,11 @@
+import "../components/styles/Menu.css";
+import "./styles/Upload.css";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/authContext.js';
 import axios from '../api/axios';
 import Modal from '../components/Modal';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
-import './styles/Upload.css';
 
 export default function UploadToQueuePage() {
   const { designId } = useParams();
@@ -12,13 +13,16 @@ export default function UploadToQueuePage() {
   const { hasRole } = useAuth();
 
   const [design, setDesign] = useState(null);
+  const [scheduledTimes, setScheduledTimes] = useState([]);
+  const [existingScheduleId, setExistingScheduleId] = useState(null);
+
   const [scheduleData, setScheduleData] = useState({
     start_time: '',
     end_time: '',
     duration: 30,
     override_current: false
   });
-  const [existingScheduleId, setExistingScheduleId] = useState(null);
+
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: 'alert',
@@ -27,22 +31,94 @@ export default function UploadToQueuePage() {
     onCancel: () => {}
   });
 
-  // Helper: convert ISO to local input value
+  // ISO → local datetime-local string
   const toLocalInput = iso => {
     const d = new Date(iso);
-    const tzOffset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - tzOffset).toISOString().slice(0,16);
+    return new Date(d.getTime() - d.getTimezoneOffset()*60000)
+      .toISOString()
+      .slice(0,16);
   };
 
-  // Load design & existing schedule
+  // === from Code 1 ===
+  const checkTimeConflict = (startTimeStr, scheduledItems, newItemDuration) => {
+    const start = new Date(startTimeStr);
+    start.setSeconds(0,0);
+
+    const duration = parseInt(newItemDuration,10) || 60;
+    const newEnd = new Date(start.getTime() + duration*1000);
+
+    return scheduledItems.some(item => {
+      const itemStart = new Date(item.start_time);
+      itemStart.setSeconds(0,0);
+
+      // exact minute clash
+      if (start.getTime() === itemStart.getTime()) return true;
+
+      const itemDur = parseInt(item.duration,10) || 60;
+      const itemEndDisp = new Date(itemStart.getTime() + itemDur*1000);
+      if (start < itemEndDisp && newEnd > itemStart) return true;
+
+      if (item.end_time) {
+        const itemEndSched = new Date(item.end_time);
+        itemEndSched.setSeconds(0,0);
+        if (start <= itemEndSched && newEnd > itemStart) return true;
+      }
+      return false;
+    });
+  };
+
+  const findNextAvailableClientSide = (startTimeStr, scheduledItems, newItemDuration) => {
+    const startTime = new Date(startTimeStr);
+    startTime.setSeconds(0,0);
+    if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) {
+      return startTime;
+    }
+
+    const INCREMENT_MINUTES = 5;
+    let currentTime = new Date(startTime);
+    for (let i = 0; i < 24; i++) {
+      currentTime = new Date(currentTime.getTime() + INCREMENT_MINUTES*60000);
+      if (!checkTimeConflict(currentTime.toISOString(), scheduledItems, newItemDuration)) {
+        return currentTime;
+      }
+    }
+    const nextDay = new Date(startTime);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay;
+  };
+  // === end Code 1 helpers ===
+
+  const showAlert = (message, cb = () => {}) => {
+    setModalState({
+      isOpen: true,
+      type: 'alert',
+      message,
+      onConfirm: () => { setModalState(m => ({ ...m, isOpen: false })); cb(); },
+      onCancel: () => setModalState(m => ({ ...m, isOpen: false }))
+    });
+  };
+
+  const showConfirm = (message, onConfirm, onCancel = () => {}) => {
+    setModalState({
+      isOpen: true,
+      type: 'confirm',
+      message,
+      onConfirm: () => { setModalState(m => ({ ...m, isOpen: false })); onConfirm(); },
+      onCancel: () => { setModalState(m => ({ ...m, isOpen: false })); onCancel(); }
+    });
+  };
+
+  // load design + all future scheduled items
   useEffect(() => {
     axios.get(`/design/${designId}`)
-      .then(res => setDesign(res.data))
+      .then(r => setDesign(r.data))
       .catch(console.error);
 
     axios.get('/rotation/scheduled')
-      .then(res => {
-        const found = res.data.items.find(s => s.design_id === Number(designId));
+      .then(r => {
+        const items = r.data.items || [];
+        setScheduledTimes(items);
+        const found = items.find(s => s.design_id === Number(designId));
         if (found) {
           setExistingScheduleId(found.schedule_id);
           setScheduleData({
@@ -56,21 +132,12 @@ export default function UploadToQueuePage() {
       .catch(console.error);
   }, [designId]);
 
-  const showAlert = (message, cb = () => {}) => {
-    setModalState({
-      isOpen: true,
-      type: 'alert',
-      message,
-      onConfirm: () => { setModalState(m => ({ ...m, isOpen: false })); cb(); },
-      onCancel: () => setModalState(m => ({ ...m, isOpen: false }))
-    });
-  };
-
-  const handleSubmit = async evt => {
-    evt.preventDefault();
+  const handleSubmit = async e => {
+    e.preventDefault();
     const { start_time, end_time, duration, override_current } = scheduleData;
+    const now = new Date();
 
-    // 1) No schedule => add to queue
+    // no start_time → immediate add
     if (!start_time) {
       try {
         await axios.post('/rotation/add', { design_id: Number(designId) });
@@ -81,40 +148,32 @@ export default function UploadToQueuePage() {
       }
     }
 
-    // 2) Scheduled
-    const now = new Date();
+    // conflict → suggest next
+    if (checkTimeConflict(start_time, scheduledTimes, duration)) {
+      const next = findNextAvailableClientSide(start_time, scheduledTimes, duration);
+      const nextLocal = toLocalInput(next.toISOString());
+      return showConfirm(
+        `This time slot is taken. Would you like to schedule for ${nextLocal.replace('T',' ')} instead?`,
+        () => setScheduleData(s => ({ ...s, start_time: nextLocal }))
+      );
+    }
+
+    // validate times
     const start = new Date(start_time);
-    let end = end_time ? new Date(end_time) : null;
-
-    // Validate future times
-    if (start < now) {
-      return showAlert('Start time must be in the future.');
-    }
-    if (end_time && end < now) {
-      return showAlert('End time must be in the future.');
-    }
-
-    // Default end = +1 day if none
-    if (!end) {
-      end = new Date(start);
-      end.setDate(end.getDate() + 1);
-    }
-
-    // Validate order
-    if (end <= start) {
-      return showAlert('End time must be after start time.');
-    }
-
-    // Validate full display
-    if ((end - start) < duration * 1000) {
-      return showAlert(`The time window must cover at least ${duration} seconds.`);
+    if (start < now) return showAlert('Start time must be in the future.');
+    let end = end_time ? new Date(end_time) : new Date(start);
+    if (end_time && end < now) return showAlert('End time must be in the future.');
+    if (!end_time) end.setDate(end.getDate() + 1);
+    if (end <= start) return showAlert('End time must be after start time.');
+    if ((end - start) < duration*1000) {
+      return showAlert(`Window must cover at least ${duration} seconds.`);
     }
 
     const payload = {
       design_id:        Number(designId),
       start_time:       start.toISOString(),
       end_time:         end.toISOString(),
-      duration:         Number(duration) || 30,
+      duration:         Number(duration),
       override_current: !!override_current
     };
 
@@ -123,12 +182,20 @@ export default function UploadToQueuePage() {
         await axios.delete(`/rotation/scheduled/${existingScheduleId}`);
       }
       await axios.post('/rotation/schedule', payload);
-      const msg = existingScheduleId
-        ? 'Schedule successfully updated!'
-        : 'Scheduled successfully!';
-      showAlert(msg, () => navigate(-1));
+      showAlert(
+        existingScheduleId ? 'Schedule updated!' : 'Scheduled successfully!',
+        () => navigate(-1)
+      );
     } catch (err) {
       console.error(err);
+      // server-suggestion flow
+      if (err.response?.status === 409 && err.response.data?.suggested_time) {
+        const sug = toLocalInput(err.response.data.suggested_time);
+        return showConfirm(
+          `Another user just booked that slot. Try ${sug.replace('T',' ')} instead?`,
+          () => setScheduleData(s => ({ ...s, start_time: sug }))
+        );
+      }
       showAlert(err.response?.data?.error || 'Error scheduling design.');
     }
   };
@@ -202,7 +269,9 @@ export default function UploadToQueuePage() {
             {design ? (
               <img
                 src={renderPixelDataToImage(
-                  typeof design.pixel_data === 'string' ? JSON.parse(design.pixel_data) : design.pixel_data,
+                  typeof design.pixel_data === 'string'
+                    ? JSON.parse(design.pixel_data)
+                    : design.pixel_data,
                   64, 64, 8
                 )}
                 alt={design.title}
