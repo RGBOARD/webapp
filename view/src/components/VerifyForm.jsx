@@ -150,16 +150,19 @@ export default function VerifyForm() {
             </button>
 
             <div className="text-center mt-4">
-                <p className="text-gray-600">
-                    Don't have a code?{' '}
-                    <span
-                        className="text-blue-600 cursor-pointer hover:underline"
-                        onClick={requestCode}
-                    >
-          Request a new code
-        </span>
-                </p>
-            </div>
+            <p className="text-gray-600">
+                <span className="text-sm">Didn't recieve a code?</span>{' '}
+                <span className="text-gray-500 text-xs">(might need check spam/quarantine)</span>
+            </p>
+            <p className="text-gray-600 mt-1">
+                <span
+                    className="text-blue-600 cursor-pointer hover:underline text-sm"
+                    onClick={requestCode}
+                >
+                    Request a new code
+                </span>
+            </p>
+        </div>
 
         </form>)
 }
