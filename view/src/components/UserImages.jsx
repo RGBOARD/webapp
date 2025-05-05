@@ -127,6 +127,7 @@ function UserImages() {
         setShowDeleteModal(false);
     };
 
+
     return (
         <div className="flex flex-col md:flex-row w-full gap-4 px-2">
             {/* GALLERY SIDE */}
@@ -262,6 +263,7 @@ function UserImages() {
                                             {selectedDesign.is_scheduled ? 'Edit Schedule' : 'Edit'}
                                         </button>)}
 
+
                                         <button
                                             onClick={handleDeleteClick}
                                             className="cursor-pointer flex-1 border font-bold text-white border-gray-300 bg-red-500 py-2 rounded-md text-md font-pixelify hover:bg-white hover:text-red-500 hover:shadow-md transition-all duration-200 ease-in-out"
@@ -272,12 +274,6 @@ function UserImages() {
                                 </>
                             ) : (
                                 <div className="flex flex-col sm:flex-row gap-4">
-                                    <button
-                                        onClick={handleEdit}
-                                        className="cursor-pointer flex-1 border font-bold text-black border-gray-300 bg-blue-500 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-blue-500 hover:shadow-md transition-all duration-200 ease-in-out"
-                                    >
-                                        Edit
-                                    </button>
                                     <button
                                         onClick={handleDeleteClick}
                                         className="cursor-pointer flex-1 border font-bold text-white border-gray-300 bg-red-500 py-2 rounded-md text-md font-pixelify hover:bg-white hover:text-red-500 hover:shadow-md transition-all duration-200 ease-in-out"

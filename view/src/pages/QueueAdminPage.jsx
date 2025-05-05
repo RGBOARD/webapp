@@ -251,7 +251,7 @@ function QueueAdminPage() {
                           {item.is_approved ? "Unapprove" : "Approve"}
                         </button>
                         <button
-                          className="delete-button"
+                          className="item-delete-button"
                           onClick={() =>
                             showConfirm(
                               "Remove this image from rotation?",
@@ -351,7 +351,7 @@ function QueueAdminPage() {
                           {item.is_approved ? "Unapprove" : "Approve"}
                         </button>
                         <button
-                          className="delete-button"
+                          className="item-delete-button"
                           onClick={() =>
                             showConfirm(
                               "Remove this item from schedule?",
