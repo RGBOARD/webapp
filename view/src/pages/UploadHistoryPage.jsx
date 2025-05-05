@@ -5,7 +5,7 @@ import "./styles/UserAdmin.css";
 import "./styles/QueueAdmin.css";
 import { useAuth } from '../auth/authContext.js';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
-import { formatDateTime } from "../utils/dateUtils.jsx";
+import { formatDateTime } from '../utils/dateUtils.jsx';
 
 export default function UploadHistoryPage() {
   const { getPageUploadHistory } = useAuth();
@@ -22,19 +22,28 @@ export default function UploadHistoryPage() {
       setError(res.error);
     } else {
       const { items, page: p, pages: totalPages } = res.data;
-      // render pixel_data → image URL
-      const transformed = items.map(item => {
-        let pd = {};
-        if (item.pixel_data) {
-          try {
-            pd = typeof item.pixel_data === 'string'
-              ? JSON.parse(item.pixel_data)
-              : item.pixel_data;
-          } catch {}
-        }
-        return { ...item, url: renderPixelDataToImage(pd, 64, 64, 1) };
-      });
-      setHistory(transformed);
+
+      const sorted = items
+        .map(item => {
+          let pd = {};
+          if (item.pixel_data) {
+            try {
+              pd = typeof item.pixel_data === 'string'
+                ? JSON.parse(item.pixel_data)
+                : item.pixel_data;
+            } catch {}
+          }
+          return {
+            ...item,
+            url: renderPixelDataToImage(pd, 64, 64, 1)
+          };
+        })
+        // use built-in Date parsing (which auto-shifts into local TZ) for ordering
+        .sort((a, b) =>
+          new Date(b.attempt_time) - new Date(a.attempt_time)
+        );
+
+      setHistory(sorted);
       setPage(p);
       setPages(totalPages);
     }
@@ -67,7 +76,7 @@ export default function UploadHistoryPage() {
                       <strong>{item.title || 'Untitled'}</strong>
                     </div>
                     <div className="text-base">
-                      <strong>Created at:</strong> {formatDateTime(item.attempt_time)}
+                      <strong>Added to queue at:</strong> {formatDateTime(item.attempt_time)}
                     </div>
                   </div>
                 </div>
@@ -84,18 +93,18 @@ export default function UploadHistoryPage() {
                 >&laquo;</button>
 
                 {Array.from({ length: pages }, (_, i) => i + 1)
-                  .filter(p => {
+                  .filter(pn => {
                     if (pages <= 5) return true;
-                    if (page <= 3)   return p <= 5;
-                    if (page >= pages - 2) return p >= pages - 4;
-                    return Math.abs(p - page) <= 2;
+                    if (page <= 3)   return pn <= 5;
+                    if (page >= pages - 2) return pn >= pages - 4;
+                    return Math.abs(pn - page) <= 2;
                   })
-                  .map(p => (
+                  .map(pn => (
                     <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`page-button ${page === p ? 'active' : ''}`}
-                    >{p}</button>
+                      key={pn}
+                      onClick={() => setPage(pn)}
+                      className={`page-button ${page === pn ? 'active' : ''}`}
+                    >{pn}</button>
                   ))}
 
                 <button
