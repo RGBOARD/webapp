@@ -441,9 +441,20 @@ class User:
         if not bcrypt.checkpw(password_encoded, temp_password_hashed):
             return jsonify(error="Wrong temporary password"), 403
 
-        password_rule = r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]).{8,32}$'
-        if not bool(re.match(password_rule, new_password)):
-            return jsonify(error="Invalid password format"), 400
+        errors = []
+        if len(new_password) < 8 or len(new_password) > 32:
+            errors.append("Password must be between 8 and 32 characters.")
+        if not re.search(r'[A-Z]', new_password):
+            errors.append("Password must include at least one uppercase letter.")
+        if not re.search(r'[a-z]', new_password):
+            errors.append("Password must include at least one lowercase letter.")
+        if not re.search(r'\d', new_password):
+            errors.append("Password must include at least one number.")
+        if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>?/\\|`~]', new_password):
+            errors.append("Password must include at least one special character (!@#$%^&* etc).")
+
+        if errors:
+            return jsonify(error=" ".join(errors)), 400
 
         new_password_encoded = new_password.encode("utf-8")
 
