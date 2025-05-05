@@ -177,7 +177,8 @@ export default function SignUpForm() {
           <p className="mt-1 text-sm text-red-600">{errors.email}</p>
         )}
       </div>
-
+      
+      <div className="h-2"></div>
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-700">
           Password
@@ -197,7 +198,8 @@ export default function SignUpForm() {
           <p className="mt-1 text-sm text-red-600">{errors.password}</p>
         )}
       </div>
-
+      
+      <div className="h-8"></div>
       <button
         type="submit"
         className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-300 cursor-not-allowed'}`}
