@@ -6,6 +6,19 @@
   min-height: calc(100vh - 200px); /* Increased the subtraction to prevent footer overlap */
 }
 
+.create-header {
+  width: 95%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.5rem;
+}
+
+.create-title{
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
 .create-content {
   display: flex;
   width: 95%;
