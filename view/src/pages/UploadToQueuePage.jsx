@@ -6,6 +6,7 @@ import { useAuth } from '../auth/authContext.js';
 import axios from '../api/axios';
 import Modal from '../components/Modal';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
+import { formatDateTime, formatDateForPicker } from '../utils/dateUtils';
 
 export default function UploadToQueuePage() {
   const { designId } = useParams();
@@ -31,62 +32,83 @@ export default function UploadToQueuePage() {
     onCancel: () => {}
   });
 
-  // ISO → local datetime-local string
+  // Convert ISO string to local datetime-local input value
   const toLocalInput = iso => {
     const d = new Date(iso);
-    return new Date(d.getTime() - d.getTimezoneOffset()*60000)
-      .toISOString()
-      .slice(0,16);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0,16);
   };
 
-  // === from Code 1 ===
+  // Fetch design and all scheduled items for conflict checking
+  useEffect(() => {
+    axios.get(`/design/${designId}`)
+      .then(res => setDesign(res.data))
+      .catch(console.error);
+
+    axios.get('/rotation/scheduled')
+      .then(res => {
+        const items = res.data.items || [];
+        setScheduledTimes(items);
+        const found = items.find(s => s.design_id === Number(designId));
+        if (found) {
+          setExistingScheduleId(found.schedule_id);
+          setScheduleData({
+            start_time: toLocalInput(found.start_time),
+            end_time:   found.end_time ? toLocalInput(found.end_time) : '',
+            duration:   found.duration,
+            override_current: found.override_current
+          });
+        }
+      })
+      .catch(console.error);
+  }, [designId]);
+
+  // Scheduling helpers from Code 1
   const checkTimeConflict = (startTimeStr, scheduledItems, newItemDuration) => {
     const start = new Date(startTimeStr);
-    start.setSeconds(0,0);
-
-    const duration = parseInt(newItemDuration,10) || 60;
-    const newEnd = new Date(start.getTime() + duration*1000);
+    start.setSeconds(0, 0);
+    const duration = newItemDuration || 60;
+    const newEnd = new Date(start.getTime() + duration * 1000);
 
     return scheduledItems.some(item => {
       const itemStart = new Date(item.start_time);
-      itemStart.setSeconds(0,0);
-
-      // exact minute clash
+      itemStart.setSeconds(0, 0);
       if (start.getTime() === itemStart.getTime()) return true;
 
-      const itemDur = parseInt(item.duration,10) || 60;
-      const itemEndDisp = new Date(itemStart.getTime() + itemDur*1000);
-      if (start < itemEndDisp && newEnd > itemStart) return true;
+      const itemDur = parseInt(item.duration) || 60;
+      const itemEndDisp = new Date(itemStart.getTime() + itemDur * 1000);
+      if (start >= itemStart && start < itemEndDisp) return true;
+      if (itemStart >= start && itemStart < newEnd) return true;
 
       if (item.end_time) {
         const itemEndSched = new Date(item.end_time);
-        itemEndSched.setSeconds(0,0);
-        if (start <= itemEndSched && newEnd > itemStart) return true;
+        itemEndSched.setSeconds(0, 0);
+        if (start >= itemStart && start <= itemEndSched) return true;
+        if (newEnd > itemStart && newEnd <= itemEndSched) return true;
       }
+
       return false;
     });
   };
 
   const findNextAvailableClientSide = (startTimeStr, scheduledItems, newItemDuration) => {
     const startTime = new Date(startTimeStr);
-    startTime.setSeconds(0,0);
-    if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) {
-      return startTime;
-    }
+    startTime.setSeconds(0, 0);
+    if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) return startTime;
 
     const INCREMENT_MINUTES = 5;
     let currentTime = new Date(startTime);
     for (let i = 0; i < 24; i++) {
-      currentTime = new Date(currentTime.getTime() + INCREMENT_MINUTES*60000);
+      currentTime = new Date(currentTime.getTime() + INCREMENT_MINUTES * 60 * 1000);
       if (!checkTimeConflict(currentTime.toISOString(), scheduledItems, newItemDuration)) {
         return currentTime;
       }
     }
+
     const nextDay = new Date(startTime);
     nextDay.setDate(nextDay.getDate() + 1);
     return nextDay;
   };
-  // === end Code 1 helpers ===
 
   const showAlert = (message, cb = () => {}) => {
     setModalState({
@@ -108,36 +130,12 @@ export default function UploadToQueuePage() {
     });
   };
 
-  // load design + all future scheduled items
-  useEffect(() => {
-    axios.get(`/design/${designId}`)
-      .then(r => setDesign(r.data))
-      .catch(console.error);
-
-    axios.get('/rotation/scheduled')
-      .then(r => {
-        const items = r.data.items || [];
-        setScheduledTimes(items);
-        const found = items.find(s => s.design_id === Number(designId));
-        if (found) {
-          setExistingScheduleId(found.schedule_id);
-          setScheduleData({
-            start_time: toLocalInput(found.start_time),
-            end_time:   found.end_time ? toLocalInput(found.end_time) : '',
-            duration:   found.duration,
-            override_current: found.override_current
-          });
-        }
-      })
-      .catch(console.error);
-  }, [designId]);
-
-  const handleSubmit = async e => {
-    e.preventDefault();
+  const handleSubmit = async evt => {
+    evt.preventDefault();
     const { start_time, end_time, duration, override_current } = scheduleData;
     const now = new Date();
 
-    // no start_time → immediate add
+    // Immediate add if no start_time
     if (!start_time) {
       try {
         await axios.post('/rotation/add', { design_id: Number(designId) });
@@ -148,51 +146,59 @@ export default function UploadToQueuePage() {
       }
     }
 
-    // conflict → suggest next
+    // Conflict check & suggestion
     if (checkTimeConflict(start_time, scheduledTimes, duration)) {
-      const next = findNextAvailableClientSide(start_time, scheduledTimes, duration);
-      const nextLocal = toLocalInput(next.toISOString());
+      const suggested = findNextAvailableClientSide(start_time, scheduledTimes, duration);
+      const sugLocal = toLocalInput(suggested.toISOString());
       return showConfirm(
-        `This time slot is taken. Would you like to schedule for ${nextLocal.replace('T',' ')} instead?`,
-        () => setScheduleData(s => ({ ...s, start_time: nextLocal }))
+        `This time slot is already taken. Would you like to schedule for ${sugLocal.replace('T',' ')} instead?`,
+        () => setScheduleData(s => ({ ...s, start_time: formatDateForPicker(suggested) }))
       );
     }
 
-    // validate times
+    // Validate times
     const start = new Date(start_time);
     if (start < now) return showAlert('Start time must be in the future.');
-    let end = end_time ? new Date(end_time) : new Date(start);
+    let end = end_time ? new Date(end_time) : null;
     if (end_time && end < now) return showAlert('End time must be in the future.');
-    if (!end_time) end.setDate(end.getDate() + 1);
-    if (end <= start) return showAlert('End time must be after start time.');
-    if ((end - start) < duration*1000) {
-      return showAlert(`Window must cover at least ${duration} seconds.`);
+    if (!end) {
+      end = new Date(start);
+      end.setDate(end.getDate() + 1);
     }
+    if (end <= start) return showAlert('End time must be after start time.');
+    if ((end - start) < duration * 1000) return showAlert(`Window must cover at least ${duration} seconds.`);
 
-    const payload = {
-      design_id:        Number(designId),
-      start_time:       start.toISOString(),
-      end_time:         end.toISOString(),
-      duration:         Number(duration),
-      override_current: !!override_current
-    };
+    // Build payload
+    const isAdmin = hasRole('admin');
+    const payload = { design_id: Number(designId), start_time, override_current: isAdmin ? override_current : false };
+
+    if (isAdmin) {
+      payload.duration = parseInt(duration) || 60;
+      if (end_time) {
+        const endDate = new Date(end_time);
+        if (start >= endDate) return showAlert('Error: Start time must be before end time.');
+        payload.end_time = end_time;
+      }
+    } else {
+      payload.duration = 30;
+      const autoEnd = new Date(start);
+      autoEnd.setDate(autoEnd.getDate() + 1);
+      payload.end_time = autoEnd.toISOString().slice(0,16);
+    }
 
     try {
       if (existingScheduleId) {
         await axios.delete(`/rotation/scheduled/${existingScheduleId}`);
       }
       await axios.post('/rotation/schedule', payload);
-      showAlert(
-        existingScheduleId ? 'Schedule updated!' : 'Scheduled successfully!',
-        () => navigate(-1)
-      );
+      const msg = existingScheduleId ? 'Schedule successfully updated!' : 'Scheduled successfully!';
+      showAlert(msg, () => navigate(-1));
     } catch (err) {
       console.error(err);
-      // server-suggestion flow
       if (err.response?.status === 409 && err.response.data?.suggested_time) {
         const sug = toLocalInput(err.response.data.suggested_time);
         return showConfirm(
-          `Another user just booked that slot. Try ${sug.replace('T',' ')} instead?`,
+          `Another user just scheduled that slot. Try ${sug.replace('T',' ')} instead?`,
           () => setScheduleData(s => ({ ...s, start_time: sug }))
         );
       }
@@ -204,7 +210,6 @@ export default function UploadToQueuePage() {
     <div className="uploadpage" style={{ overflow: 'hidden' }}>
       <div className="upload-wrapper">
         <h1 className="upload-h1">Queue Upload</h1>
-
         <div className="upload-menu-wrapper">
           {/* Form Column */}
           <div className="upload-column">
@@ -269,9 +274,7 @@ export default function UploadToQueuePage() {
             {design ? (
               <img
                 src={renderPixelDataToImage(
-                  typeof design.pixel_data === 'string'
-                    ? JSON.parse(design.pixel_data)
-                    : design.pixel_data,
+                  typeof design.pixel_data === 'string' ? JSON.parse(design.pixel_data) : design.pixel_data,
                   64, 64, 8
                 )}
                 alt={design.title}
