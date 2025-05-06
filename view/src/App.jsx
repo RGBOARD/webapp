@@ -20,9 +20,6 @@ import { useAuth } from './auth/authContext';
 import UploadToQueuePage from "./pages/UploadToQueuePage.jsx";
 import UploadHistoryPage from './pages/UploadHistoryPage';
 
-// function UploadHistoryPage() {
-//     return null;
-// }
 
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();

@@ -93,10 +93,10 @@ To run app.py:
 
 2. Switch to the PR branch.
     ```sh
-    git checkout pr-63
+    git checkout pr-15
     ```
 
 3. To refresh a PR branch with the latest changes:
     ```sh
-    git pull origin pull/66/head
+    git pull origin pull/15/head
     ```

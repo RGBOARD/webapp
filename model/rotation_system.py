@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Any, Tuple
 
 
@@ -135,7 +135,7 @@ class RotationSystemDAO:
         Returns:
             True if any scheduled items were processed, False otherwise
         """
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         conn = self._get_connection()
         cur = conn.cursor()
         
@@ -155,10 +155,18 @@ class RotationSystemDAO:
             
             for item in scheduled_items:
                 # Calculate expiry time based on end_time if provided, otherwise default to 1 day
-                if item['end_time']:
-                    expiry_time = datetime.fromisoformat(item['end_time']) if isinstance(item['end_time'], str) else item['end_time']
+                # Convert string representation of end_time to datetime with timezone info
+                if item['end_time'] and isinstance(item['end_time'], str):
+                    # Parse the string but ensure it's treated as UTC
+                    # Remove Z suffix if present to avoid ValueError with fromisoformat
+                    clean_end_time = item['end_time'].replace('Z', '')
+                    expiry_time = datetime.fromisoformat(clean_end_time).replace(tzinfo=timezone.utc)
                 else:
-                    expiry_time = now + timedelta(days=1)
+                    # Already datetime object, just ensure it has UTC timezone
+                    expiry_time = item['end_time'].replace(tzinfo=timezone.utc) if item['end_time'].tzinfo is None else item['end_time']
+            else:
+                # Default to 1 day from now, in UTC
+                expiry_time = now + timedelta(days=1)
                 
                 # If override_current is true, need to place it right after current item
                 if item['override_current']:
@@ -237,7 +245,7 @@ class RotationSystemDAO:
         Returns:
             Number of items removed
         """
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         conn = self._get_connection()
         cur = conn.cursor()
         
@@ -414,7 +422,7 @@ class RotationSystemDAO:
         conn = self._get_connection()
         cursor = conn.cursor()
         old_order = self.get_rotation_item_byid(item_id)[3]
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         if new_order < old_order:
             query = "UPDATE rotation_queue SET display_order = display_order + 1, updated_at = ? WHERE display_order >= ? AND display_order < ?"
         elif new_order > old_order:
@@ -444,9 +452,20 @@ class RotationSystemDAO:
         if not active_image:
             return None
         
-        # Calculate time elapsed since activation
-        now = datetime.now()
-        activated_at = datetime.fromisoformat(active_image['activated_at']) if isinstance(active_image['activated_at'], str) else active_image['activated_at']
+        # Calculate time elapsed since activation using UTC time
+        now = datetime.now(timezone.utc)
+        
+        # Handle the activated_at time, ensuring it's interpreted as UTC
+        if active_image['activated_at'] and isinstance(active_image['activated_at'], str):
+            # Remove Z suffix if present to avoid ValueError with fromisoformat
+            clean_activated_at = active_image['activated_at'].replace('Z', '')
+            # Parse the string and ensure it has UTC timezone
+            activated_at = datetime.fromisoformat(clean_activated_at).replace(tzinfo=timezone.utc)
+        else:
+            # Already a datetime object, ensure it has UTC timezone
+            activated_at = active_image['activated_at'].replace(tzinfo=timezone.utc) if active_image['activated_at'].tzinfo is None else active_image['activated_at']
+        
+        # Calculate elapsed time
         elapsed_seconds = (now - activated_at).total_seconds()
         
         # Calculate time left
@@ -715,10 +734,10 @@ class RotationSystemDAO:
             """)
             
             result = cur.fetchone()
-            
+            now = datetime.now(timezone.utc)
             if not result:
                 # No items in queue
-                cur.execute("UPDATE active_item SET item_id = NULL, activated_at = ? WHERE id = 1", (datetime.now(),))
+                cur.execute("UPDATE active_item SET item_id = NULL, activated_at = ? WHERE id = 1", (now,))
                 conn.commit()
                 return None
             
@@ -727,7 +746,7 @@ class RotationSystemDAO:
             UPDATE active_item
             SET item_id = ?, activated_at = ?
             WHERE id = 1
-            """, (result['item_id'], datetime.now()))
+            """, (result['item_id'], now))
             
             conn.commit()
             
@@ -824,7 +843,7 @@ class RotationSystemDAO:
         try:
             cur.execute("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM rotation_queue")
             max_order = cur.fetchone()['max_order']
-            expiry_time = datetime.now() + timedelta(days=1)
+            expiry_time = datetime.now(timezone.utc) + timedelta(days=1)
             cur.execute(
                 "INSERT INTO rotation_queue (design_id, duration, display_order, expiry_time) VALUES (?, ?, ?, ?)",
                 (design_id, 30, max_order + 1, expiry_time)
@@ -870,6 +889,38 @@ class RotationSystemDAO:
             schedule_id = cur.lastrowid
             conn.commit()
             return schedule_id
+        finally:
+            cur.close()
+            conn.close()
+
+    def get_scheduled_item(self, schedule_id: int) -> Optional[Dict]:
+        """
+        Get a scheduled item by ID.
+        
+        Args:
+            schedule_id: ID of the scheduled item to retrieve
+            
+        Returns:
+            Dict with scheduled item details or None if not found
+        """
+        conn = self._get_connection()
+        cur = conn.cursor()
+        
+        try:
+            cur.execute("""
+            SELECT s.*, d.title
+            FROM scheduled_items s
+            JOIN design d ON s.design_id = d.design_id
+            WHERE s.schedule_id = ?
+            """, (schedule_id,))
+            
+            result = cur.fetchone()
+            
+            if result:
+                return dict(result)
+            
+            return None
+            
         finally:
             cur.close()
             conn.close()

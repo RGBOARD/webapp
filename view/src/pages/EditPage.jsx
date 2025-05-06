@@ -71,6 +71,11 @@ function EditPage() {
         setDragStart
     } = useZoomPan(containerRef);
 
+    const handleColorPicked = (color) => {
+        // This updates all the color state in useColorManagement
+        handleColorChange(color);
+      };
+
     // Initialize drawing functionality - we'll use setPixels from useDrawing
     const {
         pixels,
@@ -84,7 +89,7 @@ function EditPage() {
         handleUndo,
         handleRedo,
         handleClear
-    } = useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSize);
+    } = useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSize, handleColorPicked);
 
     // Load design data from the state passed via react-router
     useEffect(() => {
@@ -93,7 +98,6 @@ function EditPage() {
             try {
                 // Check if design data was passed through location state
                 if (location.state && location.state.design) {
-                    console.log(location.state.design)
                     const design = location.state.design;
                     setFileName(design.title || '');
                     setDesignId(design.design_id);
@@ -139,6 +143,17 @@ function EditPage() {
 
         loadDesign();
     }, [location]);
+
+    useEffect(() => {
+        if (!isLoading) {
+          // Force re-initialization of the color slider
+          setTimeout(() => {
+            if (typeof colorSliderRef.current?.initializeColorSlider === 'function') {
+              colorSliderRef.current.initializeColorSlider();
+            }
+          }, 200);
+        }
+      }, [isLoading]);
 
     // Function to fetch design data from the API
     const fetchDesignData = async (id) => {
@@ -295,7 +310,7 @@ function EditPage() {
                         });
 
                         if (response.data && response.status === 200) {
-                            showAlert('Design updated successfully', () => navigate('/view'));
+                            showAlert('Design updated successfully!', () => navigate('/view'));
                         } else {
                             showAlert(`Design update failed: ${response.data?.error || 'Unknown error'}`);
                         }
@@ -311,7 +326,7 @@ function EditPage() {
                         });
 
                         if (response.data && response.status === 200) {
-                            showAlert('New design saved successfully', () => navigate('/view'));
+                            showAlert('New design saved successfully!', () => navigate('/view'));
                         } else {
                             showAlert(`Design save failed: ${response.data?.error || 'Unknown error'}`);
                         }

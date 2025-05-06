@@ -6,7 +6,7 @@ import { useAuth } from '../auth/authContext.js';
 import axios from '../api/axios';
 import Modal from '../components/Modal';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
-import { formatDateTime, formatDateForPicker } from '../utils/dateUtils';
+import { formatISODateTime, formatDateForPicker } from '../utils/dateUtils';
 
 export default function UploadToQueuePage() {
   const { designId } = useParams();
@@ -29,16 +29,12 @@ export default function UploadToQueuePage() {
     isOpen: false,
     type: 'alert',
     message: '',
-    onConfirm: () => {},
-    onCancel: () => {}
+    onConfirm: () => { },
+    onCancel: () => { }
   });
-
-  const toLocalInput = iso => {
-    const d = new Date(iso);
-    const tzOffset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - tzOffset).toISOString().slice(0,16);
-  };
-
+  
+  const [forceCloseAndRedirect, setForceCloseAndRedirect] = useState(false);
+  
   // 1) Initial load: fetch design & schedules, detect if editing
   useEffect(() => {
     axios.get(`/design/${designId}`)
@@ -64,10 +60,23 @@ export default function UploadToQueuePage() {
           }
           // Otherwise load it for editing
           setExistingScheduleId(found.schedule_id);
+
+          const foundStartTime = new Date(
+            found.start_time.includes('Z') ? found.start_time :
+            found.start_time.includes('T') ? found.start_time + 'Z' :
+            found.start_time.replace(' ', 'T') + 'Z'
+          );
+
+          const foundEndTime = found.end_time ? new Date(
+            found.end_time.includes('Z') ? found.end_time :
+            found.end_time.includes('T') ? found.end_time + 'Z' :
+            found.end_time.replace(' ', 'T') + 'Z'
+          ) : '';
+
           setScheduleData({
-            start_time: toLocalInput(found.start_time),
-            end_time:   found.end_time ? toLocalInput(found.end_time) : '',
-            duration:   found.duration,
+            start_time: formatDateForPicker(foundStartTime),
+            end_time: found.end_time ? formatDateForPicker(foundEndTime) : '',
+            duration: found.duration,
             override_current: found.override_current
           });
           setIsEditing(true);
@@ -80,80 +89,80 @@ export default function UploadToQueuePage() {
 
   // 2) As soon as the clock hits your original start_time, auto-block
   useEffect(() => {
-    if (!isEditing || !scheduleData.start_time) return;
+    // Only run for existing schedules in edit mode
+    if (!existingScheduleId || !isEditing) return;
+    
+    const checkScheduleExists = async () => {
+      try {
+        await axios.get(`/rotation/scheduled/${existingScheduleId}`);
+        // Schedule still exists, do nothing
+      } catch (err) {
+        if (err.response?.status === 404) {
+          // Schedule no longer exists - force close any open modal
+          setModalState(prev => ({ ...prev, isOpen: false }));
+          
+          // Show the alert after a short delay
+          setTimeout(() => {
+            showAlert(
+              'This schedule cannot be edited as it has already been processed and moved to the rotation queue.',
+              () => navigate('/view-saved-images')
+            );
+          }, 50);
+        }
+      }
+    };
+    
+    // Check immediately
+    checkScheduleExists();
+    
+    // Then check every few seconds
+    const intervalId = setInterval(checkScheduleExists, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [existingScheduleId, isEditing]);
 
-    const startMs = new Date(scheduleData.start_time).getTime();
-    const nowMs = Date.now();
-    const delay = startMs - nowMs;
-
-    if (delay <= 0) {
-      // already passed
-      showAlert(
-        'This schedule has already started and cannot be modified.',
-        () => navigate('/view-saved-images')
-      );
-    } else {
-      const timer = setTimeout(() => {
+  useEffect(() => {
+    if (forceCloseAndRedirect) {
+      // First close any open modal
+      setModalState(prev => ({ ...prev, isOpen: false }));
+      
+      // Then wait a tiny bit for the modal to close
+      setTimeout(() => {
         showAlert(
           'This schedule has already started and cannot be modified.',
           () => navigate('/view-saved-images')
         );
-      }, delay);
-      return () => clearTimeout(timer);
+        // Reset the flag
+        setForceCloseAndRedirect(false);
+      }, 50);
     }
-  }, [isEditing, scheduleData.start_time]);
+  }, [forceCloseAndRedirect]);
 
-  const getConflictList = () =>
-    isEditing
-      ? scheduledTimes.filter(item => item.schedule_id !== existingScheduleId)
-      : scheduledTimes;
-
-  const checkTimeConflict = (startTimeStr, scheduledItems, newItemDuration) => {
-    const start = new Date(startTimeStr);
-    start.setSeconds(0, 0);
-    const duration = newItemDuration || 60;
-    const newEnd = new Date(start.getTime() + duration * 1000);
-
-    return scheduledItems.some(item => {
-      const itemStart = new Date(item.start_time);
-      itemStart.setSeconds(0, 0);
-      if (start.getTime() === itemStart.getTime()) return true;
-
-      const itemDur = parseInt(item.duration) || 60;
-      const itemEndDisp = new Date(itemStart.getTime() + itemDur * 1000);
-      if (start >= itemStart && start < itemEndDisp) return true;
-      if (itemStart >= start && itemStart < newEnd) return true;
-
-      if (item.end_time) {
-        const itemEndSched = new Date(item.end_time);
-        itemEndSched.setSeconds(0, 0);
-        if (start >= itemStart && start <= itemEndSched) return true;
-        if (newEnd > itemStart && newEnd <= itemEndSched) return true;
+  useEffect(() => {
+    // Only run this check when a modal is open AND we're in edit mode
+    if (!modalState.isOpen || !isEditing || !scheduleData.start_time) return;
+    
+    // This interval will check every second if the schedule has started
+    // while a modal is open
+    const intervalId = setInterval(() => {
+      const startMs = new Date(scheduleData.start_time).getTime();
+      const nowMs = Date.now();
+      
+      // If schedule has started, force close the modal
+      if (startMs <= nowMs) {
+        // Clear the interval first
+        clearInterval(intervalId);
+        
+        // Set the flag to force close and redirect
+        setForceCloseAndRedirect(true);
       }
-      return false;
-    });
-  };
+    }, 1000); // Check every second
+    
+    // Clean up on unmount or when dependencies change
+    return () => clearInterval(intervalId);
+  }, [modalState.isOpen, isEditing, scheduleData.start_time]);
 
-  const findNextAvailableClientSide = (startTimeStr, scheduledItems, newItemDuration) => {
-    const startTime = new Date(startTimeStr);
-    startTime.setSeconds(0, 0);
-    if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) {
-      return startTime;
-    }
-    const INCREMENT_MINUTES = 5;
-    let currentTime = new Date(startTime);
-    for (let i = 0; i < 24 * (60 / INCREMENT_MINUTES); i++) {
-      currentTime = new Date(currentTime.getTime() + INCREMENT_MINUTES * 60 * 1000);
-      if (!checkTimeConflict(currentTime.toISOString(), scheduledItems, newItemDuration)) {
-        return currentTime;
-      }
-    }
-    const nextDay = new Date(startTime);
-    nextDay.setDate(nextDay.getDate() + 1);
-    return nextDay;
-  };
-
-  const showAlert = (message, cb = () => {}) => {
+  const showAlert = (message, cb = () => { }) => {
     setModalState({
       isOpen: true,
       type: 'alert',
@@ -163,7 +172,7 @@ export default function UploadToQueuePage() {
     });
   };
 
-  const showConfirm = (message, onConfirm, onCancel = () => {}) => {
+  const showConfirm = (message, onConfirm, onCancel = () => { }) => {
     setModalState({
       isOpen: true,
       type: 'confirm',
@@ -177,6 +186,21 @@ export default function UploadToQueuePage() {
     evt.preventDefault();
     const { start_time, end_time, duration, override_current } = scheduleData;
     const now = new Date();
+
+    if (existingScheduleId) {
+      try {
+          await axios.get(`/rotation/scheduled/${existingScheduleId}`);
+      } catch (err) {
+          if (err.response?.status === 404) {
+              return showAlert(
+                  'This schedule cannot be edited as it has already been processed and moved to the rotation queue.',
+                  () => navigate('/view-saved-images')
+              );
+          }
+          console.error(err);
+          return showAlert('Error checking schedule status. Please try again.');
+      }
+  }
 
     // 3) Disallow clearing the schedule when editing
     if (existingScheduleId && !start_time) {
@@ -208,17 +232,6 @@ export default function UploadToQueuePage() {
       }
     }
 
-    // 6) Conflict check & suggestion
-    const conflicts = getConflictList();
-    if (checkTimeConflict(start_time, conflicts, duration)) {
-      const suggested = findNextAvailableClientSide(start_time, conflicts, duration);
-      const sugLocal = toLocalInput(suggested.toISOString());
-      return showConfirm(
-        `This time slot is already taken. Would you like to schedule for ${sugLocal.replace('T',' ')} instead?`,
-        () => setScheduleData(s => ({ ...s, start_time: formatDateForPicker(suggested) }))
-      );
-    }
-
     // 7) Standard time validations (unchanged)
     const start = new Date(start_time);
     if (start < now) return showAlert('Start time must be in the future.');
@@ -235,24 +248,42 @@ export default function UploadToQueuePage() {
 
     // 8) Build payload & call API (unchanged)
     const isAdmin = hasRole('admin');
+
+    // Convert start_time to UTC
+    const startLocal = new Date(start_time);
+    const startTimeUTC = startLocal.toISOString().slice(0, 16);
+
+    // Convert end_time to UTC if it exists
+    let endTimeUTC = null;
+    if (end_time) {
+      const endLocal = new Date(end_time);
+      endTimeUTC = endLocal.toISOString().slice(0, 16);
+    }
+
     const payload = {
       design_id: Number(designId),
-      start_time,
+      start_time: startTimeUTC, // Now sending in UTC
       override_current: isAdmin ? override_current : false
     };
     if (isAdmin) {
       payload.duration = parseInt(duration) || 60;
       if (end_time) {
-        if (start >= new Date(end_time)) {
+        // User provided an end time
+        if (startLocal >= new Date(end_time)) {
           return showAlert('Error: Start time must be before end time.');
         }
-        payload.end_time = end_time;
+        payload.end_time = endTimeUTC; // Now sending in UTC
+      } else {
+        // Auto-generate end time (24 hours after start) for admin too
+        const autoEnd = new Date(startLocal);
+        autoEnd.setDate(autoEnd.getDate() + 1);
+        payload.end_time = autoEnd.toISOString().slice(0, 16);
       }
     } else {
       payload.duration = 30;
-      const autoEnd = new Date(start);
+      const autoEnd = new Date(startLocal);
       autoEnd.setDate(autoEnd.getDate() + 1);
-      payload.end_time = autoEnd.toISOString().slice(0,16);
+      payload.end_time = autoEnd.toISOString().slice(0, 16); // Already UTC
     }
 
     try {
@@ -265,10 +296,20 @@ export default function UploadToQueuePage() {
     } catch (err) {
       console.error(err);
       if (err.response?.status === 409 && err.response.data?.suggested_time) {
-        const sug = toLocalInput(err.response.data.suggested_time);
+        const serverSuggestedTime = err.response.data?.suggested_time;
+
+        const suggestedDate = new Date(
+          serverSuggestedTime.includes('Z') ? serverSuggestedTime :
+            serverSuggestedTime.includes('T') ? serverSuggestedTime + 'Z' :
+              serverSuggestedTime.replace(' ', 'T') + 'Z'
+        );
+
+        // Use your existing formatDateForPicker function
+        const pickerFormat = formatDateForPicker(suggestedDate);
+
         return showConfirm(
-          `Another user just scheduled that slot. Try ${sug.replace('T',' ')} instead?`,
-          () => setScheduleData(s => ({ ...s, start_time: sug }))
+          `Another user just scheduled that slot. Try ${formatISODateTime(serverSuggestedTime)} instead?`,
+          () => setScheduleData(s => ({ ...s, start_time: pickerFormat }))
         );
       }
       showAlert(err.response?.data?.error || 'Error scheduling design.');

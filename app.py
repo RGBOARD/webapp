@@ -415,6 +415,15 @@ def remove_scheduled_item(schedule_id):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route("/rotation/scheduled/<int:schedule_id>", methods=['GET'])
+@jwt_required()
+def get_scheduled_item(schedule_id):
+    try:
+        handler = RotationSystem(email=get_jwt_identity())
+        return handler.get_scheduled_item(schedule_id)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # UploadHistory-----------------------------------------------------------------------------------------------------------
 
 @app.route("/upload_history", methods=['GET'])

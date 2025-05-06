@@ -28,11 +28,13 @@ export default function UserMemory() {
         : 0;
 
     return (
-        <div
+        
+<div
             className="w-full bg-white border border-gray-300 rounded-xl shadow-md flex flex-col items-center space-y-4 p-4 mb-6"
-            style={{fontFamily: '"Pixelify Sans", sans-serif'}}
         >
-            <h2 className="text-xl font-bold text-center text-gray-800 break-words w-full">
+            <h2 className="text-xl font-bold text-center text-gray-800 break-words w-full"
+                style={{fontFamily: '"Pixelify Sans", sans-serif'}}
+            >
                 Storage Usage
             </h2>
 

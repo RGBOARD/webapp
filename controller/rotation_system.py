@@ -284,7 +284,7 @@ class RotationSystem:
         """Remove a scheduled item by its ID."""
         try:
             self.dao.remove_scheduled_item(schedule_id)
-            return jsonify({"message": "Scheduled item removed successfully"}), 200
+            return jsonify({"message": "Scheduled item removed successfully!"}), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -312,3 +312,14 @@ class RotationSystem:
                 'pixel_data': row['pixel_data'],
             })
         return jsonify(history), 200
+    
+    def get_scheduled_item(self, schedule_id):
+        try:
+            scheduled_item = self.dao.get_scheduled_item(schedule_id)
+            
+            if not scheduled_item:
+                return jsonify({'error': 'Scheduled item not found'}), 404
+            
+            return jsonify(scheduled_item), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

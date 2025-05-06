@@ -1,36 +1,81 @@
+// Your original formatter - works well for basic date formats
 export const formatDateTime = (datetimeString) => {
-  if (!datetimeString || datetimeString === '+010000-01-01T03:59:59.999Z')
-    return 'N/A';
-
-  let iso = datetimeString.trim().replace(' ', 'T');
-  if (!iso.endsWith('Z')) iso += 'Z';
-
+  if (!datetimeString || datetimeString === '+010000-01-01T03:59:59.999Z') return 'N/A';
+ 
   try {
-    const date = new Date(iso);
-    if (isNaN(date.getTime())) return 'Invalid date';
-
-    const day = date.getDate();
-    const month = date.toLocaleString(undefined, { month: 'short' });
-    const year = date.getFullYear();
-
-    let hours = date.getHours();
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12 || 12;  // converts 0→12 and 13→1, etc.
-
-    return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+    // Parse the date string properly
+    const date = new Date(datetimeString);
+   
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+   
+    const options = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    };
+   
+    return date.toLocaleString(undefined, options);
   } catch (error) {
     console.error('Date formatting error:', error);
     return 'Date error';
   }
 };
 
+// Your original date picker formatter
 export const formatDateForPicker = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
-
   return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+export const formatISODateTime = (isoString) => {
+  if (!isoString) return 'N/A';
+ 
+  try {
+    let date;
+    
+    // Handle different UTC formats from server
+    if (isoString.includes('Z')) {
+      // Already has UTC indicator - parse normally
+      date = new Date(isoString);
+    } else if (isoString.includes('T')) {
+      // Has T separator but no Z - interpret as UTC by adding Z
+      date = new Date(isoString + 'Z');
+    } else if (isoString.includes(' ')) {
+      // Has space separator - interpret as UTC by adding Z
+      date = new Date(isoString.replace(' ', 'T') + 'Z');
+    } else {
+      // Fallback - parse as-is
+      date = new Date(isoString);
+    }
+   
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+   
+    const options = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone // Local timezone
+    };
+   
+    const formattedDate = date.toLocaleString(undefined, options);
+    
+    return formattedDate;
+  } catch (error) {
+    console.error('ISO date formatting error:', error);
+    return 'Date error';
+  }
 };
