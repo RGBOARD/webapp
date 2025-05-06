@@ -91,6 +91,19 @@ def login_user():
     return handler.login_user()
 
 
+@app.route("/temp-password", methods=['POST'])
+def get_temp_password():
+    handler = User(email=request.get_json().get("email"))
+    return handler.get_new_temp_password()
+
+
+@app.route("/reset-password", methods=['POST'])
+def reset_password():
+    body = request.get_json()
+    handler = User(email=body.get('email'))
+    return handler.reset_password(password=body.get('temp_password'), new_password=body.get('new_password'))
+
+
 @app.route("/verify-email", methods=['POST'])
 @jwt_required()
 def verify_user():
