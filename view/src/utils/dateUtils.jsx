@@ -1,5 +1,4 @@
 export const formatDateTime = (datetimeString) => {
-  console.log(datetimeString);
   if (!datetimeString || datetimeString === '+010000-01-01T03:59:59.999Z') return 'N/A';
   
   try {

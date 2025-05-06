@@ -149,11 +149,20 @@ function QueueAdminPage() {
     }
   };
 
-  const handleToggleApproval = async (designId, isApproved) => {
+  const handleToggleApproval = async (designId, itemId, isApproved) => {
     try {
       await toggleapproval(designId, !isApproved);
+      await removeFromRotation(itemId);
       fetchImages(page);
-      // Also refresh scheduled items as approval status may affect them
+    } catch (err) {
+      console.error("Toggle approval failed:", err);
+    }
+  };
+
+  const handleScheduledToggleApproval = async (designId, scheduledId, isApproved) => {
+    try {
+      await toggleapproval(designId, !isApproved);
+      await removeScheduledItem(scheduledId);
       fetchScheduledItems(scheduledPage);
     } catch (err) {
       console.error("Toggle approval failed:", err);
@@ -233,16 +242,16 @@ function QueueAdminPage() {
                             onClick={() =>
                                 showConfirm(
                               item.is_approved
-                                ? "Unapprove this design?"
+                                ? "Unapprove this design? This will also remove it from the queue."
                                 : "Approve this design?",
-                              () => handleToggleApproval(item.design_id, item.is_approved)
+                              () => handleToggleApproval(item.design_id, item.item_id, item.is_approved)
                             )
                           }
                         >
                           {item.is_approved ? "Unapprove" : "Approve"}
                         </button>
                         <button
-                          className="delete-button"
+                          className="item-delete-button"
                           onClick={() =>
                             showConfirm(
                               "Remove this image from rotation?",
@@ -335,14 +344,14 @@ function QueueAdminPage() {
                               item.is_approved
                                 ? "Unapprove this design?"
                                 : "Approve this design?",
-                              () => handleToggleApproval(item.design_id, item.is_approved)
+                              () => handleScheduledToggleApproval(item.design_id, item.schedule_id, item.is_approved)
                             )
                           }
                         >
                           {item.is_approved ? "Unapprove" : "Approve"}
                         </button>
                         <button
-                          className="delete-button"
+                          className="item-delete-button"
                           onClick={() =>
                             showConfirm(
                               "Remove this item from schedule?",

@@ -106,7 +106,7 @@ function UserAdminPage() {
                         {!isCurrentUser ? (
                             <>
                               <button
-                                  className="delete-button"
+                                  className="user-delete-button"
                                   onClick={() => showConfirm("Would you like to delete this user?", () => handleDelete(user.user_id))}
                               >
                                 Delete
