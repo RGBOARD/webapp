@@ -1,21 +1,20 @@
-import atexit
 import signal
 import sys
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_jwt_extended import JWTManager
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from controller.admin_action import AdminAction
-from controller.upload_history import UploadHistory
-from controller.user import User
 from controller.design import Design
 from controller.rotation_system import RotationSystem
 from controller.setting import authorize_mail, authorize_callback
+from controller.upload_history import UploadHistory
+from controller.user import User
 from services.scheduler_service import scheduler_service
+
 
 def create_app():
     app = Flask(__name__)
@@ -24,18 +23,18 @@ def create_app():
     CORS(app)
     app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this in production
     jwt = JWTManager(app)
-   
+
     # Register signal handlers for clean shutdown
     def signal_handler(sig, frame):
         print(f"Received shutdown signal {sig}")
         # Since scheduler_service has its own shutdown logic in atexit handler,
         # we don't need to manually shut it down here
         sys.exit(0)
-   
+
     # Register the signal handler for SIGINT (Ctrl+C) and SIGTERM
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-   
+
     # Initialize the scheduler service
     try:
         print("Initializing scheduler service")
@@ -44,10 +43,12 @@ def create_app():
         # The scheduler_service already registers its own in init_app
     except Exception as e:
         print(f"Failed to initialize scheduler: {e}")
-   
+
     return app
 
+
 app = create_app()
+
 
 @app.route('/')
 def hello_world():  # put application's code here
@@ -88,6 +89,19 @@ def create_user():
 def login_user():
     handler = User(json_data=request.json)
     return handler.login_user()
+
+
+@app.route("/temp-password", methods=['POST'])
+def get_temp_password():
+    handler = User(email=request.get_json().get("email"))
+    return handler.get_new_temp_password()
+
+
+@app.route("/reset-password", methods=['POST'])
+def reset_password():
+    body = request.get_json()
+    handler = User(email=body.get('email'))
+    return handler.reset_password(password=body.get('temp_password'), new_password=body.get('new_password'))
 
 
 @app.route("/verify-email", methods=['POST'])
@@ -216,6 +230,13 @@ def get_approved_designs():
     return jsonify(approved), 200
 
 
+@app.route("/design/bytes", methods=['GET'])
+@jwt_required()
+def get_user_bytes():
+    handler = Design(email=get_jwt_identity())
+    return handler.get_user_bytes()
+
+
 @app.route("/design", methods=['DELETE'])
 @jwt_required()
 def delete_design():
@@ -306,17 +327,20 @@ def get_current_image():
     handler = RotationSystem(email=get_jwt_identity())
     return handler.get_current_image()
 
+
 @app.route("/rotation/add", methods=['POST'])
 @jwt_required()
 def add_unscheduled_image():
     handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
     return handler.add_unscheduled_image()
 
+
 @app.route("/rotation/schedule", methods=['POST'])
 @jwt_required()
 def schedule_image():
     handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
     return handler.schedule_image()
+
 
 @app.route("/rotation/<int:item_id>/reorder", methods=['PUT'])
 @jwt_required()
@@ -326,17 +350,20 @@ def reorder_images(item_id):
     handler = RotationSystem(email=get_jwt_identity())
     return handler.reorder_images(item_id=item_id, new_order=new_order)
 
+
 @app.route("/rotation/rotate", methods=['POST'])
 @jwt_required()
 def rotate_to_next():
     handler = RotationSystem(email=get_jwt_identity())
     return handler.rotate_to_next()
 
+
 @app.route("/rotation/items", methods=['GET'])
 @jwt_required()
 def get_all_rotation_items():
     handler = RotationSystem(email=get_jwt_identity())
     return handler.get_all_items()
+
 
 @app.route("/rotation/items/pagination", methods=['GET'])
 @jwt_required()
@@ -351,17 +378,20 @@ def get_rotation_items_paginated():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route("/rotation/item/<int:item_id>", methods=['DELETE'])
 @jwt_required()
 def remove_rotation_item(item_id):
     handler = RotationSystem(email=get_jwt_identity())
     return handler.remove_item(item_id)
 
+
 @app.route("/rotation/scheduled", methods=['GET'])
 @jwt_required()
 def get_scheduled_items():
     handler = RotationSystem(email=get_jwt_identity())
     return handler.get_scheduled_items()
+
 
 @app.route("/rotation/scheduled/pagination", methods=['GET'])
 @jwt_required()
@@ -374,6 +404,7 @@ def get_scheduled_items_paginated():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route("/rotation/scheduled/<int:schedule_id>", methods=['DELETE'])
 @jwt_required()
 def remove_scheduled_item(schedule_id):
@@ -383,6 +414,7 @@ def remove_scheduled_item(schedule_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 # UploadHistory-----------------------------------------------------------------------------------------------------------
 
 @app.route("/upload_history", methods=['GET'])
@@ -390,10 +422,12 @@ def remove_scheduled_item(schedule_id):
 def get_upload_history_for_current_user():
     return jsonify(UploadHistory().getAllUploadHistory()), 200
 
+
 @app.route("/upload_history/pagination", methods=['GET'])
 @jwt_required()
 def get_upload_history_paginated():
     return UploadHistory().getAllUploadHistoryPaginated()
+
 
 @app.route("/upload_history/<int:history_id>", methods=['GET', 'PUT', 'DELETE'])
 def handleUploadHistoryById(history_id):
