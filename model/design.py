@@ -24,17 +24,17 @@ class DesignDAO:
     def get_designs_by_id(self, user_id: int, page: int, page_size: int):
         cursor = self.conn.cursor()
         query = """
-            SELECT d.*, 
-                CASE WHEN rq.design_id IS NOT NULL THEN 1 ELSE 0 END AS is_in_queue, 
-                CASE WHEN si.design_id IS NOT NULL THEN 1 ELSE 0 END AS is_scheduled 
-            FROM design d 
-            LEFT JOIN rotation_queue rq ON d.design_id = rq.design_id 
-            LEFT JOIN scheduled_items si ON d.design_id = si.design_id 
-            WHERE d.user_id = ? 
-            GROUP BY d.design_id 
-            ORDER BY d.updated_at DESC 
-            LIMIT ? OFFSET ?;
-            """
+                SELECT d.*,
+                       CASE WHEN rq.design_id IS NOT NULL THEN 1 ELSE 0 END AS is_in_queue,
+                       CASE WHEN si.design_id IS NOT NULL THEN 1 ELSE 0 END AS is_scheduled
+                FROM design d
+                         LEFT JOIN rotation_queue rq ON d.design_id = rq.design_id
+                         LEFT JOIN scheduled_items si ON d.design_id = si.design_id
+                WHERE d.user_id = ?
+                GROUP BY d.design_id
+                ORDER BY d.updated_at DESC
+                LIMIT ? OFFSET ?; \
+                """
 
         try:
             cursor.execute(query, (user_id, page_size, (page - 1) * page_size))
@@ -165,5 +165,29 @@ class DesignDAO:
             return result
         except sqlite3.Error as e:
             return []  # Return an empty list on error
+        finally:
+            cursor.close()
+
+    def get_bytes_by_userid(self, user_id):
+        cursor = self.conn.cursor()
+        query = "SELECT SUM(LENGTH(pixel_data)) AS bytes FROM design WHERE user_id = ?;"
+        try:
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            return result[0] if result and result[0] is not None else 0
+        except sqlite3.Error:
+            return -1
+        finally:
+            cursor.close()
+
+    def get_design_bytes(self, design_id, user_id):
+        cursor = self.conn.cursor()
+        query = "SELECT LENGTH(pixel_data) FROM design WHERE design_id = ? AND user_id = ?"
+        try:
+            cursor.execute(query, (design_id, user_id))
+            result = cursor.fetchone()
+            return result[0] if result and result[0] is not None else 0
+        except sqlite3.Error:
+            return -1
         finally:
             cursor.close()

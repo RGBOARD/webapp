@@ -4,10 +4,12 @@ import './styles/UserImages.css';
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf';
 import axios from '../api/axios';
 import {renderPixelDataToImage} from '../utils/pixelRenderer';
-import { Navigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate} from 'react-router-dom';
 // modal component
 import Modal from "../components/Modal";
+
+// memory component
+import UserMemory from "../components/UserMemory"
 
 async function getDesigns(page, page_size) {
     try {
@@ -43,6 +45,10 @@ function UserImages() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [AlertMessage, setAlertMessage] = useState(null);
+
+    // A funny trick to remount the memory bar
+    const [memoryRefreshKey, setMemoryRefreshKey] = useState(0);
+
     const [page, setPage] = useState(1);
     const pageSize = 8;
     const navigate = useNavigate();
@@ -90,7 +96,7 @@ function UserImages() {
     };
 
     if (redirectToEdit) {
-        return <Navigate to="/edit" state={redirectToEdit} replace />;
+        return <Navigate to="/edit" state={redirectToEdit} replace/>;
     }
 
     const handleDeleteClick = () => {
@@ -119,6 +125,7 @@ function UserImages() {
                 setSelectedDesign(null);
             }
 
+            setMemoryRefreshKey(prev => prev + 1);
             setShowDeleteModal(false);
             return;
         }
@@ -207,6 +214,7 @@ function UserImages() {
 
             {/* CARD SIDE */}
             <div className="w-full md:w-1/4 p-2 flex flex-col items-center h-auto md:h-full">
+                <UserMemory key={memoryRefreshKey}/>
                 {selectedDesign ? (
                     <div
                         className="w-full bg-white border border-gray-300 rounded-xl shadow-md flex flex-col items-center space-y-4 selected-box"

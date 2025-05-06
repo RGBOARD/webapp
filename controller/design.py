@@ -6,6 +6,8 @@ from controller.user import User
 from model.design import DesignDAO
 from model.queue_item import QueueItemDAO
 
+MAX_USER_BYTES_MB = 1  # TODO: Select a realistic limit for production
+
 
 def serialize_design(t):
     return {
@@ -56,6 +58,9 @@ class Design:
         user_id = self.user.get_user_id()
         if user_id is None:
             return jsonify(error='User not found'), 404
+
+        if self.is_memory_limit_reached(pixel_data):
+            return jsonify(error="Memory limit exceeded."), 507
 
         dao = DesignDAO()
         new_id = dao.add_new_design(user_id, title, pixel_data)
@@ -154,6 +159,9 @@ class Design:
         if user_id is None:
             return jsonify(error="Couldn't verify user"), 500
 
+        if self.is_memory_limit_reached_on_edit(design_id, pixel_data):
+            return jsonify(error="Memory limit exceeded."), 507
+
         design_dao = DesignDAO()
         design_user_id = design_dao.get_user_id(design_id)
 
@@ -231,3 +239,70 @@ class Design:
         approved_records = dao.getApprovedDesigns()
         answer = [serialize_design(record) for record in approved_records]
         return answer
+
+    # This is the response one
+    def get_user_bytes(self):
+        user_id = self.user.get_user_id()
+
+        if user_id is None:
+            return jsonify(error="Couldn't verify user"), 404
+
+        design_dao = DesignDAO()
+        user_bytes = design_dao.get_bytes_by_userid(user_id)
+
+        if user_bytes < 0:
+            return jsonify(error="Couldn't retrieve used memory"), 500
+
+        return jsonify(
+            user_bytes=user_bytes,
+            max_bytes_mb=MAX_USER_BYTES_MB
+        ), 200
+
+    # INTERNAL USE: Checks that the user does not exceed limit with an upload
+    def is_memory_limit_reached(self, pixel_data):
+        user_id = self.user.get_user_id()
+
+        # On failures, we never trust
+
+        if user_id is None:
+            return True
+
+        design_dao = DesignDAO()
+        user_bytes = design_dao.get_bytes_by_userid(user_id)
+
+        if user_bytes < 0:
+            return True
+
+        try:
+            incoming_bytes = len(pixel_data.encode('utf-8'))
+        except (UnicodeError, AttributeError):
+            return True
+        ## print(f"[DEBUG] user_bytes: {user_bytes}, incoming_bytes: {incoming_bytes}")
+        return (user_bytes + incoming_bytes) > MAX_USER_BYTES_MB * 1024 * 1024
+
+    # INTERNAL USE: Checks that the user does not exceed limit with an edit
+    def is_memory_limit_reached_on_edit(self, design_id, pixel_data):
+        user_id = self.user.get_user_id()
+
+        if user_id is None:
+            return True
+
+        design_dao = DesignDAO()
+        user_bytes = design_dao.get_bytes_by_userid(user_id)
+
+        if user_bytes < 0:
+            return True
+
+        current_design_bytes = design_dao.get_design_bytes(design_id, user_id)
+
+        if current_design_bytes < 0:
+            return True
+
+        try:
+            incoming_bytes = len(pixel_data.encode('utf-8'))
+        except (UnicodeError, AttributeError):
+            return True
+
+        difference_bytes = incoming_bytes - current_design_bytes
+
+        return (user_bytes + difference_bytes) > MAX_USER_BYTES_MB * 1024 * 1024
