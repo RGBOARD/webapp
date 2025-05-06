@@ -11,13 +11,11 @@ import Modal from "../components/Modal";
 
 async function getDesigns(page, page_size) {
     try {
-        return await axios.get('/designs', {params: {page, page_size}});
+        const res = await axios.get('/designs', {params: {page, page_size}});
+        return res.data;
     } catch (error) {
-        if (error.response) {
-            return error.response.data;
-        } else {
-            return {error: "Unexpected error occurred"};
-        }
+        if (error.response) return error.response.data;
+        return {error: "Unexpected error occurred"};
     }
 }
 
@@ -44,27 +42,24 @@ function UserImages() {
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [AlertMessage, setAlertMessage] = useState(null);
     const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
     const pageSize = 8;
 
     useEffect(() => {
         async function fetchDesigns() {
             const response = await getDesigns(page, pageSize);
-            if (response?.data) {
-                setDesigns(response.data);
-                setSelectedDesign(response.data.length > 0 ? response.data[0] : null);
+            if (response?.designs) {
+                setDesigns(response.designs);
+                setPages(response.pages);
+                setSelectedDesign(response.designs.length > 0 ? response.designs[0] : null);
+            } else {
+                setDesigns([]);
+                setPages(1);
             }
         }
 
         fetchDesigns();
     }, [page]);
-
-    const handlePrevious = () => {
-        if (page > 1) setPage(page - 1);
-    };
-
-    const handleNext = () => {
-        if (designs.length === pageSize) setPage(page + 1);
-    };
 
     const handleQueue = () => {
         if (selectedDesign) {
@@ -184,20 +179,45 @@ function UserImages() {
 
                 {/* Pagination */}
                 <div
-                    className="flex justify-center items-center gap-4 image-panel-container text-xs border-t border-gray-300 arrows"
+                    className="flex justify-center items-center gap-2 image-panel-container text-xs border-t border-gray-300 arrows py-3"
                     style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 >
+                    {/* Previous Arrow */}
                     <button
-                        onClick={handlePrevious}
-                        className="border border-gray-300 bg-black text-white py-1 px-3 rounded-md cursor-pointer transition-all duration-200 ease-in-out font-pixelify hover:bg-white hover:text-black hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                         disabled={page === 1}
+                        className="border border-gray-300 bg-black text-white py-1 px-3 rounded-md cursor-pointer transition-all duration-200 ease-in-out font-pixelify hover:bg-white hover:text-black hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         &laquo;
                     </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({length: pages}, (_, i) => i + 1)
+                        .filter((p) => {
+                            if (pages <= 5) return true;
+                            if (page <= 3) return p <= 5;
+                            if (page >= pages - 2) return p >= pages - 4;
+                            return Math.abs(p - page) <= 2;
+                        })
+                        .map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPage(p)}
+                                className={`border border-gray-300 py-1 px-3 rounded-md cursor-pointer font-pixelify transition-all duration-200 ease-in-out ${
+                                    page === p
+                                        ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                        : 'bg-white text-black hover:bg-black hover:text-white'
+                                }`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+
+                    {/* Next Arrow */}
                     <button
-                        onClick={handleNext}
+                        onClick={() => setPage((prev) => Math.min(prev + 1, pages))}
+                        disabled={page === pages}
                         className="border border-gray-300 bg-black text-white py-1 px-3 rounded-md cursor-pointer transition-all duration-200 ease-in-out font-pixelify hover:bg-white hover:text-black hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={designs.length < pageSize}
                     >
                         &raquo;
                     </button>

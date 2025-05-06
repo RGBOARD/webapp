@@ -21,6 +21,18 @@ class DesignDAO:
         finally:
             cursor.close()
 
+    def count_designs_by_id(self, user_id: int):
+        cursor = self.conn.cursor()
+        try:
+            query = "SELECT COUNT(*) FROM design WHERE user_id = ?"
+            cursor.execute(query, (user_id,))
+            count = cursor.fetchone()[0]
+            return count
+        except sqlite3.Error:
+            return 0
+        finally:
+            cursor.close()
+
     def get_designs_by_id(self, user_id: int, page: int, page_size: int):
         cursor = self.conn.cursor()
         query = """

@@ -106,12 +106,22 @@ class Design:
             return jsonify(error="Unauthorized."), 403
 
         design_dao = DesignDAO()
-        designs = design_dao.get_designs_by_id(user_id, page, page_size)
 
-        if designs is None or len(designs) == 0:
+        total_count = design_dao.count_designs_by_id(user_id)  # <-- NEW
+        if total_count == 0:
             return jsonify(error="No designs found."), 404
 
-        return jsonify(designs), 200
+        total_pages = (total_count + page_size - 1) // page_size
+
+        designs = design_dao.get_designs_by_id(user_id, page, page_size)
+        if designs is None:
+            return jsonify(error="Failed to fetch designs."), 500
+
+        return jsonify({
+            "designs": designs,
+            "page": page,
+            "pages": total_pages
+        }), 200
 
     def update_design_title(self, design_id, title):
         if design_id is None:
