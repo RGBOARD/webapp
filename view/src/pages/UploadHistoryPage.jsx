@@ -76,7 +76,7 @@ export default function UploadHistoryPage() {
                       <strong>{item.title || 'Untitled'}</strong>
                     </div>
                     <div className="text-base">
-                      <strong>Added to queue at:</strong> {formatDateTime(item.attempt_time)}
+                      <strong>Added to queue on:</strong> {formatDateTime(item.attempt_time)}
                     </div>
                   </div>
                 </div>
