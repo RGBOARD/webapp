@@ -144,7 +144,8 @@
 .delete-button{
   background-color: #F00000;
   color: white;
-  max-width: 300px;
+  width: 100%;
+  max-width: 100px;
 }
 
 .delete-button:hover {
@@ -153,7 +154,8 @@
 
 .submit-button{
     background-color: #38E837;
-    max-width: 300px;
+  width: 100%;
+  max-width: 100px;
 }
 
 .submit-button:hover {
