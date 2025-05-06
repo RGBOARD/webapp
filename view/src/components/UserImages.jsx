@@ -254,7 +254,7 @@ function UserImages() {
                         </div>
 
                         <div
-                            className="flex flex-col w-full max-w-xs space-y-4 selected-buttons"
+                            className="flex flex-col w-full max-w-xs space-y-2 selected-buttons"
                             style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                         >
                             {selectedDesign.is_approved ? (
