@@ -20,6 +20,19 @@ cur.execute("""
 print("Created table: user")
 
 cur.execute("""
+            CREATE TABLE IF NOT EXISTS temp_password
+            (
+                tp_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id       INTEGER NOT NULL,
+                temp_password TEXT    NOT NULL,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
+            );
+            """)
+
+print("Created table: temp_password")
+
+cur.execute("""
             CREATE TABLE IF NOT EXISTS verification_code
             (
                 code_id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,32 +46,32 @@ cur.execute("""
 print("Created table: verification_code")
 
 cur.execute("""
-    CREATE TABLE IF NOT EXISTS design
-    (
-        design_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id     INTEGER  NOT NULL,
-        title       TEXT     NOT NULL,
-        pixel_data   TEXT     NOT NULL, -- Changed to pixel_data since conversion is client-side
-        is_approved BOOLEAN  NOT NULL DEFAULT 1,
-        status      BOOLEAN  NOT NULL DEFAULT 0,
-        created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
-    );
-""")
+            CREATE TABLE IF NOT EXISTS design
+            (
+                design_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER  NOT NULL,
+                title       TEXT     NOT NULL,
+                pixel_data  TEXT     NOT NULL, -- Changed to pixel_data since conversion is client-side
+                is_approved BOOLEAN  NOT NULL DEFAULT 1,
+                status      BOOLEAN  NOT NULL DEFAULT 0,
+                created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
+            );
+            """)
 
 print("Created table: design")
 
 cur.execute("""
             CREATE TABLE IF NOT EXISTS rotation_queue
             (
-                item_id           INTEGER PRIMARY KEY AUTOINCREMENT,
-                design_id         INTEGER NOT NULL,
-                duration          INTEGER NOT NULL,  -- Duration in seconds
-                display_order     INTEGER NOT NULL,  -- For custom ordering
-                expiry_time       DATETIME NOT NULL, -- When to remove from rotation
-                created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                item_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                design_id     INTEGER  NOT NULL,
+                duration      INTEGER  NOT NULL, -- Duration in seconds
+                display_order INTEGER  NOT NULL, -- For custom ordering
+                expiry_time   DATETIME NOT NULL, -- When to remove from rotation
+                created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE
             );
             """)
@@ -68,14 +81,14 @@ print("Created table: rotation_queue")
 cur.execute("""
             CREATE TABLE IF NOT EXISTS scheduled_items
             (
-                schedule_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-                design_id         INTEGER NOT NULL,
-                duration          INTEGER NOT NULL,  -- Duration in seconds (min 60)
-                start_time        DATETIME NOT NULL, -- When to insert into rotation
-                end_time          DATETIME,          -- When to remove from rotation (NULL = 1 day default)
-                override_current  BOOLEAN NOT NULL DEFAULT 0, -- Whether to make it active immediately
-                created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                schedule_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                design_id        INTEGER  NOT NULL,
+                duration         INTEGER  NOT NULL,           -- Duration in seconds (min 60)
+                start_time       DATETIME NOT NULL,           -- When to insert into rotation
+                end_time         DATETIME,                    -- When to remove from rotation (NULL = 1 day default)
+                override_current BOOLEAN  NOT NULL DEFAULT 0, -- Whether to make it active immediately
+                created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (design_id) REFERENCES design (design_id) ON DELETE CASCADE
             );
             """)
@@ -85,9 +98,9 @@ print("Created table: scheduled_items")
 cur.execute("""
             CREATE TABLE IF NOT EXISTS active_item
             (
-                id                INTEGER PRIMARY KEY DEFAULT 1,
-                item_id           INTEGER,
-                activated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                id           INTEGER PRIMARY KEY DEFAULT 1,
+                item_id      INTEGER,
+                activated_at DATETIME NOT NULL   DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (item_id) REFERENCES rotation_queue (item_id) ON DELETE SET NULL
             );
             """)

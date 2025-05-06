@@ -17,7 +17,7 @@ import LoadingPage from './pages/LoadingPage';
 import LandingPage from './pages/LandingPage';
 import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
-
+import UploadToQueuePage from "./pages/UploadToQueuePage.jsx";
 import UploadHistoryPage from './pages/UploadHistoryPage';
 
 // function UploadHistoryPage() {
@@ -122,7 +122,15 @@ function AppContent() {
               <RequireAuth allowedRoles={['admin']}>
                 <UserAdminPage />
               </RequireAuth>
-            } 
+            }
+          />
+          <Route
+            path="/upload-to-queue/:designId"
+            element={
+              <RequireAuth>
+                <UploadToQueuePage />
+              </RequireAuth>
+            }
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
