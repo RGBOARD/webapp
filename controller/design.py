@@ -6,7 +6,7 @@ from controller.user import User
 from model.design import DesignDAO
 from model.queue_item import QueueItemDAO
 
-MAX_USER_BYTES_MB = 1 # TODO: Select a realistic limit for production
+MAX_USER_BYTES_MB = 1  # TODO: Select a realistic limit for production
 
 
 def serialize_design(t):
@@ -159,7 +159,7 @@ class Design:
         if user_id is None:
             return jsonify(error="Couldn't verify user"), 500
 
-        if self.is_memory_limit_reached(pixel_data):
+        if self.is_memory_limit_reached_on_edit(design_id, pixel_data):
             return jsonify(error="Memory limit exceeded."), 507
 
         design_dao = DesignDAO()
@@ -277,5 +277,32 @@ class Design:
             incoming_bytes = len(pixel_data.encode('utf-8'))
         except (UnicodeError, AttributeError):
             return True
-       ## print(f"[DEBUG] user_bytes: {user_bytes}, incoming_bytes: {incoming_bytes}")
+        ## print(f"[DEBUG] user_bytes: {user_bytes}, incoming_bytes: {incoming_bytes}")
         return (user_bytes + incoming_bytes) > MAX_USER_BYTES_MB * 1024 * 1024
+
+    # INTERNAL USE: Checks that the user does not exceed limit with an edit
+    def is_memory_limit_reached_on_edit(self, design_id, pixel_data):
+        user_id = self.user.get_user_id()
+
+        if user_id is None:
+            return True
+
+        design_dao = DesignDAO()
+        user_bytes = design_dao.get_bytes_by_userid(user_id)
+
+        if user_bytes < 0:
+            return True
+
+        current_design_bytes = design_dao.get_design_bytes(design_id, user_id)
+
+        if current_design_bytes < 0:
+            return True
+
+        try:
+            incoming_bytes = len(pixel_data.encode('utf-8'))
+        except (UnicodeError, AttributeError):
+            return True
+
+        difference_bytes = incoming_bytes - current_design_bytes
+
+        return (user_bytes + difference_bytes) > MAX_USER_BYTES_MB * 1024 * 1024

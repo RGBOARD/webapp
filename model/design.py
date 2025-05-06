@@ -179,3 +179,15 @@ class DesignDAO:
             return -1
         finally:
             cursor.close()
+
+    def get_design_bytes(self, design_id, user_id):
+        cursor = self.conn.cursor()
+        query = "SELECT LENGTH(pixel_data) FROM design WHERE design_id = ? AND user_id = ?"
+        try:
+            cursor.execute(query, (design_id, user_id))
+            result = cursor.fetchone()
+            return result[0] if result and result[0] is not None else 0
+        except sqlite3.Error:
+            return -1
+        finally:
+            cursor.close()
