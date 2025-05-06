@@ -65,7 +65,7 @@ class UserDAO:
         query = "SELECT password FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (email, ))
+            cursor.execute(query, (email,))
             password = cursor.fetchone()
             return password[0] if password else None
 
@@ -80,7 +80,7 @@ class UserDAO:
         query = "SELECT is_admin FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (email, ))
+            cursor.execute(query, (email,))
             is_admin = cursor.fetchone()
             return is_admin[0]
 
@@ -95,11 +95,15 @@ class UserDAO:
         query = "SELECT user_id FROM user WHERE email = ?;"
 
         try:
-            cursor.execute(query, (email, ))
-            user_id = cursor.fetchone()
-            return user_id[0]
+            cursor.execute(query, (email,))
+            result = cursor.fetchone()
 
-        except sqlite3.Error:
+            if result is not None:
+                return result[0]
+            else:
+                return None
+
+        except sqlite3.Error as e:
             return None
 
         finally:
@@ -124,7 +128,7 @@ class UserDAO:
     def set_user_email_verified_by_id(self, user_id: int, is_verified: int):
         status = 1
         cursor = self.conn.cursor()
-        query = "UPDATE user SET is_email_verified = ? WHERE user_id = ?;"
+        query = "UPDATE user SET is_email_verified = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?;"
 
         try:
             cursor.execute(query, (is_verified, user_id))
@@ -138,6 +142,21 @@ class UserDAO:
             cursor.close()
             return status
 
+    def set_user_password(self, user_id: int, password):
+        status = 1
+        cursor = self.conn.cursor()
+        query = "UPDATE user SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?;"
+        try:
+            cursor.execute(query, (password, user_id))
+            self.conn.commit()
+            status = 0
+
+        except sqlite3.Error:
+            status = 1
+
+        finally:
+            cursor.close()
+            return status
 
     def add_new_user(self, email, password):
 
@@ -157,7 +176,6 @@ class UserDAO:
 
         finally:
             cursor.close()
-
 
     def updateUserById(self, user_id, data):
 

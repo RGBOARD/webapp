@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react'
+import {useEffect, useState} from 'react'
 import '../App.css'
 import '../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf'
 import {useNavigate} from 'react-router-dom'
@@ -117,49 +117,54 @@ export default function VerifyForm() {
 
 
     return (<form
-            onSubmit={handleSubmit}
-            className={"max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md space-y-5"}
+        onSubmit={handleSubmit}
+        className={"max-w-md mx-auto mt-10 p-6 bg-white rounded-2xl shadow-md space-y-5"}>
+        <h2 className="text-2xl font-bold text-center text-gray-800"
+            style={{fontFamily: '"Pixelify Sans", sans-serif'}}>Verify your account</h2>
+        {message && (<div
+            className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
             style={{fontFamily: '"Pixelify Sans", sans-serif'}}>
-            <h2 className="text-2xl font-bold text-center text-gray-800">Verify your account</h2>
-            {message && (<div
-                className={`text-center p-2 rounded ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                {message}
-            </div>)}
-            <label htmlFor="text" className="block text-sm font-medium text-gray-700">
-                Verification Code
-            </label>
-            <input
-                id="code"
-                name="code"
-                type="text"
-                value={formData.code}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="Enter your verification code"
-                className={`mt-1 w-full px-4 py-2 border ${errors.code ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.code ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
-                disabled={isLoading}
-            />
+            {message}
+        </div>)}
+        <label htmlFor="text" className="block text-sm font-medium text-gray-700">
+            Verification Code
+        </label>
+        <input
+            id="code"
+            name="code"
+            type="text"
+            value={formData.code}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="Enter your verification code"
+            className={`mt-1 w-full px-4 py-2 border ${errors.code ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm focus:outline-none focus:ring ${errors.code ? 'focus:ring-red-500' : 'focus:ring-blue-500'}`}
+            disabled={isLoading}
+        />
 
-            {errors.code && (<p className="mt-1 text-sm text-red-600">{errors.code}</p>)}
+        {errors.code && (<p className="mt-1 text-sm text-red-600">{errors.code}</p>)}
 
-            <button
-                type="submit"
-                className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-300 cursor-not-allowed'}`}
-                disabled={isLoading || !isFormValid}>
-                {isLoading ? 'Verifying...' : 'Verify'}
-            </button>
+        <button
+            type="submit"
+            className={`w-full py-2 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${isFormValid ? 'bg-blue-600 hover:bg-blue-500 cursor-pointer' : 'bg-blue-300 cursor-not-allowed'}`}
+            style={{fontFamily: '"Pixelify Sans", sans-serif'}}
+            disabled={isLoading || !isFormValid}>
+            {isLoading ? 'Verifying...' : 'Verify'}
+        </button>
 
-            <div className="text-center mt-4">
-                <p className="text-gray-600">
-                    Don't have a code?{' '}
-                    <span
-                        className="text-blue-600 cursor-pointer hover:underline"
-                        onClick={requestCode}
-                    >
-          Request a new code
-        </span>
-                </p>
-            </div>
+        <div className="text-center mt-4">
+            <p className="text-gray-600">
+                <span className="text-sm">Didn't recieve a code?</span>{' '}
+                <span className="text-gray-500 text-xs">(might need check spam/quarantine)</span>
+            </p>
+            <p className="text-gray-600 mt-1">
+                <span
+                    className="text-blue-600 cursor-pointer hover:underline text-sm"
+                    onClick={requestCode}
+                >
+                    Request a new code
+                </span>
+            </p>
+        </div>
 
-        </form>)
+    </form>)
 }
