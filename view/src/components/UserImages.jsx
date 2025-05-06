@@ -13,13 +13,11 @@ import UserMemory from "../components/UserMemory"
 
 async function getDesigns(page, page_size) {
     try {
-        return await axios.get('/designs', {params: {page, page_size}});
+        const res = await axios.get('/designs', {params: {page, page_size}});
+        return res.data;
     } catch (error) {
-        if (error.response) {
-            return error.response.data;
-        } else {
-            return {error: "Unexpected error occurred"};
-        }
+        if (error.response) return error.response.data;
+        return {error: "Unexpected error occurred"};
     }
 }
 
@@ -50,28 +48,25 @@ function UserImages() {
     const [memoryRefreshKey, setMemoryRefreshKey] = useState(0);
 
     const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
     const pageSize = 8;
     const navigate = useNavigate();
 
     useEffect(() => {
         async function fetchDesigns() {
             const response = await getDesigns(page, pageSize);
-            if (response?.data) {
-                setDesigns(response.data);
-                setSelectedDesign(response.data.length > 0 ? response.data[0] : null);
+            if (response?.designs) {
+                setDesigns(response.designs);
+                setPages(response.pages);
+                setSelectedDesign(response.designs.length > 0 ? response.designs[0] : null);
+            } else {
+                setDesigns([]);
+                setPages(1);
             }
         }
 
         fetchDesigns();
     }, [page]);
-
-    const handlePrevious = () => {
-        if (page > 1) setPage(page - 1);
-    };
-
-    const handleNext = () => {
-        if (designs.length === pageSize) setPage(page + 1);
-    };
 
     const handleQueue = () => {
         if (selectedDesign) {
@@ -105,26 +100,24 @@ function UserImages() {
         }
     };
 
-    // this was buggy to set up, but it works.
     const confirmDelete = async () => {
         if (!selectedDesign) return;
 
         const response = await deleteDesign(selectedDesign.design_id);
 
         if (response && response.status === 200) {
-            const refreshed = await getDesigns(page, pageSize);
-            const refreshedDesigns = refreshed?.data ?? [];
+            let refreshed = await getDesigns(page, pageSize);
 
-            if (refreshedDesigns.length > 0) {
-                setDesigns(refreshedDesigns);
-                setSelectedDesign(refreshedDesigns[0]);
-            } else if (page > 1) {
-                setPage(page - 1); //  fetch the previous page
-            } else {
-                setDesigns([]);
-                setSelectedDesign(null);
+            // If the current page is now empty, try going back a page
+            if (refreshed?.designs?.length === 0 && page > 1) {
+                const prevPage = page - 1;
+                setPage(prevPage); // will trigger useEffect to fetch new page
+                return;
             }
 
+            setDesigns(refreshed.designs);
+            setPages(refreshed.pages || 1);
+            setSelectedDesign(refreshed.designs[0] || null);
             setMemoryRefreshKey(prev => prev + 1);
             setShowDeleteModal(false);
             return;
@@ -192,20 +185,45 @@ function UserImages() {
 
                 {/* Pagination */}
                 <div
-                    className="flex justify-center items-center gap-4 image-panel-container text-xs border-t border-gray-300 arrows"
+                    className="flex justify-center items-center gap-2 image-panel-container text-xs border-t border-gray-300 arrows py-3"
                     style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                 >
+                    {/* Previous Arrow */}
                     <button
-                        onClick={handlePrevious}
-                        className="border border-gray-300 bg-black text-white py-1 px-3 rounded-md cursor-pointer transition-all duration-200 ease-in-out font-pixelify hover:bg-white hover:text-black hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                         disabled={page === 1}
+                        className="border border-gray-300 bg-black text-white py-1 px-3 rounded-md cursor-pointer transition-all duration-200 ease-in-out font-pixelify hover:bg-white hover:text-black hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         &laquo;
                     </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({length: pages}, (_, i) => i + 1)
+                        .filter((p) => {
+                            if (pages <= 5) return true;
+                            if (page <= 3) return p <= 5;
+                            if (page >= pages - 2) return p >= pages - 4;
+                            return Math.abs(p - page) <= 2;
+                        })
+                        .map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPage(p)}
+                                className={`border border-gray-300 py-1 px-3 rounded-md cursor-pointer font-pixelify transition-all duration-200 ease-in-out ${
+                                    page === p
+                                        ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                        : 'bg-white text-black hover:bg-black hover:text-white'
+                                }`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+
+                    {/* Next Arrow */}
                     <button
-                        onClick={handleNext}
+                        onClick={() => setPage((prev) => Math.min(prev + 1, pages))}
+                        disabled={page === pages}
                         className="border border-gray-300 bg-black text-white py-1 px-3 rounded-md cursor-pointer transition-all duration-200 ease-in-out font-pixelify hover:bg-white hover:text-black hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={designs.length < pageSize}
                     >
                         &raquo;
                     </button>
@@ -246,7 +264,7 @@ function UserImages() {
                         </div>
 
                         <div
-                            className="flex flex-col w-full max-w-xs space-y-4 selected-buttons"
+                            className="flex flex-col w-full max-w-xs space-y-2 selected-buttons"
                             style={{fontFamily: '"Pixelify Sans", sans-serif'}}
                         >
                             {selectedDesign.is_approved ? (
@@ -272,6 +290,7 @@ function UserImages() {
                                             {selectedDesign.is_scheduled ? 'Edit Schedule' : 'Edit'}
                                         </button>)}
 
+
                                         <button
                                             onClick={handleDeleteClick}
                                             className="cursor-pointer flex-1 border font-bold text-white border-gray-300 bg-red-500 py-2 rounded-md text-md font-pixelify hover:bg-white hover:text-red-500 hover:shadow-md transition-all duration-200 ease-in-out"
@@ -282,12 +301,6 @@ function UserImages() {
                                 </>
                             ) : (
                                 <div className="flex flex-col sm:flex-row gap-4">
-                                    <button
-                                        onClick={handleEdit}
-                                        className="cursor-pointer flex-1 border font-bold text-black border-gray-300 bg-blue-500 py-2 rounded-md text-md font-pixelify hover:bg-black hover:text-blue-500 hover:shadow-md transition-all duration-200 ease-in-out"
-                                    >
-                                        Edit
-                                    </button>
                                     <button
                                         onClick={handleDeleteClick}
                                         className="cursor-pointer flex-1 border font-bold text-white border-gray-300 bg-red-500 py-2 rounded-md text-md font-pixelify hover:bg-white hover:text-red-500 hover:shadow-md transition-all duration-200 ease-in-out"

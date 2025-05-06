@@ -58,7 +58,7 @@
   margin-top: 1rem;
 }
 
-.delete-button,
+.user-delete-button,
 .toggle-button {
   padding: 6px 12px;
   border: none;
@@ -68,7 +68,7 @@
   font-family: "Pixelify Sans", sans-serif;
 }
 
-.delete-button{
+.user-delete-button{
     background-color: #F00000;
 }
 
@@ -76,7 +76,7 @@
     background-color: #FFDD27;
 }
 
-.delete-button:hover {
+.user-delete-button:hover {
   background-color: black;
   color: #F00000;
 }

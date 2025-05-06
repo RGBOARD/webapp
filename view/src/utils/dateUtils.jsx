@@ -2,25 +2,27 @@ export const formatDateTime = (datetimeString) => {
   if (!datetimeString || datetimeString === '+010000-01-01T03:59:59.999Z')
     return 'N/A';
 
-
   let iso = datetimeString.trim().replace(' ', 'T');
   if (!iso.endsWith('Z')) iso += 'Z';
 
-  const date = new Date(iso);
-  if (isNaN(date.getTime())) return 'Invalid date';
+  try {
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return 'Invalid date';
 
-  // Build human-readable components
-  const day = date.getDate();
-  const month = date.toLocaleString(undefined, { month: 'short' });
-  const year = date.getFullYear();
+    const day = date.getDate();
+    const month = date.toLocaleString(undefined, { month: 'short' });
+    const year = date.getFullYear();
 
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  hours = hours % 12 || 12;
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12 || 12;  // converts 0→12 and 13→1, etc.
 
-
-  return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+    return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'Date error';
+  }
 };
 
 export const formatDateForPicker = (date) => {

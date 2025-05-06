@@ -188,109 +188,112 @@ function CreatePage() {
   };
 
   return (
-    <div className="create-container">
-      <div className="create-content">
-        <ToolPanel 
-          selectedTool={selectedTool}
-          handleToolSelect={handleToolSelect}
-          handleUndo={handleUndo}
-          handleRedo={handleRedo}
-          handleClear={handleClear}
-          scale={scale}
-          zoomIn={zoomIn}
-          zoomOut={zoomOut}
-          resetZoom={resetZoom}
-        />
-        
-        <div className="canvas-area" ref={containerRef}>
-          <Stage
-            width={canvasSize.width}
-            height={canvasSize.height}
-            onMouseDown={(e) => {
-              // If right-clicking or middle-clicking, handle panning
-              if (e.evt && (e.evt.button === 2 || e.evt.button === 1)) {
-                handleCanvasDragStart(e);
-              } else {
-                handleMouseDown(e);
-              }
-            }}
-            onMouseMove={(e) => {
-              if (isDragging) {
-                handleCanvasDragMove(e);
-              } else {
-                handleMouseMove(e);
-              }
-            }}
-            onMouseUp={(e) => {
-              if (isDragging) {
-                handleCanvasDragEnd();
-              } else {
-                handleMouseUp();
-              }
-            }}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleMouseDown}
-            onTouchMove={handleMouseMove}
-            onTouchEnd={handleMouseUp}
-            onWheel={handleWheel}
-            ref={stageRef}
-            scaleX={scale}
-            scaleY={scale}
-            x={position.x}
-            y={position.y}
-            onContextMenu={e => {
-              if (e.evt && typeof e.evt.preventDefault === 'function') {
-                e.evt.preventDefault();
-              }
-            }}
-          >
-            <Layer>
-              <Rect
+      <div className="create-container">
+        <div className="create-header">
+          <h1 className="create-title">Create an Image</h1>
+        </div>
+        <div className="create-content">
+          <ToolPanel
+              selectedTool={selectedTool}
+              handleToolSelect={handleToolSelect}
+              handleUndo={handleUndo}
+              handleRedo={handleRedo}
+              handleClear={handleClear}
+              scale={scale}
+              zoomIn={zoomIn}
+              zoomOut={zoomOut}
+              resetZoom={resetZoom}
+          />
+
+          <div className="canvas-area" ref={containerRef}>
+            <Stage
                 width={canvasSize.width}
                 height={canvasSize.height}
-                fill="black"
-              />
-              {gridLines}
-            </Layer>
-            <Layer>
-              {Object.entries(pixels).map(([key, color], i) => {
-                const [x, y] = key.split(',').map(Number);
-                return (
-                  <Rect
-                    key={`pixel-${i}`}
-                    x={x}
-                    y={y}
-                    width={gridSize}
-                    height={gridSize}
-                    fill={color}
-                  />
-                );
-              })}
-            </Layer>
-          </Stage>
+                onMouseDown={(e) => {
+                  // If right-clicking or middle-clicking, handle panning
+                  if (e.evt && (e.evt.button === 2 || e.evt.button === 1)) {
+                    handleCanvasDragStart(e);
+                  } else {
+                    handleMouseDown(e);
+                  }
+                }}
+                onMouseMove={(e) => {
+                  if (isDragging) {
+                    handleCanvasDragMove(e);
+                  } else {
+                    handleMouseMove(e);
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (isDragging) {
+                    handleCanvasDragEnd();
+                  } else {
+                    handleMouseUp();
+                  }
+                }}
+                onMouseLeave={handleMouseUp}
+                onTouchStart={handleMouseDown}
+                onTouchMove={handleMouseMove}
+                onTouchEnd={handleMouseUp}
+                onWheel={handleWheel}
+                ref={stageRef}
+                scaleX={scale}
+                scaleY={scale}
+                x={position.x}
+                y={position.y}
+                onContextMenu={e => {
+                  if (e.evt && typeof e.evt.preventDefault === 'function') {
+                    e.evt.preventDefault();
+                  }
+                }}
+            >
+              <Layer>
+                <Rect
+                    width={canvasSize.width}
+                    height={canvasSize.height}
+                    fill="black"
+                />
+                {gridLines}
+              </Layer>
+              <Layer>
+                {Object.entries(pixels).map(([key, color], i) => {
+                  const [x, y] = key.split(',').map(Number);
+                  return (
+                      <Rect
+                          key={`pixel-${i}`}
+                          x={x}
+                          y={y}
+                          width={gridSize}
+                          height={gridSize}
+                          fill={color}
+                      />
+                  );
+                })}
+              </Layer>
+            </Stage>
+          </div>
+
+          <ColorPickerPanel
+              selectedColor={selectedColor}
+              hexColor={hexColor}
+              rgbValues={rgbValues}
+              hsvValues={hsvValues}
+              handleColorChange={handleColorChange}
+              handleRGBChange={handleRGBChange}
+              handleHSVChange={handleHSVChange}
+              colorSliderRef={colorSliderRef}
+              handleSave={handleSave}
+              handleFileNameChange={handleFileNameChange}
+          />
         </div>
-        
-        <ColorPickerPanel 
-          selectedColor={selectedColor}
-          hexColor={hexColor}
-          rgbValues={rgbValues}
-          hsvValues={hsvValues}
-          handleColorChange={handleColorChange}
-          handleRGBChange={handleRGBChange}
-          handleHSVChange={handleHSVChange}
-          colorSliderRef={colorSliderRef}
-          handleSave={handleSave}
-          handleFileNameChange={handleFileNameChange}
+        <Modal
+            isOpen={modalState.isOpen}
+            type={modalState.type}
+            message={modalState.message}
+            onConfirm={modalState.onConfirm}
+            onCancel={modalState.onCancel}
         />
       </div>
-      <Modal 
-        isOpen={modalState.isOpen}
-        type={modalState.type}
-        message={modalState.message}
-        onConfirm={modalState.onConfirm}
-        onCancel={modalState.onCancel}
-      />
-    </div>
   );
 }
 
