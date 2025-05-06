@@ -168,26 +168,3 @@ class QueueItem:
                 return jsonify(error="Unauthorized. Not admin."), 401
 
             return jsonify(error="Unauthorized. No token."), 401
-
-## MOVE TO OTHER FILE
-        @jwt_required()
-        def getUserHistory(self):
-            user_email = get_jwt_identity()
-
-            rows = QueueItemDAO().getByUserEmail(user_email)
-
-            result = []
-            for (history_id, design_id, created_at,
-                 display_duration, display_order, status,
-                 title, pixel_data) in rows:
-                result.append({
-                    'history_id': history_id,
-                    'design_id': design_id,
-                    'created_at': created_at,
-                    'display_duration': display_duration,
-                    'display_order': display_order,
-                    'status': 'scheduled' if status else 'pending',
-                    'title': title,
-                    'pixel_data': pixel_data,
-                })
-            return result

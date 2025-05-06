@@ -64,89 +64,66 @@ class RotationSystemDAO:
     
     def add_unscheduled_image(self, design_id: int) -> int:
         """
-        Add an unscheduled image to the rotation queue with default 30-second duration.
-        
-        Args:
-            design_id: ID of the design to add
-            
-        Returns:
-            The ID of the newly added item
+        Add an unscheduled image to the rotation queue with default 30-second duration,
+        log the upload, and return the new item ID.
         """
-        conn = self._get_connection()
+        conn: Connection = self._get_connection()
         cur = conn.cursor()
-        
         try:
-            # Get the highest display_order to add at the end
-            cur.execute("SELECT COALESCE(MAX(display_order), 0) as max_order FROM rotation_queue")
+            cur.execute("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM rotation_queue")
             max_order = cur.fetchone()['max_order']
-            
-            # Calculate expiry time (1 day from now)
             expiry_time = datetime.now() + timedelta(days=1)
-
-            # Insert the new item
-            cur.execute("""
-            INSERT INTO rotation_queue 
-            (design_id, duration, display_order, expiry_time)
-            VALUES (?, ?, ?, ?)
-            """, (design_id, 30, max_order + 1, expiry_time))
-            
+            cur.execute(
+                "INSERT INTO rotation_queue (design_id, duration, display_order, expiry_time) VALUES (?, ?, ?, ?)",
+                (design_id, 30, max_order + 1, expiry_time)
+            )
             item_id = cur.lastrowid
             conn.commit()
-            
-            # If this is the first item, make it active
-            self._ensure_active_item(conn)
-            
-            cur.execute(
-            "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, ?, ?);",
-            (design_id, datetime.utcnow().isoformat(), 'successful')
-            )
 
+            # Make active if first
+            self._ensure_active_item(conn)
+
+            # Log upload history
+            cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
+                (design_id, 'successful')
+            )
+            conn.commit()
             return item_id
-            
         finally:
             cur.close()
             conn.close()
     
-    def schedule_image(self, design_id: int, duration: int, start_time: datetime, 
-                   end_time: Optional[datetime] = None, override_current: bool = False) -> int:
+    def schedule_image(self, design_id: int, duration: int, start_time: datetime,
+                       end_time: Optional[datetime] = None, override_current: bool = False) -> int:
         """
-        Schedule an image to be inserted at a specific time.
-        
-        Args:
-            design_id: ID of the design to schedule
-            duration: Display duration in seconds (must be >= 60)
-            start_time: When to insert the image
-            end_time: When to remove the image from rotation (optional, defaults to 1 day)
-            override_current: Whether to make this the active image when inserted
-            
-        Returns:
-            The ID of the scheduled item
+        Schedule an image to be inserted at a specific time, log the upload, and return the schedule ID.
         """
         if duration < 30:
             raise ValueError("Scheduled images must have a duration of at least 30 seconds")
-        
-        conn = self._get_connection()
+        conn: Connection = self._get_connection()
         cur = conn.cursor()
-        
         try:
             if end_time:
-                cur.execute("""
-                INSERT INTO scheduled_items
-                (design_id, duration, start_time, end_time, override_current)
-                VALUES (?, ?, ?, ?, ?)
-                """, (design_id, duration, start_time, end_time, override_current))
+                cur.execute(
+                    "INSERT INTO scheduled_items (design_id, duration, start_time, end_time, override_current) VALUES (?, ?, ?, ?, ?)",
+                    (design_id, duration, start_time, end_time, override_current)
+                )
             else:
-                cur.execute("""
-                INSERT INTO scheduled_items
-                (design_id, duration, start_time, override_current)
-                VALUES (?, ?, ?, ?)
-                """, (design_id, duration, start_time, override_current))
-            
+                cur.execute(
+                    "INSERT INTO scheduled_items (design_id, duration, start_time, override_current) VALUES (?, ?, ?, ?)",
+                    (design_id, duration, start_time, override_current)
+                )
             schedule_id = cur.lastrowid
             conn.commit()
-            
+
+            # Log upload history
+            cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
+                (design_id, 'successful')
+            )
+            conn.commit()
             return schedule_id
-            
         finally:
             cur.close()
             conn.close()
@@ -784,3 +761,115 @@ class RotationSystemDAO:
         finally:
             if should_close:
                 conn.close()
+
+    def get_user_history(self, email: str) -> List[Dict[str, Any]]:
+        """
+        Return rotation queue history for designs created by the given user email.
+        """
+        conn = self._get_connection()
+        cur = conn.cursor()
+        try:
+            query = """
+                SELECT
+                    rq.item_id       AS history_id,
+                    rq.item_id       AS item_id,
+                    rq.created_at    AS created_at,
+                    rq.duration      AS duration,
+                    rq.display_order AS display_order,
+                    rq.expiry_time   AS expiry_time,
+                    CASE
+                        WHEN rq.expiry_time > CURRENT_TIMESTAMP THEN 'active'
+                        ELSE 'expired'
+                    END             AS status,
+                    d.title          AS title,
+                    d.pixel_data     AS pixel_data
+                FROM rotation_queue rq
+                JOIN design d ON d.design_id = rq.design_id
+                JOIN user u ON u.user_id = d.user_id
+                WHERE u.email = ?
+                ORDER BY rq.created_at DESC;
+            """
+            cur.execute(query, (email,))
+            rows = cur.fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            cur.close()
+            conn.close()
+
+    def log_upload_history(self, design_id: int, status: str) -> int:
+        """
+        Insert a new record into upload_history for the given design_id and status.
+        Returns the new history_id.
+        """
+        conn = self._get_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
+                (design_id, status)
+            )
+            conn.commit()
+            return cur.lastrowid
+        finally:
+            cur.close()
+            conn.close()
+
+    def add_unscheduled_image(self, design_id: int) -> int:
+        """
+        Add an unscheduled image to the rotation queue with default 30-second duration,
+        log the upload, and return the new item ID.
+        """
+        conn = self._get_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM rotation_queue")
+            max_order = cur.fetchone()['max_order']
+            expiry_time = datetime.now() + timedelta(days=1)
+            cur.execute(
+                "INSERT INTO rotation_queue (design_id, duration, display_order, expiry_time) VALUES (?, ?, ?, ?)",
+                (design_id, 30, max_order + 1, expiry_time)
+            )
+            item_id = cur.lastrowid
+            conn.commit()
+
+            # Ensure active
+            self._ensure_active_item(conn)
+
+            # Log history after queueing
+            cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
+                (design_id, 'successful')
+            )
+            conn.commit()
+
+            return item_id
+        finally:
+            cur.close()
+            conn.close()
+
+    def schedule_image(self, design_id: int, duration: int, start_time: datetime,
+                       end_time: Optional[datetime] = None, override_current: bool = False) -> int:
+        """
+        Schedule an image to be inserted at a specific time. Logging is deferred until actual queuing.
+        """
+        if duration < 30:
+            raise ValueError("Scheduled images must have a duration of at least 30 seconds")
+        conn = self._get_connection()
+        cur = conn.cursor()
+        try:
+            if end_time:
+                cur.execute(
+                    "INSERT INTO scheduled_items (design_id, duration, start_time, end_time, override_current) VALUES (?, ?, ?, ?, ?)",
+                    (design_id, duration, start_time, end_time, override_current)
+                )
+            else:
+                cur.execute(
+                    "INSERT INTO scheduled_items (design_id, duration, start_time, override_current) VALUES (?, ?, ?, ?)",
+                    (design_id, duration, start_time, override_current)
+                )
+            schedule_id = cur.lastrowid
+            conn.commit()
+            return schedule_id
+        finally:
+            cur.close()
+            conn.close()
