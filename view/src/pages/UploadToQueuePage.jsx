@@ -33,14 +33,13 @@ export default function UploadToQueuePage() {
     onCancel: () => {}
   });
 
-  // Convert ISO string to local datetime-local input value
   const toLocalInput = iso => {
     const d = new Date(iso);
     const tzOffset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - tzOffset).toISOString().slice(0,16);
   };
 
-  // Fetch design & scheduled slots
+  // 1) Initial load: fetch design & schedules, detect if editing
   useEffect(() => {
     axios.get(`/design/${designId}`)
       .then(res => setDesign(res.data))
@@ -51,20 +50,19 @@ export default function UploadToQueuePage() {
         const items = (res.data.items || [])
           .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
-        // Check if user already has a schedule for this design
         const found = items.find(s => s.design_id === Number(designId));
         if (found) {
           const start = new Date(found.start_time);
           const now = new Date();
-          // Too late to edit
+          // If already started, kick out immediately:
           if (start <= now) {
             showAlert(
               'This schedule has already started and cannot be modified.',
-              () => navigate(-1)
+              () => navigate('/view-saved-images')
             );
             return;
           }
-          // Load for editing and freeze it out of conflicts
+          // Otherwise load it for editing
           setExistingScheduleId(found.schedule_id);
           setScheduleData({
             start_time: toLocalInput(found.start_time),
@@ -80,14 +78,36 @@ export default function UploadToQueuePage() {
       .catch(console.error);
   }, [designId]);
 
-  // Return the list of slots to check against (excluding our own if editing)
-  const getConflictList = () => {
-    return isEditing
+  // 2) As soon as the clock hits your original start_time, auto-block
+  useEffect(() => {
+    if (!isEditing || !scheduleData.start_time) return;
+
+    const startMs = new Date(scheduleData.start_time).getTime();
+    const nowMs = Date.now();
+    const delay = startMs - nowMs;
+
+    if (delay <= 0) {
+      // already passed
+      showAlert(
+        'This schedule has already started and cannot be modified.',
+        () => navigate('/view-saved-images')
+      );
+    } else {
+      const timer = setTimeout(() => {
+        showAlert(
+          'This schedule has already started and cannot be modified.',
+          () => navigate('/view-saved-images')
+        );
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing, scheduleData.start_time]);
+
+  const getConflictList = () =>
+    isEditing
       ? scheduledTimes.filter(item => item.schedule_id !== existingScheduleId)
       : scheduledTimes;
-  };
 
-  // Does this new start time collide with any existing slot?
   const checkTimeConflict = (startTimeStr, scheduledItems, newItemDuration) => {
     const start = new Date(startTimeStr);
     start.setSeconds(0, 0);
@@ -110,19 +130,16 @@ export default function UploadToQueuePage() {
         if (start >= itemStart && start <= itemEndSched) return true;
         if (newEnd > itemStart && newEnd <= itemEndSched) return true;
       }
-
       return false;
     });
   };
 
-  // Find the next open slot client-side
   const findNextAvailableClientSide = (startTimeStr, scheduledItems, newItemDuration) => {
     const startTime = new Date(startTimeStr);
     startTime.setSeconds(0, 0);
     if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) {
       return startTime;
     }
-
     const INCREMENT_MINUTES = 5;
     let currentTime = new Date(startTime);
     for (let i = 0; i < 24 * (60 / INCREMENT_MINUTES); i++) {
@@ -131,8 +148,6 @@ export default function UploadToQueuePage() {
         return currentTime;
       }
     }
-
-    // If full day blocked, jump to next day same time
     const nextDay = new Date(startTime);
     nextDay.setDate(nextDay.getDate() + 1);
     return nextDay;
@@ -163,20 +178,27 @@ export default function UploadToQueuePage() {
     const { start_time, end_time, duration, override_current } = scheduleData;
     const now = new Date();
 
-    // Block editing if the schedule has already started
+    // 3) Disallow clearing the schedule when editing
+    if (existingScheduleId && !start_time) {
+      return showAlert(
+        'This schedule cannot be removed once set.',
+        () => navigate('/view-saved-images')
+      );
+    }
+
+    // 4) Block editing if start time is now in the past
     if (existingScheduleId && start_time) {
       const scheduledStart = new Date(start_time);
       if (scheduledStart <= now) {
-        showAlert(
+        return showAlert(
           'This schedule has already started and cannot be modified.',
-          () => navigate(-1)
+          () => navigate('/view-saved-images')
         );
-        return;
       }
     }
 
-    // If no start_time, just add to rotation now
-    if (!start_time) {
+    // 5) Only “Add to rotation” when NOT editing
+    if (!start_time && !existingScheduleId) {
       try {
         await axios.post('/rotation/add', { design_id: Number(designId) });
         return showAlert('Added to rotation queue!', () => navigate(-1));
@@ -186,7 +208,7 @@ export default function UploadToQueuePage() {
       }
     }
 
-    // Conflict check against filtered list
+    // 6) Conflict check & suggestion
     const conflicts = getConflictList();
     if (checkTimeConflict(start_time, conflicts, duration)) {
       const suggested = findNextAvailableClientSide(start_time, conflicts, duration);
@@ -197,34 +219,27 @@ export default function UploadToQueuePage() {
       );
     }
 
-    // Validate times
+    // 7) Standard time validations (unchanged)
     const start = new Date(start_time);
-    if (start < now) {
-      return showAlert('Start time must be in the future.');
-    }
+    if (start < now) return showAlert('Start time must be in the future.');
     let end = end_time ? new Date(end_time) : null;
-    if (end_time && end < now) {
-      return showAlert('End time must be in the future.');
-    }
+    if (end_time && end < now) return showAlert('End time must be in the future.');
     if (!end) {
       end = new Date(start);
       end.setDate(end.getDate() + 1);
     }
-    if (end <= start) {
-      return showAlert('End time must be after start time.');
-    }
+    if (end <= start) return showAlert('End time must be after start time.');
     if ((end - start) < duration * 1000) {
       return showAlert(`Window must cover at least ${duration} seconds.`);
     }
 
-    // Build payload
+    // 8) Build payload & call API (unchanged)
     const isAdmin = hasRole('admin');
     const payload = {
       design_id: Number(designId),
       start_time,
       override_current: isAdmin ? override_current : false
     };
-
     if (isAdmin) {
       payload.duration = parseInt(duration) || 60;
       if (end_time) {
@@ -314,7 +329,7 @@ export default function UploadToQueuePage() {
               )}
 
               <button type="submit" className="upload-button queue-button mt-4">
-                {!scheduleData.start_time
+                {!scheduleData.start_time && !existingScheduleId
                   ? 'Add to Rotation'
                   : existingScheduleId
                     ? 'Update Schedule'
