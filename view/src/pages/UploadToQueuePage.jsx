@@ -16,6 +16,7 @@ export default function UploadToQueuePage() {
   const [design, setDesign] = useState(null);
   const [scheduledTimes, setScheduledTimes] = useState([]);
   const [existingScheduleId, setExistingScheduleId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [scheduleData, setScheduleData] = useState({
     start_time: '',
@@ -39,36 +40,54 @@ export default function UploadToQueuePage() {
     return new Date(d.getTime() - tzOffset).toISOString().slice(0,16);
   };
 
-  // Fetch design and all scheduled items for conflict checking
+  // Fetch design & scheduled slots
   useEffect(() => {
-  axios.get(`/design/${designId}`)
-    .then(res => setDesign(res.data))
-    .catch(console.error);
+    axios.get(`/design/${designId}`)
+      .then(res => setDesign(res.data))
+      .catch(console.error);
 
-  axios.get('/rotation/scheduled')
-    .then(res => {
-      // sort by start_time ascending
-      const items = (res.data.items || [])
-        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    axios.get('/rotation/scheduled')
+      .then(res => {
+        const items = (res.data.items || [])
+          .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
-      setScheduledTimes(items);
+        // Check if user already has a schedule for this design
+        const found = items.find(s => s.design_id === Number(designId));
+        if (found) {
+          const start = new Date(found.start_time);
+          const now = new Date();
+          // Too late to edit
+          if (start <= now) {
+            showAlert(
+              'This schedule has already started and cannot be modified.',
+              () => navigate(-1)
+            );
+            return;
+          }
+          // Load for editing and freeze it out of conflicts
+          setExistingScheduleId(found.schedule_id);
+          setScheduleData({
+            start_time: toLocalInput(found.start_time),
+            end_time:   found.end_time ? toLocalInput(found.end_time) : '',
+            duration:   found.duration,
+            override_current: found.override_current
+          });
+          setIsEditing(true);
+        }
 
-      const found = items.find(s => s.design_id === Number(designId));
-      if (found) {
-        setExistingScheduleId(found.schedule_id);
-        setScheduleData({
-          start_time: toLocalInput(found.start_time),
-          end_time:   found.end_time ? toLocalInput(found.end_time) : '',
-          duration:   found.duration,
-          override_current: found.override_current
-        });
-      }
-    })
-    .catch(console.error);
-}, [designId]);
+        setScheduledTimes(items);
+      })
+      .catch(console.error);
+  }, [designId]);
 
+  // Return the list of slots to check against (excluding our own if editing)
+  const getConflictList = () => {
+    return isEditing
+      ? scheduledTimes.filter(item => item.schedule_id !== existingScheduleId)
+      : scheduledTimes;
+  };
 
-  // Scheduling helpers from Code 1
+  // Does this new start time collide with any existing slot?
   const checkTimeConflict = (startTimeStr, scheduledItems, newItemDuration) => {
     const start = new Date(startTimeStr);
     start.setSeconds(0, 0);
@@ -96,20 +115,24 @@ export default function UploadToQueuePage() {
     });
   };
 
+  // Find the next open slot client-side
   const findNextAvailableClientSide = (startTimeStr, scheduledItems, newItemDuration) => {
     const startTime = new Date(startTimeStr);
     startTime.setSeconds(0, 0);
-    if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) return startTime;
+    if (!checkTimeConflict(startTime.toISOString(), scheduledItems, newItemDuration)) {
+      return startTime;
+    }
 
     const INCREMENT_MINUTES = 5;
     let currentTime = new Date(startTime);
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 24 * (60 / INCREMENT_MINUTES); i++) {
       currentTime = new Date(currentTime.getTime() + INCREMENT_MINUTES * 60 * 1000);
       if (!checkTimeConflict(currentTime.toISOString(), scheduledItems, newItemDuration)) {
         return currentTime;
       }
     }
 
+    // If full day blocked, jump to next day same time
     const nextDay = new Date(startTime);
     nextDay.setDate(nextDay.getDate() + 1);
     return nextDay;
@@ -140,18 +163,19 @@ export default function UploadToQueuePage() {
     const { start_time, end_time, duration, override_current } = scheduleData;
     const now = new Date();
 
-
+    // Block editing if the schedule has already started
     if (existingScheduleId && start_time) {
       const scheduledStart = new Date(start_time);
       if (scheduledStart <= now) {
         showAlert(
-            'This schedule has already started and cannot be modified.',
-            () => navigate('/view-saved-images')
+          'This schedule has already started and cannot be modified.',
+          () => navigate(-1)
         );
         return;
       }
     }
-    // Immediate add if no start_time
+
+    // If no start_time, just add to rotation now
     if (!start_time) {
       try {
         await axios.post('/rotation/add', { design_id: Number(designId) });
@@ -162,9 +186,10 @@ export default function UploadToQueuePage() {
       }
     }
 
-    // Conflict check & suggestion
-    if (checkTimeConflict(start_time, scheduledTimes, duration)) {
-      const suggested = findNextAvailableClientSide(start_time, scheduledTimes, duration);
+    // Conflict check against filtered list
+    const conflicts = getConflictList();
+    if (checkTimeConflict(start_time, conflicts, duration)) {
+      const suggested = findNextAvailableClientSide(start_time, conflicts, duration);
       const sugLocal = toLocalInput(suggested.toISOString());
       return showConfirm(
         `This time slot is already taken. Would you like to schedule for ${sugLocal.replace('T',' ')} instead?`,
@@ -174,25 +199,38 @@ export default function UploadToQueuePage() {
 
     // Validate times
     const start = new Date(start_time);
-    if (start < now) return showAlert('Start time must be in the future.');
+    if (start < now) {
+      return showAlert('Start time must be in the future.');
+    }
     let end = end_time ? new Date(end_time) : null;
-    if (end_time && end < now) return showAlert('End time must be in the future.');
+    if (end_time && end < now) {
+      return showAlert('End time must be in the future.');
+    }
     if (!end) {
       end = new Date(start);
       end.setDate(end.getDate() + 1);
     }
-    if (end <= start) return showAlert('End time must be after start time.');
-    if ((end - start) < duration * 1000) return showAlert(`Window must cover at least ${duration} seconds.`);
+    if (end <= start) {
+      return showAlert('End time must be after start time.');
+    }
+    if ((end - start) < duration * 1000) {
+      return showAlert(`Window must cover at least ${duration} seconds.`);
+    }
 
     // Build payload
     const isAdmin = hasRole('admin');
-    const payload = { design_id: Number(designId), start_time, override_current: isAdmin ? override_current : false };
+    const payload = {
+      design_id: Number(designId),
+      start_time,
+      override_current: isAdmin ? override_current : false
+    };
 
     if (isAdmin) {
       payload.duration = parseInt(duration) || 60;
       if (end_time) {
-        const endDate = new Date(end_time);
-        if (start >= endDate) return showAlert('Error: Start time must be before end time.');
+        if (start >= new Date(end_time)) {
+          return showAlert('Error: Start time must be before end time.');
+        }
         payload.end_time = end_time;
       }
     } else {
@@ -290,7 +328,9 @@ export default function UploadToQueuePage() {
             {design ? (
               <img
                 src={renderPixelDataToImage(
-                  typeof design.pixel_data === 'string' ? JSON.parse(design.pixel_data) : design.pixel_data,
+                  typeof design.pixel_data === 'string'
+                    ? JSON.parse(design.pixel_data)
+                    : design.pixel_data,
                   64, 64, 8
                 )}
                 alt={design.title}
