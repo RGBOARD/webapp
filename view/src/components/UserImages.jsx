@@ -92,26 +92,24 @@ function UserImages() {
         }
     };
 
-    // this was buggy to set up, but it works.
     const confirmDelete = async () => {
         if (!selectedDesign) return;
 
         const response = await deleteDesign(selectedDesign.design_id);
 
         if (response && response.status === 200) {
-            const refreshed = await getDesigns(page, pageSize);
-            const refreshedDesigns = refreshed?.data ?? [];
+            let refreshed = await getDesigns(page, pageSize);
 
-            if (refreshedDesigns.length > 0) {
-                setDesigns(refreshedDesigns);
-                setSelectedDesign(refreshedDesigns[0]);
-            } else if (page > 1) {
-                setPage(page - 1); //  fetch the previous page
-            } else {
-                setDesigns([]);
-                setSelectedDesign(null);
+            // If the current page is now empty, try going back a page
+            if (refreshed?.designs?.length === 0 && page > 1) {
+                const prevPage = page - 1;
+                setPage(prevPage); // will trigger useEffect to fetch new page
+                return;
             }
 
+            setDesigns(refreshed.designs);
+            setPages(refreshed.pages || 1);
+            setSelectedDesign(refreshed.designs[0] || null);
             setShowDeleteModal(false);
             return;
         }
@@ -121,7 +119,6 @@ function UserImages() {
         setShowAlertModal(true);
         setShowDeleteModal(false);
     };
-
 
     return (
         <div className="flex flex-col md:flex-row w-full gap-4 px-2">

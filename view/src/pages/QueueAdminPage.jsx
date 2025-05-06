@@ -242,7 +242,7 @@ function QueueAdminPage() {
                             onClick={() =>
                                 showConfirm(
                               item.is_approved
-                                ? "Unapprove this design?"
+                                ? "Unapprove this design? This will also remove it from the queue."
                                 : "Approve this design?",
                               () => handleToggleApproval(item.design_id, item.item_id, item.is_approved)
                             )
