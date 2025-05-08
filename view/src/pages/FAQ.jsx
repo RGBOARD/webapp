@@ -3,62 +3,68 @@ import './styles/FAQ.css';
 
 const faqs = [
   {
-    question: "What does this app do?",
-    answer: "It lets you upload pixel art, schedule it into a rotation queue, and display it on your board automatically.",
-  },
-  {
-    question: "How do I sign up?",
-    answer: "Click the “Sign Up” button in the header, enter your details, then hit “Create Account.”",
-  },
-  {
-    question: "How can I schedule an image to appear?",
+    question: 'What is RGBoard?',
     answer:
-      "Go to “Upload to Queue,” pick your image, set your start/end times and duration, then click “Schedule.”",
+      'RGBoard is a simple, dynamic platform where you can upload flyers or image ads and schedule them to display on our LED board—making it easy to reach students and your community.',
+    color: '#e74c3c',
   },
   {
-    question: "Where can I manage my saved images?",
+    question: 'Supported image formats and best-practice guidelines?',
     answer:
-      "In the user menu select “Upload History” to view, delete, or reschedule any past uploads.",
+      'We support most common image formats. For best results, use square images (1:1 aspect ratio) with clear, non-blurry visuals, large readable fonts, and vibrant colors.',
+    color: '#e74c3c',
   },
   {
-    question: "I’m an admin—how do I approve images?",
+    question: 'How do I create an account?',
     answer:
-      "Admins can go to “Queue Admin” and click “Approve” or “Unapprove” on any pending item.",
+      'Click <strong>Sign In</strong> and enter your UPR credentials. After signing in, you will be redirected to the login page. Once you enter your credentials, you’ll be asked to verify your account. Check your email from <a href="mailto:noreply@rgboard.org">noreply@rgboard.org</a> for your verification code, then enter it on the site. Once verified, you’re all set to start using RGBoard.',
+    color: '#2ecc71',
   },
   {
-    question: "I still can’t find an answer—what now?",
+    question: 'How do I schedule or add my design to the rotation?',
     answer:
-      `Drop us a line at <a href="mailto:support@yourdomain.com">support@yourdomain.com</a> and we’ll help you out.`,
+      'After uploading your design, go to <strong>View Saved Images</strong>, select your design, and click the queue button to set a start time, then hit <strong>Schedule</strong>. If you want to queue the design without setting a start time, simply leave it empty and click <strong>Add to Rotation</strong>.',
+    color: '#2ecc71',
+  },
+  {
+    question: 'How can I delete, reschedule, or edit my designs?',
+    answer:
+      'Yes—go to <strong>View Saved Images</strong>, find your design, and you’ll see options to delete it, edit its schedule, or modify the design using our integrated pixel art editor.',
+    color: '#3498db',
+  },
+  {
+    question: 'Where can I get more help?',
+    answer:
+      'Still stuck? Email us at <a href="mailto:computersociety@uprm.edu">computersociety@uprm.edu</a>.',
+    color: '#3498db',
   },
 ];
 
-const FAQ = () => (
-  <div className="faq-page">
-    <h2 className="page-title">FAQ &amp; Support</h2>
-    <div className="page-desc">
-      <h3 className="font-semibold">
-        Looking for quick answers? Click on a question to expand the answer.
-      </h3>
-      <h3>
-        If you still need help, email us at{' '}
-        <a href="mailto:support@yourdomain.com">support@yourdomain.com</a>.
-      </h3>
-    </div>
+export default function FAQ() {
+  return (
+    <div className="faq-page">
+      <h2 className="faq-title">Frequently Asked Questions</h2>
+      <p className="faq-intro">
+        Need help navigating RGBoard? This page covers the basics of account setup, uploading, scheduling, and editing your designs.
+      </p>
 
-    <div className="faq-wrapper card-animation">
-      <div className="faq-container">
-        {faqs.map(({ question, answer }, idx) => (
-          <details key={idx} className="faq-item">
-            <summary>{question}</summary>
-            <div
-              className="faq-answer"
-              dangerouslySetInnerHTML={{ __html: answer }}
+      <div className="faq-grid">
+        {faqs.map((item, idx) => (
+          <div key={idx} className="faq-card">
+            <span
+              className="faq-bullet"
+              style={{ backgroundColor: item.color }}
             />
-          </details>
+            <div>
+              <p className="faq-question">{item.question}</p>
+              <p
+                className="faq-answer"
+                dangerouslySetInnerHTML={{ __html: item.answer }}
+              />
+            </div>
+          </div>
         ))}
       </div>
     </div>
-  </div>
-);
-
-export default FAQ;
+  );
+}

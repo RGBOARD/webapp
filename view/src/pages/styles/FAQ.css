@@ -1,82 +1,71 @@
-/* reuse your PixelifySans if desired */
-@font-face {
-  font-family: 'PixelifySans';
-  src: url('../../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf') format('truetype');
-}
-
-@keyframes fadeSlideIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.card-animation {
-  animation: fadeSlideIn 0.6s ease-out both;
-}
-
 .faq-page {
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
   box-sizing: border-box;
 }
 
-.page-title {
+.faq-title {
   font-size: 2rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
   text-align: center;
 }
 
-.page-desc {
-  text-align: center;
-  font-size: 1.1rem;
-  max-width: 800px;
-  margin-bottom: 1.5rem;
-}
-
-.faq-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.faq-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
+.faq-intro {
   max-width: 700px;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+  line-height: 1.4;
 }
 
-.faq-item {
-  background: #f9f9f9;
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  background: #e5e5e5;
+  padding: 2rem;
   border-radius: 8px;
-  padding: 1rem;
-  border-bottom: 5px solid #ccc; /* accent line */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 1000px;
+  box-sizing: border-box;
 }
 
-.faq-item summary {
-  font-size: 1.1rem;
+/* Mobile: collapse to one column */
+@media (max-width: 600px) {
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.faq-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.faq-bullet {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-top: 0.5rem;
+}
+
+.faq-question {
+  margin: 0;
   font-weight: bold;
-  cursor: pointer;
-  list-style: none; /* remove default triangle if desired */
-  outline: none;
 }
 
 .faq-answer {
-  margin-top: 0.75rem;
-  line-height: 1.5;
+  margin: 0.25rem 0 0;
+  color: #555;
+  line-height: 1.4;
 }
 
-/* style links inside answers */
+/* allow links to stand out */
 .faq-answer a {
   color: #007acc;
   text-decoration: underline;
