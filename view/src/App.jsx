@@ -19,10 +19,8 @@ import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 import UploadToQueuePage from "./pages/UploadToQueuePage.jsx";
 import UploadHistoryPage from './pages/UploadHistoryPage';
+import ResetPassword from './pages/ResetPassword';
 
-// function UploadHistoryPage() {
-//     return null;
-// }
 
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
@@ -83,6 +81,10 @@ function AppContent() {
                 <CreatePage />
               </RequireAuth>
             } 
+          />
+          <Route
+            path="/reset"
+            element={isAuthenticated ? <Navigate to="/"/> : <ResetPassword/>}
           />
           <Route 
             path="/edit" 

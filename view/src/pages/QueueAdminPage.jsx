@@ -5,7 +5,7 @@ import "./styles/QueueAdmin.css";
 import { useAuth } from '../auth/authContext.js';
 import { useState, useEffect } from "react";
 import Modal from "../components/Modal";
-import { formatDateTime } from '../utils/dateUtils';
+import { formatISODateTime } from '../utils/dateUtils';
 import { renderPixelDataToImage } from '../utils/pixelRenderer'
 
 function QueueAdminPage() {
@@ -216,6 +216,9 @@ function QueueAdminPage() {
                           <strong>Duration:</strong> {item.duration} seconds
                         </div>
                         <div className="text-base">
+                          <strong>Expires:</strong> {formatISODateTime(item.expiry_time)}
+                        </div>
+                        <div className="text-base">
                           <strong>Order:</strong> {" "}
                           <select
                             className="order-select"
@@ -330,10 +333,10 @@ function QueueAdminPage() {
                           <strong>Duration:</strong> {item.duration} seconds
                         </div>
                         <div className="text-base">
-                          <strong>Start Time:</strong> {formatDateTime(item.start_time)}
+                          <strong>Start Time:</strong> {formatISODateTime(item.start_time)}
                         </div>
                         <div className="text-base">
-                          <strong>End Time:</strong> {formatDateTime(item.end_time)}
+                          <strong>End Time:</strong> {formatISODateTime(item.end_time)}
                         </div>
                       </div>
                       <div className="user-buttons">

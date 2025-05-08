@@ -5,7 +5,7 @@ import "./styles/UserAdmin.css";
 import "./styles/QueueAdmin.css";
 import { useAuth } from '../auth/authContext.js';
 import { renderPixelDataToImage } from '../utils/pixelRenderer';
-import { formatDateTime } from '../utils/dateUtils.jsx';
+import { formatISODateTime } from '../utils/dateUtils.jsx';
 
 export default function UploadHistoryPage() {
   const { getPageUploadHistory } = useAuth();
@@ -76,7 +76,7 @@ export default function UploadHistoryPage() {
                       <strong>{item.title || 'Untitled'}</strong>
                     </div>
                     <div className="text-base">
-                      <strong>Added to queue on:</strong> {formatDateTime(item.attempt_time)}
+                      <strong>Added to queue on:</strong> {formatISODateTime(item.attempt_time)}
                     </div>
                   </div>
                 </div>
