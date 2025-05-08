@@ -1,0 +1,80 @@
+/* reuse your pixel font if desired */
+@font-face {
+  font-family: 'PixelifySans';
+  src: url('../../assets/fonts/PixelifySans/PixelifySans-VariableFont_wght.ttf') format('truetype');
+}
+
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animation {
+  animation: fadeSlideIn 0.6s ease-out both;
+}
+
+.privacy-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.page-desc {
+  text-align: center;
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
+}
+
+.privacy-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.privacy-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.privacy-section {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  border-bottom: 5px solid #ccc; /* adjust accent color if you like */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.privacy-section h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+.privacy-section p {
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* style links inside sections */
+.privacy-section a {
+  color: #007acc;
+  text-decoration: underline;
+}

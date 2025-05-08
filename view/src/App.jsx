@@ -19,6 +19,8 @@ import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 import UploadToQueuePage from "./pages/UploadToQueuePage.jsx";
 import UploadHistoryPage from './pages/UploadHistoryPage';
+import FAQ from "./pages/FAQ.jsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 
 // function UploadHistoryPage() {
 //     return null;
@@ -63,6 +65,14 @@ function AppContent() {
           <Route
             path="/developers"
             element={ <Developers />}
+          />
+          <Route
+            path="/faq"
+            element={ <FAQ />}
+          />
+          <Route
+            path="/privacy"
+            element={ <PrivacyPolicy />}
           />
           <Route 
             path="/signup" 
