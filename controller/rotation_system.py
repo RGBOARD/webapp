@@ -1,5 +1,5 @@
 from flask import jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -52,13 +52,30 @@ class RotationSystem:
                 return validation_result
             
             design_id = self.json_data.get('design_id')
+            duration = self.json_data.get('duration')
+            end_time_str = self.json_data.get('end_time')  # Optional
+            override_current = self.json_data.get('override_current', False)
             
-            # Check if design exists (you might want to add this check)
-            # if not self.dao.design_exists(design_id):
-            #     return jsonify({"error": f"Design ID {design_id} not found"}), 404
+            # Parse end time if provided
+            end_time = None
+            if end_time_str:
+                try:
+                    end_time = datetime.fromisoformat(end_time_str)
+                    # Set seconds and microseconds to zero for minute-level comparison
+                    end_time = end_time.replace(second=0, microsecond=0)
+                except ValueError:
+                    return jsonify({
+                        "error": "Invalid end_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
+                    }), 400
             
+            # Validate duration
+            if not isinstance(duration, int) or duration < 30:
+                return jsonify({
+                    "error": "Duration must be an integer of at least 30 seconds"
+                }), 400
+
             # Add to rotation queue
-            item_id = self.dao.add_unscheduled_image(design_id)
+            item_id = self.dao.add_unscheduled_image(design_id, end_time, duration, override_current)
             
             return jsonify({
                 "success": True,
@@ -151,6 +168,103 @@ class RotationSystem:
                 response["end_time"] = end_time.isoformat()
                 
             return jsonify(response), 201
+            
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        
+    def update_schedule(self, schedule_id):
+        """Update an existing scheduled image."""
+        try:
+            # Validate required fields
+            required_fields = ['design_id', 'duration', 'start_time']
+            validation_result = validate_required_fields(self.json_data, required_fields)
+            if validation_result:
+                return validation_result
+            
+            design_id = self.json_data.get('design_id')
+            duration = self.json_data.get('duration')
+            start_time_str = self.json_data.get('start_time')
+            end_time_str = self.json_data.get('end_time')  # Optional
+            override_current = self.json_data.get('override_current', False)
+            
+            # Parse start time
+            try:
+                start_time = datetime.fromisoformat(start_time_str)
+                # Set seconds and microseconds to zero for minute-level comparison
+                start_time = start_time.replace(second=0, microsecond=0)
+            except ValueError:
+                return jsonify({
+                    "error": "Invalid start_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
+                }), 400
+            
+            # Parse end time if provided
+            end_time = None
+            if end_time_str:
+                try:
+                    end_time = datetime.fromisoformat(end_time_str)
+                    # Set seconds and microseconds to zero for minute-level comparison
+                    end_time = end_time.replace(second=0, microsecond=0)
+                    
+                    # Validate end_time is after start_time
+                    if end_time <= start_time:
+                        return jsonify({
+                            "error": "end_time must be after start_time"
+                        }), 400
+                except ValueError:
+                    return jsonify({
+                        "error": "Invalid end_time format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
+                    }), 400
+            
+            # Validate duration
+            if not isinstance(duration, int) or duration < 30:
+                return jsonify({
+                    "error": "Duration must be an integer of at least 30 seconds"
+                }), 400
+            
+            # First check if the schedule exists
+            existing_schedule = self.dao.get_scheduled_item(schedule_id)
+            if not existing_schedule:
+                return jsonify({
+                    "error": f"Schedule with ID {schedule_id} not found"
+                }), 404
+            
+            # Check for duplicate start times at minute precision, excluding this schedule
+            existing_scheduled = self.dao.get_scheduled_items()
+            
+            # Check if any other item has the same start time (at minute precision)
+            for item in existing_scheduled:
+                # Skip the current schedule being updated
+                if item.get('schedule_id') == schedule_id:
+                    continue
+                    
+                existing_start = datetime.fromisoformat(item['start_time']) if isinstance(item['start_time'], str) else item['start_time']
+                # Set seconds and microseconds to zero for minute-level comparison
+                existing_start = existing_start.replace(second=0, microsecond=0)
+                
+                if existing_start == start_time:
+                    # Find next available 5-minute slot
+                    suggested_time = self._suggest_next_available_time(start_time, existing_scheduled)
+                    
+                    return jsonify({
+                        "error": "Another item is already scheduled for this time slot",
+                        "suggested_time": suggested_time.isoformat()
+                    }), 409  # Using 409 Conflict status code
+            
+            # Update the schedule
+            self.dao.update_scheduled_item(
+                schedule_id, design_id, duration, start_time, end_time, override_current
+            )
+            
+            response = {
+                "success": True,
+                "schedule_id": schedule_id,
+                "message": f"Schedule updated successfully for design ID {design_id} at {start_time.isoformat()}"
+            }
+            
+            if end_time:
+                response["end_time"] = end_time.isoformat()
+                
+            return jsonify(response), 200
             
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -284,7 +398,7 @@ class RotationSystem:
         """Remove a scheduled item by its ID."""
         try:
             self.dao.remove_scheduled_item(schedule_id)
-            return jsonify({"message": "Scheduled item removed successfully"}), 200
+            return jsonify({"message": "Scheduled item removed successfully!"}), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -312,3 +426,14 @@ class RotationSystem:
                 'pixel_data': row['pixel_data'],
             })
         return jsonify(history), 200
+    
+    def get_scheduled_item(self, schedule_id):
+        try:
+            scheduled_item = self.dao.get_scheduled_item(schedule_id)
+            
+            if not scheduled_item:
+                return jsonify({'error': 'Scheduled item not found'}), 404
+            
+            return jsonify(scheduled_item), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500

@@ -3,6 +3,7 @@ import { Stage, Layer, Rect, Line } from "react-konva";
 import { useAuth } from '../auth/authContext.js'
 import "../components/styles/Menu.css";
 import "./styles/CreatePage.css";
+import { useNavigate } from 'react-router-dom';
 
 // Import components
 import ToolPanel from "../components/ToolPanel";
@@ -13,6 +14,7 @@ import Modal from "../components/Modal";
 import useColorManagement from "../hooks/useColorManagement";
 import useDrawing from "../hooks/useDrawing";
 import useZoomPan from "../hooks/useZoomPan";
+import { Navigate } from "react-router-dom";
 
 function CreatePage() {
   const stageRef = useRef(null);
@@ -27,6 +29,7 @@ function CreatePage() {
     onConfirm: () => {},
     onCancel: () => {}
   });
+  const navigate = useNavigate();
 
   // Force resize handling on component mount
   useEffect(() => {
@@ -75,6 +78,11 @@ function CreatePage() {
     setDragStart
   } = useZoomPan(containerRef);
   
+  const handleColorPicked = (color) => {
+    // This updates all the color state in useColorManagement
+    handleColorChange(color);
+  };
+
   // Initialize drawing functionality
   const {
     pixels,
@@ -86,8 +94,8 @@ function CreatePage() {
     handleMouseUp,
     handleUndo,
     handleRedo,
-    handleClear
-  } = useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSize);
+    handleClear,
+  } = useDrawing(stageRef, selectedColor, scale, position, gridSize, canvasSize, handleColorPicked);
   
   // Generate grid lines
   const gridLines = [];
@@ -175,7 +183,7 @@ function CreatePage() {
           const result = await upload(form);
           
           if (result.success) {
-            showAlert('Design saved successfully');
+            showAlert('Design saved successfully!', () => navigate('/'));
           } else {
             showAlert(`Design save failed: ${result.error || 'Unknown error'}`);
           }

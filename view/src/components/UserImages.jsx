@@ -70,16 +70,12 @@ function UserImages() {
 
     const handleQueue = () => {
         if (selectedDesign) {
-            console.log("Queued design", selectedDesign.design_id);
             navigate(`/upload-to-queue/${selectedDesign.design_id}`);
-            // TODO: Jandel: Go to queue view
-            // Not putting anything here so you can mount the component your way
         }
     };
 
     const handleEdit = () => {
         if (selectedDesign) {
-            console.log("Edit design", selectedDesign.design_id);
             setRedirectToEdit({
                 design: {
                     design_id: selectedDesign.design_id,

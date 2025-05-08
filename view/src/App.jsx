@@ -21,10 +21,8 @@ import UploadToQueuePage from "./pages/UploadToQueuePage.jsx";
 import UploadHistoryPage from './pages/UploadHistoryPage';
 import FAQ from "./pages/FAQ.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+import ResetPassword from './pages/ResetPassword';
 
-// function UploadHistoryPage() {
-//     return null;
-// }
 
 function AppContent() {
   const { isLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
@@ -74,7 +72,7 @@ function AppContent() {
             path="/privacy"
             element={ <PrivacyPolicy />}
           />
-          <Route 
+          <Route
             path="/signup" 
             element={isAuthenticated ? <Navigate to="/" /> : <SignUp />}
           />
@@ -94,7 +92,11 @@ function AppContent() {
               </RequireAuth>
             } 
           />
-          <Route 
+          <Route
+            path="/reset"
+            element={isAuthenticated ? <Navigate to="/"/> : <ResetPassword/>}
+          />
+          <Route
             path="/edit" 
             element={
               <RequireAuth>
