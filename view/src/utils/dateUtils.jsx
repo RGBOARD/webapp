@@ -37,21 +37,27 @@ export const formatDateForPicker = (date) => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-export const formatISODateTime = (isoString) => {
+export const formatISODateTime = (isoString, showSeconds = false) => {
   if (!isoString) return 'N/A';
  
   try {
     let date;
-    
+   
     // Handle different UTC formats from server
     if (isoString.includes('Z')) {
       // Already has UTC indicator - parse normally
       date = new Date(isoString);
+    } else if (isoString.includes('+')) {
+      if (isoString.includes(' ')) {
+        date = new Date(isoString.replace(' ', 'T'));
+      } else {
+        date = new Date(isoString);
+      }
     } else if (isoString.includes('T')) {
-      // Has T separator but no Z - interpret as UTC by adding Z
+      // Has T separator but no timezone - interpret as UTC by adding Z
       date = new Date(isoString + 'Z');
     } else if (isoString.includes(' ')) {
-      // Has space separator - interpret as UTC by adding Z
+      // Has space separator but no timezone - interpret as UTC by adding Z
       date = new Date(isoString.replace(' ', 'T') + 'Z');
     } else {
       // Fallback - parse as-is
@@ -70,9 +76,12 @@ export const formatISODateTime = (isoString) => {
       minute: '2-digit',
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone // Local timezone
     };
+
+    if (showSeconds) {
+      options.second = '2-digit';
+    }
    
     const formattedDate = date.toLocaleString(undefined, options);
-    
     return formattedDate;
   } catch (error) {
     console.error('ISO date formatting error:', error);

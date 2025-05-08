@@ -62,23 +62,58 @@ class RotationSystemDAO:
             cur.close()
             conn.close()
     
-    def add_unscheduled_image(self, design_id: int) -> int:
+    def add_unscheduled_image(self, design_id: int, end_time: datetime,
+                        duration: int = 30, override_current: bool = False) -> int:
         """
         Add an unscheduled image to the rotation queue with default 30-second duration,
         log the upload, and return the new item ID.
         """
-        conn: Connection = self._get_connection()
+        conn = self._get_connection()
         cur = conn.cursor()
         try:
-            cur.execute("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM rotation_queue")
-            max_order = cur.fetchone()['max_order']
-            expiry_time = datetime.now() + timedelta(days=1)
+            if override_current:
+                # Get current active item's display_order
+                active_item_id = self._get_active_item_id(conn)
+                if active_item_id:
+                    cur.execute("""
+                    SELECT display_order FROM rotation_queue
+                    WHERE item_id = ?
+                    """, (active_item_id,))
+                    result = cur.fetchone()
+                    current_order = result['display_order'] if result else 0
+
+                    # Shift all items with display_order > current_order up by 1
+                    cur.execute("""
+                    UPDATE rotation_queue
+                    SET display_order = display_order + 1,
+                        updated_at = ?
+                    WHERE display_order > ?
+                    """, (datetime.now(timezone.utc), current_order))
+                    
+                    # Insert new item at current_order + 1
+                    display_order = current_order + 1
+                else:
+                    # No active item, just use order 1
+                    display_order = 1
+            else:
+                cur.execute("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM rotation_queue")
+                display_order = cur.fetchone()['max_order'] + 1
+            
             cur.execute(
                 "INSERT INTO rotation_queue (design_id, duration, display_order, expiry_time) VALUES (?, ?, ?, ?)",
-                (design_id, 30, max_order + 1, expiry_time)
+                (design_id, duration, display_order, end_time)
             )
+
             item_id = cur.lastrowid
             conn.commit()
+
+            # If override_current is true, make this the active item
+            if override_current:
+                cur.execute("""
+                UPDATE active_item
+                SET item_id = ?, activated_at = ?
+                WHERE id = 1
+                """, (item_id, datetime.now(timezone.utc)))
 
             # Make active if first
             self._ensure_active_item(conn)
@@ -101,7 +136,7 @@ class RotationSystemDAO:
         """
         if duration < 30:
             raise ValueError("Scheduled images must have a duration of at least 30 seconds")
-        conn: Connection = self._get_connection()
+        conn = self._get_connection()
         cur = conn.cursor()
         try:
             if end_time:
@@ -124,6 +159,37 @@ class RotationSystemDAO:
             )
             conn.commit()
             return schedule_id
+        finally:
+            cur.close()
+            conn.close()
+
+    def update_scheduled_item(self, schedule_id: int, design_id: int, duration: int, 
+                          start_time: datetime, end_time: Optional[datetime] = None, 
+                          override_current: bool = False) -> None:
+        """Update an existing scheduled item."""
+        conn = self._get_connection()
+        cur = conn.cursor()
+        try:
+            if end_time:
+                cur.execute(
+                    "UPDATE scheduled_items SET design_id = ?, duration = ?, start_time = ?, "
+                    "end_time = ?, override_current = ? WHERE schedule_id = ?",
+                    (design_id, duration, start_time, end_time, override_current, schedule_id)
+                )
+            else:
+                cur.execute(
+                    "UPDATE scheduled_items SET design_id = ?, duration = ?, start_time = ?, "
+                    "end_time = NULL, override_current = ? WHERE schedule_id = ?",
+                    (design_id, duration, start_time, override_current, schedule_id)
+                )
+            conn.commit()
+            
+            # Log update history
+            cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
+                (design_id, 'successful')
+            )
+            conn.commit()
         finally:
             cur.close()
             conn.close()
@@ -161,12 +227,12 @@ class RotationSystemDAO:
                     # Remove Z suffix if present to avoid ValueError with fromisoformat
                     clean_end_time = item['end_time'].replace('Z', '')
                     expiry_time = datetime.fromisoformat(clean_end_time).replace(tzinfo=timezone.utc)
-                else:
+                elif item['end_time']:
                     # Already datetime object, just ensure it has UTC timezone
                     expiry_time = item['end_time'].replace(tzinfo=timezone.utc) if item['end_time'].tzinfo is None else item['end_time']
-            else:
-                # Default to 1 day from now, in UTC
-                expiry_time = now + timedelta(days=1)
+                else:
+                    # Default to 1 day from now, in UTC
+                    expiry_time = now + timedelta(days=1)
                 
                 # If override_current is true, need to place it right after current item
                 if item['override_current']:
@@ -205,11 +271,6 @@ class RotationSystemDAO:
                 (design_id, duration, display_order, expiry_time)
                 VALUES (?, ?, ?, ?)
                 """, (item['design_id'], item['duration'], display_order, expiry_time))
-                
-                cur.execute(
-                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, ?, ?);",
-                (item['design_id'], datetime.utcnow().isoformat(), 'successful')
-                )
 
                 item_id = cur.lastrowid
                 
@@ -220,6 +281,11 @@ class RotationSystemDAO:
                     SET item_id = ?, activated_at = ?
                     WHERE id = 1
                     """, (item_id, now))
+
+                cur.execute(
+                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, ?, ?);",
+                (item['design_id'], datetime.utcnow().isoformat(), 'successful')
+                )
                 
                 # Remove from scheduled_items
                 cur.execute("DELETE FROM scheduled_items WHERE schedule_id = ?", (item['schedule_id'],))
@@ -261,6 +327,9 @@ class RotationSystemDAO:
             
             expired_items = [row['item_id'] for row in cur.fetchall()]
             
+            if not expired_items:
+                return 0
+            
             # Delete expired items
             cur.execute("""
             DELETE FROM rotation_queue
@@ -268,6 +337,15 @@ class RotationSystemDAO:
             """, (now,))
             
             removed_count = cur.rowcount
+
+            # After removal, update the orders 
+            cur.execute("SELECT item_id FROM rotation_queue ORDER BY display_order ASC")
+            items = cur.fetchall()
+            for index, item in enumerate(items):
+                cur.execute(
+                "UPDATE rotation_queue SET display_order = ? WHERE item_id = ?",
+                (index + 1, item[0])
+                )
             
             # If the active item was expired, select a new one
             if active_item_id in expired_items:
@@ -283,8 +361,7 @@ class RotationSystemDAO:
     def check_rotation(self):
         """Check if it's time to rotate to the next image."""
         time_left = self.get_time_left_for_current()
-        
-        if time_left is not None and time_left <= 0:
+        if time_left is None or (time_left <= 0):
             self.rotate_to_next()
     
     def rotate_to_next(self) -> Optional[Dict]:
@@ -352,7 +429,7 @@ class RotationSystemDAO:
                 UPDATE active_item 
                 SET item_id = NULL, activated_at = ? 
                 WHERE id = 1
-                """, (datetime.now(),))
+                """, (datetime.now(timezone.utc),))
                 conn.commit()
                 return None
             
@@ -361,7 +438,7 @@ class RotationSystemDAO:
             UPDATE active_item
             SET item_id = ?, activated_at = ?
             WHERE id = 1
-            """, (next_item['item_id'], datetime.now()))
+            """, (next_item['item_id'], datetime.now(timezone.utc)))
             
             # Store the item_id before committing and closing connection
             next_item_id = next_item['item_id']
@@ -467,10 +544,8 @@ class RotationSystemDAO:
         
         # Calculate elapsed time
         elapsed_seconds = (now - activated_at).total_seconds()
-        
         # Calculate time left
         time_left = active_image['duration'] - elapsed_seconds
-        
         # Return 0 if time_left is negative
         return max(0, time_left)
     
@@ -580,7 +655,6 @@ class RotationSystemDAO:
             # If we deleted the active item, select a new one
             if success and item_id == active_item_id:
                 self._select_new_active_item(conn)
-
 
             cur.execute("SELECT item_id FROM rotation_queue ORDER BY display_order ASC")
             items = cur.fetchall()
@@ -811,84 +885,6 @@ class RotationSystemDAO:
             cur.execute(query, (email,))
             rows = cur.fetchall()
             return [dict(row) for row in rows]
-        finally:
-            cur.close()
-            conn.close()
-
-    def log_upload_history(self, design_id: int, status: str) -> int:
-        """
-        Insert a new record into upload_history for the given design_id and status.
-        Returns the new history_id.
-        """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute(
-                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
-                (design_id, status)
-            )
-            conn.commit()
-            return cur.lastrowid
-        finally:
-            cur.close()
-            conn.close()
-
-    def add_unscheduled_image(self, design_id: int) -> int:
-        """
-        Add an unscheduled image to the rotation queue with default 30-second duration,
-        log the upload, and return the new item ID.
-        """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("SELECT COALESCE(MAX(display_order), 0) AS max_order FROM rotation_queue")
-            max_order = cur.fetchone()['max_order']
-            expiry_time = datetime.now(timezone.utc) + timedelta(days=1)
-            cur.execute(
-                "INSERT INTO rotation_queue (design_id, duration, display_order, expiry_time) VALUES (?, ?, ?, ?)",
-                (design_id, 30, max_order + 1, expiry_time)
-            )
-            item_id = cur.lastrowid
-            conn.commit()
-
-            # Ensure active
-            self._ensure_active_item(conn)
-
-            # Log history after queueing
-            cur.execute(
-                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
-                (design_id, 'successful')
-            )
-            conn.commit()
-
-            return item_id
-        finally:
-            cur.close()
-            conn.close()
-
-    def schedule_image(self, design_id: int, duration: int, start_time: datetime,
-                       end_time: Optional[datetime] = None, override_current: bool = False) -> int:
-        """
-        Schedule an image to be inserted at a specific time. Logging is deferred until actual queuing.
-        """
-        if duration < 30:
-            raise ValueError("Scheduled images must have a duration of at least 30 seconds")
-        conn = self._get_connection()
-        cur = conn.cursor()
-        try:
-            if end_time:
-                cur.execute(
-                    "INSERT INTO scheduled_items (design_id, duration, start_time, end_time, override_current) VALUES (?, ?, ?, ?, ?)",
-                    (design_id, duration, start_time, end_time, override_current)
-                )
-            else:
-                cur.execute(
-                    "INSERT INTO scheduled_items (design_id, duration, start_time, override_current) VALUES (?, ?, ?, ?)",
-                    (design_id, duration, start_time, override_current)
-                )
-            schedule_id = cur.lastrowid
-            conn.commit()
-            return schedule_id
         finally:
             cur.close()
             conn.close()

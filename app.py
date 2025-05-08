@@ -341,6 +341,11 @@ def schedule_image():
     handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
     return handler.schedule_image()
 
+@app.route("/rotation/scheduled/<int:schedule_id>", methods=['PUT'])
+@jwt_required()
+def update_schedule(schedule_id):
+    handler = RotationSystem(email=get_jwt_identity(), json_data=request.json)
+    return handler.update_schedule(schedule_id)
 
 @app.route("/rotation/<int:item_id>/reorder", methods=['PUT'])
 @jwt_required()

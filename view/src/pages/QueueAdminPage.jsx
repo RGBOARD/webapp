@@ -216,6 +216,9 @@ function QueueAdminPage() {
                           <strong>Duration:</strong> {item.duration} seconds
                         </div>
                         <div className="text-base">
+                          <strong>Expires:</strong> {formatISODateTime(item.expiry_time)}
+                        </div>
+                        <div className="text-base">
                           <strong>Order:</strong> {" "}
                           <select
                             className="order-select"
