@@ -35,6 +35,11 @@
   max-width: 100%;
 }
 
+.user-card > * {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
 /* ⬇️ Responsive switch: stack vertically on narrow screens */
 @media (max-width: 800px) {
   .user-card {
@@ -51,9 +56,19 @@
   }
 }
 
+.user-info strong {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
 .user-buttons {
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
+  min-width: 0;
+  word-break: break-word;
+  justify-content: center;
   gap: 0.5rem;
   margin-top: 1rem;
 }
@@ -100,6 +115,8 @@
   border-radius: 24px;
   width: fit-content;
   padding: 5px;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .pagination-container {
