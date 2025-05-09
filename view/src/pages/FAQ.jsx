@@ -17,7 +17,7 @@ const faqs = [
   {
     question: 'How do I create an account?',
     answer:
-      'Click <strong>Sign In</strong> and enter your UPR credentials. After signing in, you will be redirected to the login page. Once you enter your credentials, you’ll be asked to verify your account. Check your email from <a href="mailto:noreply@rgboard.org">noreply@rgboard.org</a> for your verification code, then enter it on the site. Once verified, you’re all set to start using RGBoard.',
+      'Click <strong>Sign In</strong> and enter your UPR credentials. After signing in, you will be redirected to the login page. Once you enter your credentials, you’ll be asked to verify your account. Check for an email from <a href="mailto:noreply@rgboard.org">noreply@rgboard.org</a> for your verification code, then enter it on the site. Once verified, you’re all set to start using RGBoard.',
     color: '#2ecc71',
   },
   {
@@ -29,7 +29,7 @@ const faqs = [
   {
     question: 'How can I delete, reschedule, or edit my designs?',
     answer:
-      'Yes—go to <strong>View Saved Images</strong>, find your design, and you’ll see options to delete it, edit its schedule, or modify the design using our integrated pixel art editor.',
+      'Go to <strong>View Saved Images</strong>, find your design, and you’ll see options to delete it, edit its schedule, or modify the design using our integrated pixel art editor.',
     color: '#3498db',
   },
   {
