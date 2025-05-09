@@ -36,6 +36,14 @@
   border-radius: 24px;
   width: fit-content;
   padding: 5px;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.queue-info strong {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .item-delete-button{

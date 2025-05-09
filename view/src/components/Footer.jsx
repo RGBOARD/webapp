@@ -14,7 +14,7 @@ const Footer = () => {
             <a href="https://x.com/ComputerSociety" target="_blank" rel="noopener noreferrer">
               <SimpleIcon name="X" color="#000000"/>
             </a>
-            <a href="https://www.instagram.com/ieee_computer_society/" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.instagram.com/computersocietyuprm_" target="_blank" rel="noopener noreferrer">
               <SimpleIcon name="Instagram" color="#000000"/>
             </a>
             <a href="https://www.youtube.com/@IEEEComputerSociety" target="_blank" rel="noopener noreferrer">
