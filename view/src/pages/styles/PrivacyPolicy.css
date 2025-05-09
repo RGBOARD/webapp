@@ -1,0 +1,65 @@
+.policy-page {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.policy-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.policy-desc {
+  text-align: center;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Container for all sections */
+.policy-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Each collapsible section */
+.policy-section {
+  background: #f9f9f9;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* The clickable header */
+.policy-section > summary.policy-summary {
+  padding: 1rem;
+  cursor: pointer;
+  list-style: none; /* remove default triangle, if desired */
+  font-weight: bold;
+  font-size: 1.1rem;
+  outline: none;
+}
+
+/* Hide default marker (for most browsers) */
+.policy-section summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The content, hidden by default */
+.policy-text {
+  padding: 1rem;
+  border-top: 1px solid #e0e0e0;
+  display: none;
+  line-height: 1.5;
+  color: #555;
+}
+
+/* Show content when open */
+.policy-section[open] .policy-text {
+  display: block;
+}
