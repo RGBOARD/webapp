@@ -151,13 +151,6 @@ class RotationSystemDAO:
                 )
             schedule_id = cur.lastrowid
             conn.commit()
-
-            # Log upload history
-            cur.execute(
-                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
-                (design_id, 'successful')
-            )
-            conn.commit()
             return schedule_id
         finally:
             cur.close()
@@ -182,13 +175,6 @@ class RotationSystemDAO:
                     "end_time = NULL, override_current = ? WHERE schedule_id = ?",
                     (design_id, duration, start_time, override_current, schedule_id)
                 )
-            conn.commit()
-            
-            # Log update history
-            cur.execute(
-                "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, CURRENT_TIMESTAMP, ?)",
-                (design_id, 'successful')
-            )
             conn.commit()
         finally:
             cur.close()
