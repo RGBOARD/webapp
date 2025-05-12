@@ -1,3 +1,4 @@
+import argparse
 import signal
 import sys
 
@@ -16,12 +17,17 @@ from controller.user import User
 from services.scheduler_service import scheduler_service
 
 
-def create_app():
+def create_app(db_path=None):
     app = Flask(__name__)
+    CORS(app)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
     app.secret_key = "super-secret"  # Change this in production
-    CORS(app)
     app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this in production
+    app.config["DATABASE_PATH"] = db_path or 'data.db'
+
+    from utilities.database import init_db
+    init_db(app)
+
     jwt = JWTManager(app)
 
     # Register signal handlers for clean shutdown
@@ -38,22 +44,24 @@ def create_app():
     # Initialize the scheduler service
     try:
         print("Initializing scheduler service")
-        scheduler_service.init_app(app)
-        # No need to register a separate atexit handler here
-        # The scheduler_service already registers its own in init_app
+        scheduler_service.init_app(app)  # Pass the app instance here
     except Exception as e:
         print(f"Failed to initialize scheduler: {e}")
 
     return app
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run the RGBOARD Flask application')
+    parser.add_argument('--db', dest='db_path', default='data.db',
+                        help='Path to the SQLite database file (default: data.db)')
+    return parser.parse_args()
 
-app = create_app()
-
+args = parse_args()
+app = create_app(db_path=args.db_path)
 
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello RGBOARD'
-
 
 # User-----------------------------------------------------------------------------------------------------------
 @app.route("/user", methods=['GET'])
@@ -130,7 +138,7 @@ def get_verification_code():
 def handleUserById(user_id):
     if request.method == 'GET':
         handler = User(email=get_jwt_identity())
-        return handler.getUserById(user_id)
+        return handler.get_user_by_id(user_id)
     elif request.method == 'PUT':
         try:
             data = request.json
@@ -484,6 +492,5 @@ def authorize():
 def callback():
     return authorize_callback()
 
-
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

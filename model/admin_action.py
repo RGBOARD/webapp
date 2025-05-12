@@ -1,15 +1,10 @@
-import sqlite3
+from utilities.database import get_db_connection
 
 class AdminActionDAO:
 
-    def __init__(self):
-        database_path = 'data.db'
-        print("Connecting to SQLite database at:", database_path)
-        self.conn = sqlite3.connect(database_path)
-        self.conn.execute("PRAGMA foreign_keys = ON")
-
     def getAllAdminAction(self):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "SELECT * FROM admin_action;"
         cursor.execute(query)
         result = []
@@ -19,7 +14,8 @@ class AdminActionDAO:
         return result
 
     def getAdminActionById(self, action_id):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "SELECT * FROM admin_action WHERE action_id = ?;"
         cursor.execute(query, (action_id,))
         result = cursor.fetchone()
@@ -28,13 +24,14 @@ class AdminActionDAO:
 
     def addNewAdminAction(self, user_id, target_user_id, target_design_id, target_queue_id,
                           action_type, action_details, timestamp):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = """INSERT INTO admin_action 
                    (user_id, target_user_id, target_design_id, target_queue_id, action_type, action_details, timestamp)
                    VALUES (?, ?, ?, ?, ?, ?, ?);"""
         cursor.execute(query, (user_id, target_user_id, target_design_id, target_queue_id,
                                action_type, action_details, timestamp))
-        self.conn.commit()
+        conn.commit()
 
         # Return the newly inserted record
         query = "SELECT * FROM admin_action ORDER BY action_id DESC LIMIT 1;"
@@ -44,7 +41,8 @@ class AdminActionDAO:
         return result
 
     def updateAdminActionById(self, action_id, data):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
         for key, value in data.items():
             query = "UPDATE admin_action SET"
@@ -64,7 +62,7 @@ class AdminActionDAO:
                 query += " timestamp = ? WHERE action_id = ?;"
 
             cursor.execute(query, (value, action_id))
-            self.conn.commit()
+            conn.commit()
 
         # Return the updated record
         query = "SELECT * FROM admin_action WHERE action_id = ?;"
@@ -74,7 +72,8 @@ class AdminActionDAO:
         return result
 
     def deleteAdminActionById(self, action_id):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
         # Check if record exists
         select_query = "SELECT * FROM admin_action WHERE action_id = ?;"
@@ -87,6 +86,6 @@ class AdminActionDAO:
         else:
             query = "DELETE FROM admin_action WHERE action_id = ?;"
             cursor.execute(query, (action_id,))
-            self.conn.commit()
+            conn.commit()
             cursor.close()
             return action_id

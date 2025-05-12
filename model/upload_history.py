@@ -1,21 +1,13 @@
 import sqlite3
+from utilities.database import get_db_connection
 
 class UploadHistoryDAO:
-    def __init__(self):
-        database_path = 'data.db'
-        print("Connecting to SQLite database at:", database_path)
-        try:
-            self.conn = sqlite3.connect(database_path)
-            self.conn.execute("PRAGMA foreign_keys = ON")
-            self.conn.execute("PRAGMA busy_timeout = 5000;")
-        except sqlite3.Error as e:
-            print(f"Database connection error: {e}")
-            raise
 
     def getAllUploadHistory(self):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("SELECT * FROM upload_history;")
             return cursor.fetchall()
         except sqlite3.Error as e:
@@ -28,7 +20,8 @@ class UploadHistoryDAO:
     def getUploadHistoryById(self, history_id):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("SELECT * FROM upload_history WHERE history_id = ?;", (history_id,))
             return cursor.fetchone()
         except sqlite3.Error as e:
@@ -41,17 +34,18 @@ class UploadHistoryDAO:
     def addNewUploadHistory(self, design_id, attempt_time, status):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO upload_history (design_id, attempt_time, status) VALUES (?, ?, ?);",
                 (design_id, attempt_time, status)
             )
-            self.conn.commit()
+            conn.commit()
             cursor.execute("SELECT * FROM upload_history ORDER BY history_id DESC LIMIT 1;")
             return cursor.fetchone()
         except sqlite3.Error as e:
             print(f"Error adding new upload history: {e}")
-            self.conn.rollback()
+            conn.rollback()
             raise
         finally:
             if cursor:
@@ -60,7 +54,8 @@ class UploadHistoryDAO:
     def updateUploadHistoryById(self, history_id, data):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             for key, value in data.items():
                 if key == "design_id":
                     query = "UPDATE upload_history SET design_id = ? WHERE history_id = ?;"
@@ -69,12 +64,12 @@ class UploadHistoryDAO:
                 else:
                     query = "UPDATE upload_history SET status = ? WHERE history_id = ?;"
                 cursor.execute(query, (value, history_id))
-            self.conn.commit()
+            conn.commit()
             cursor.execute("SELECT * FROM upload_history WHERE history_id = ?;", (history_id,))
             return cursor.fetchone()
         except sqlite3.Error as e:
             print(f"Error updating upload history ID {history_id}: {e}")
-            self.conn.rollback()
+            conn.rollback()
             raise
         finally:
             if cursor:
@@ -83,17 +78,18 @@ class UploadHistoryDAO:
     def deleteUploadHistoryById(self, history_id):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("SELECT * FROM upload_history WHERE history_id = ?;", (history_id,))
             record = cursor.fetchone()
             if not record:
                 return None
             cursor.execute("DELETE FROM upload_history WHERE history_id = ?;", (history_id,))
-            self.conn.commit()
+            conn.commit()
             return history_id
         except sqlite3.Error as e:
             print(f"Error deleting upload history ID {history_id}: {e}")
-            self.conn.rollback()
+            conn.rollback()
             raise
         finally:
             if cursor:
@@ -102,7 +98,8 @@ class UploadHistoryDAO:
     def getByUserEmail(self, email):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("""
                 SELECT
                   uh.history_id,
@@ -128,7 +125,8 @@ class UploadHistoryDAO:
     def countByUserEmail(self, email):
         cursor = None
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("""
                            SELECT COUNT(*)
                            FROM upload_history uh
@@ -148,7 +146,8 @@ class UploadHistoryDAO:
         cursor = None
         offset = (page - 1) * page_size
         try:
-            cursor = self.conn.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("""
                 SELECT
                   uh.history_id,

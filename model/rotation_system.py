@@ -1,6 +1,8 @@
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Optional, Any, Tuple
+from typing import List, Dict, Optional, Any
+
+from utilities.database import get_db_connection
 
 
 class RotationSystemDAO:
@@ -8,28 +10,24 @@ class RotationSystemDAO:
     Data Access Object for the image rotation system.
     Handles all database operations.
     """
-    
-    def __init__(self, db_path='data.db'):
-        """Initialize the DAO with the database path."""
-        self.db_path = db_path
-    
-    def _get_connection(self):
-        """Create and return a database connection."""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Enable row factory for dict-like access
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA busy_timeout = 5000;")
-        return conn
 
     def get_rotation_item_byid(self, item_id):
-        conn = self._get_connection()
-        cursor = conn.cursor()
+        conn = None
+        cursor = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
 
-        query = "select * from rotation_queue where item_id = ?;"
-        cursor.execute(query, (item_id,))
-        result = cursor.fetchone()
-        cursor.close()
-        return result
+            query = "select * from rotation_queue where item_id = ?;"
+            cursor.execute(query, (item_id,))
+            result = cursor.fetchone()
+            return result
+        except sqlite3.Error as e:
+            print(f"Error getting rotation item by ID: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
     
     def get_active_image(self) -> Optional[Dict]:
         """
@@ -38,10 +36,12 @@ class RotationSystemDAO:
         Returns:
             Dict with image information or None if no active image
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
             cur.execute("""
             SELECT rq.*, d.*, ai.activated_at 
             FROM active_item ai
@@ -53,14 +53,16 @@ class RotationSystemDAO:
             result = cur.fetchone()
             
             if result:
-                # Convert to dict
                 return dict(result)
             
             return None
-            
+        except sqlite3.Error as e:
+            print(f"Error getting active image: {e}")
+            return None
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
     
     def add_unscheduled_image(self, design_id: int, end_time: datetime,
                         duration: int = 30, override_current: bool = False) -> int:
@@ -68,9 +70,14 @@ class RotationSystemDAO:
         Add an unscheduled image to the rotation queue with default 30-second duration,
         log the upload, and return the new item ID.
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            conn.execute("BEGIN TRANSACTION")
+            
             if override_current:
                 # Get current active item's display_order
                 active_item_id = self._get_active_item_id(conn)
@@ -105,7 +112,6 @@ class RotationSystemDAO:
             )
 
             item_id = cur.lastrowid
-            conn.commit()
 
             # If override_current is true, make this the active item
             if override_current:
@@ -125,9 +131,15 @@ class RotationSystemDAO:
             )
             conn.commit()
             return item_id
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error adding unscheduled image: {e}")
+            return -1
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
     
     def schedule_image(self, design_id: int, duration: int, start_time: datetime,
                        end_time: Optional[datetime] = None, override_current: bool = False) -> int:
@@ -136,9 +148,15 @@ class RotationSystemDAO:
         """
         if duration < 30:
             raise ValueError("Scheduled images must have a duration of at least 30 seconds")
-        conn = self._get_connection()
-        cur = conn.cursor()
+        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            conn.execute("BEGIN TRANSACTION")
+            
             if end_time:
                 cur.execute(
                     "INSERT INTO scheduled_items (design_id, duration, start_time, end_time, override_current) VALUES (?, ?, ?, ?, ?)",
@@ -152,17 +170,28 @@ class RotationSystemDAO:
             schedule_id = cur.lastrowid
             conn.commit()
             return schedule_id
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error scheduling image: {e}")
+            return -1
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
 
     def update_scheduled_item(self, schedule_id: int, design_id: int, duration: int, 
                           start_time: datetime, end_time: Optional[datetime] = None, 
                           override_current: bool = False) -> None:
         """Update an existing scheduled item."""
-        conn = self._get_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            conn.execute("BEGIN TRANSACTION")
+            
             if end_time:
                 cur.execute(
                     "UPDATE scheduled_items SET design_id = ?, duration = ?, start_time = ?, "
@@ -176,9 +205,16 @@ class RotationSystemDAO:
                     (design_id, duration, start_time, override_current, schedule_id)
                 )
             conn.commit()
+            return True
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error updating scheduled item: {e}")
+            return False
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
     
     def process_scheduled_images(self) -> bool:
         """
@@ -188,10 +224,13 @@ class RotationSystemDAO:
             True if any scheduled items were processed, False otherwise
         """
         now = datetime.now(timezone.utc)
-        conn = self._get_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
             # Get scheduled items that should be active now
             cur.execute("""
             SELECT * FROM scheduled_items
@@ -202,6 +241,9 @@ class RotationSystemDAO:
             scheduled_items = cur.fetchall()
             if not scheduled_items:
                 return False
+            
+            # Start a single transaction for all items
+            conn.execute("BEGIN TRANSACTION")
             
             activated = False
             
@@ -285,10 +327,15 @@ class RotationSystemDAO:
                 self._ensure_active_item(conn)
             
             return activated
-            
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error processing scheduled images: {e}")
+            return False
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
     
     def clean_expired_images(self) -> int:
         """
@@ -298,10 +345,15 @@ class RotationSystemDAO:
             Number of items removed
         """
         now = datetime.now(timezone.utc)
-        conn = self._get_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            conn.execute("BEGIN TRANSACTION")
+            
             # Check if the active item is expired
             active_item_id = self._get_active_item_id(conn)
             
@@ -339,10 +391,15 @@ class RotationSystemDAO:
             
             conn.commit()
             return removed_count
-            
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error cleaning expired images: {e}")
+            return 0
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
     
     def check_rotation(self):
         """Check if it's time to rotate to the next image."""
@@ -360,7 +417,7 @@ class RotationSystemDAO:
         conn = None
         cur = None
         try:
-            conn = self._get_connection()
+            conn = get_db_connection()
             cur = conn.cursor()
             
             # Start a transaction to ensure consistency
@@ -441,8 +498,7 @@ class RotationSystemDAO:
         finally:
             if cur:
                 cur.close()
-            if conn:
-                conn.close()
+                
 
     def _get_image_info_by_id(self, item_id: int) -> Optional[Dict]:
         """
@@ -454,8 +510,10 @@ class RotationSystemDAO:
         Returns:
             Dict containing image information or None if not found
         """
+        conn = None
+        cur = None
         try:
-            conn = self._get_connection()
+            conn = get_db_connection()
             cur = conn.cursor()
             
             cur.execute("""
@@ -473,35 +531,60 @@ class RotationSystemDAO:
             print(f"Error fetching image info: {e}")
             return None
         finally:
-            if 'cur' in locals() and cur:
+            if cur:
                 cur.close()
-            if 'conn' in locals() and conn:
-                conn.close()
+                
 
     def reorder_images(self, item_id: int, new_order: int):
-
-        status = 1
-        query = None
-        conn = self._get_connection()
-        cursor = conn.cursor()
-        old_order = self.get_rotation_item_byid(item_id)[3]
-        now = datetime.now(timezone.utc)
-        if new_order < old_order:
-            query = "UPDATE rotation_queue SET display_order = display_order + 1, updated_at = ? WHERE display_order >= ? AND display_order < ?"
-        elif new_order > old_order:
-            query = "UPDATE rotation_queue SET display_order = display_order - 1, updated_at = ? WHERE display_order <= ? AND display_order > ?"
+        conn = None
+        cursor = None
         try:
-            if query:
-                cursor.execute(query, (now, new_order, old_order))
-            shift = "UPDATE rotation_queue SET display_order = ?, updated_at = ? WHERE item_id = ?"
-            cursor.execute(shift,(new_order, now, item_id))
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Get the current order of the item
+            item = self.get_rotation_item_byid(item_id)
+            if not item:
+                print(f"Item {item_id} not found")
+                return 1
+                
+            old_order = item[3]  # Assuming position 3 is the display_order
+            now = datetime.now(timezone.utc)
+            
+            # Start transaction
+            conn.execute("BEGIN TRANSACTION")
+            
+            # Update orders of items between old and new position
+            if new_order < old_order:
+                # Moving item up - shift items in between down
+                cursor.execute(
+                    "UPDATE rotation_queue SET display_order = display_order + 1, updated_at = ? WHERE display_order >= ? AND display_order < ?",
+                    (now, new_order, old_order)
+                )
+            elif new_order > old_order:
+                # Moving item down - shift items in between up
+                cursor.execute(
+                    "UPDATE rotation_queue SET display_order = display_order - 1, updated_at = ? WHERE display_order <= ? AND display_order > ?",
+                    (now, new_order, old_order)
+                )
+            
+            # Update the item's order
+            cursor.execute(
+                "UPDATE rotation_queue SET display_order = ?, updated_at = ? WHERE item_id = ?",
+                (new_order, now, item_id)
+            )
+            
+            # Commit transaction
             conn.commit()
-            status = 0
-        except sqlite3.Error:
-            status = 1
+            return 0
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error reordering images: {e}")
+            return 1
         finally:
-            cursor.close()
-            return status
+            if cursor:
+                cursor.close()
 
     def get_time_left_for_current(self) -> Optional[float]:
         """
@@ -543,10 +626,12 @@ class RotationSystemDAO:
         Returns:
             List of dicts with rotation queue and design information
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
             cur.execute("""
             SELECT rq.*, d.* 
             FROM rotation_queue rq
@@ -558,12 +643,14 @@ class RotationSystemDAO:
             
             # Convert to list of dicts
             items = [dict(row) for row in results]
-            
             return items
-            
+        except sqlite3.Error as e:
+            print(f"Error getting all rotation items: {e}")
+            return []
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+
 
     def get_rotation_items_paginated(self, page: int = 1, page_size: int = 6) -> Dict:
         """
@@ -576,10 +663,12 @@ class RotationSystemDAO:
         Returns:
             Dict with pagination info and items
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
             # Calculate offset
             offset = (page - 1) * page_size
             
@@ -603,7 +692,6 @@ class RotationSystemDAO:
             
             # Convert to list of dicts
             items = [dict(row) for row in results]
-            
             return {
                 "page": page,
                 "page_size": page_size,
@@ -611,10 +699,19 @@ class RotationSystemDAO:
                 "pages": total_pages,
                 "items": items
             }
-            
+        except sqlite3.Error as e:
+            print(f"Error getting paginated rotation items: {e}")
+            return {
+                "page": page,
+                "page_size": page_size,
+                "total": 0,
+                "pages": 0,
+                "items": []
+            }
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+             
 
     def remove_item_from_rotation(self, item_id: int) -> bool:
         """
@@ -626,10 +723,14 @@ class RotationSystemDAO:
         Returns:
             Success status
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
+
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            conn.execute("BEGIN TRANSACTION")
+
             # Check if this is the active item
             active_item_id = self._get_active_item_id(conn)
             
@@ -653,14 +754,16 @@ class RotationSystemDAO:
             conn.commit()
             return success
             
-        except Exception as e:
-            conn.rollback()
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
             print(f"Error removing item from rotation: {e}")
             return False
             
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
     
     def get_scheduled_items(self) -> List[Dict]:
         """
@@ -669,10 +772,12 @@ class RotationSystemDAO:
         Returns:
             List of scheduled items with their details
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
             cur.execute("""
             SELECT s.*, d.title
             FROM scheduled_items s
@@ -684,12 +789,15 @@ class RotationSystemDAO:
             
             # Convert to list of dicts
             scheduled_items = [dict(row) for row in results]
-            
             return scheduled_items
-            
+        except sqlite3.Error as e:
+            print(f"Error getting scheduled items: {e}")
+            return []
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
+            
         
     def get_scheduled_items_paginated(self, page: int = 1, page_size: int = 6) -> Dict:
         """
@@ -702,10 +810,12 @@ class RotationSystemDAO:
         Returns:
             Dict with pagination info and items
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
             # Calculate offset
             offset = (page - 1) * page_size
             
@@ -729,7 +839,6 @@ class RotationSystemDAO:
             
             # Convert to list of dicts
             items = [dict(row) for row in results]
-            
             return {
                 "page": page,
                 "page_size": page_size,
@@ -737,10 +846,19 @@ class RotationSystemDAO:
                 "pages": total_pages,
                 "items": items
             }
-            
+        except sqlite3.Error as e:
+            print(f"Error getting paginated scheduled items: {e}")
+            return {
+                "page": page,
+                "page_size": page_size,
+                "total": 0,
+                "pages": 0,
+                "items": []
+            }
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+        
 
     def remove_scheduled_item(self, schedule_id: int) -> None:
         """
@@ -749,43 +867,70 @@ class RotationSystemDAO:
         Args:
             schedule_id: ID of the scheduled item to remove
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            conn.execute("BEGIN TRANSACTION")
             cur.execute("DELETE FROM scheduled_items WHERE schedule_id = ?", (schedule_id,))
             conn.commit()
-            
+            return True
+        except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
+            print(f"Error removing scheduled item: {e}")
+            return False
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
         
     def _get_active_item_id(self, conn=None) -> Optional[int]:
         """Get the ID of the currently active item."""
         should_close = False
-        if conn is None:
-            conn = self._get_connection()
-            should_close = True
-            
-        cur = conn.cursor()
+        cur = None
         try:
+            if conn is None:
+                conn = get_db_connection()
+                should_close = True
+            
+            cur = conn.cursor()
             cur.execute("SELECT item_id FROM active_item WHERE id = 1")
             result = cur.fetchone()
             return result['item_id'] if result and result['item_id'] is not None else None
+        except sqlite3.Error as e:
+            print(f"Error getting active item ID: {e}")
+            return None
         finally:
-            cur.close()
-            if should_close:
+            if cur:
+                cur.close()
+            if should_close and conn:
                 conn.close()
+                
     
     def _select_new_active_item(self, conn=None) -> Optional[Dict]:
         """Select a new active item from the rotation queue."""
         should_close = False
-        if conn is None:
-            conn = self._get_connection()
-            should_close = True
-            
-        cur = conn.cursor()
+        cur = None
+        should_manage_transaction = False
+        
         try:
+            if conn is None:
+                conn = get_db_connection()
+                should_close = True
+                should_manage_transaction = True
+            
+            cur = conn.cursor()
+            
+            # Only start a new transaction if we're managing the connection
+            if should_manage_transaction:
+                conn.execute("BEGIN TRANSACTION")
+            else:
+                # Create a savepoint if we're inside another transaction
+                conn.execute("SAVEPOINT select_new_active")
+                
             # Get the first item in the queue by display_order
             cur.execute("""
             SELECT item_id FROM rotation_queue 
@@ -798,7 +943,12 @@ class RotationSystemDAO:
             if not result:
                 # No items in queue
                 cur.execute("UPDATE active_item SET item_id = NULL, activated_at = ? WHERE id = 1", (now,))
-                conn.commit()
+                
+                if should_manage_transaction:
+                    conn.commit()
+                else:
+                    conn.execute("RELEASE SAVEPOINT select_new_active")
+                    
                 return None
             
             # Set as active
@@ -808,46 +958,60 @@ class RotationSystemDAO:
             WHERE id = 1
             """, (result['item_id'], now))
             
-            conn.commit()
+            if should_manage_transaction:
+                conn.commit()
+            else:
+                conn.execute("RELEASE SAVEPOINT select_new_active")
             
-            # Return full information - need to close connection first
+            # Get full information with fresh connection
             if should_close:
                 cur.close()
                 conn.close()
                 
             # Get full information with fresh connection
             return self.get_active_image()
-        except Exception as e:
-            conn.rollback()
-            raise e
+        except sqlite3.Error as e:
+            if should_manage_transaction and conn:
+                conn.rollback()
+            else:
+                conn.execute("ROLLBACK TO SAVEPOINT select_new_active")
+            print(f"Error selecting new active item: {e}")
+            return None
         finally:
-            cur.close()
+            if cur:
+                cur.close()
             if should_close and conn:
                 conn.close()
+                
     
     def _ensure_active_item(self, conn=None):
         """Make sure there is an active item if the queue isn't empty."""
         should_close = False
-        if conn is None:
-            conn = self._get_connection()
-            should_close = True
-        
         try:
+            if conn is None:
+                conn = get_db_connection()
+                should_close = True
+            
             active_item_id = self._get_active_item_id(conn)
             
             if active_item_id is None:
                 self._select_new_active_item(conn)
+        except sqlite3.Error as e:
+            print(f"Error ensuring active item: {e}")
         finally:
-            if should_close:
+            if should_close and conn:
                 conn.close()
+                
 
     def get_user_history(self, email: str) -> List[Dict[str, Any]]:
         """
         Return rotation queue history for designs created by the given user email.
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
             query = """
                 SELECT
                     rq.item_id       AS history_id,
@@ -871,9 +1035,13 @@ class RotationSystemDAO:
             cur.execute(query, (email,))
             rows = cur.fetchall()
             return [dict(row) for row in rows]
+        except sqlite3.Error as e:
+            print(f"Error getting user history: {e}")
+            return []
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+            
 
     def get_scheduled_item(self, schedule_id: int) -> Optional[Dict]:
         """
@@ -885,10 +1053,12 @@ class RotationSystemDAO:
         Returns:
             Dict with scheduled item details or None if not found
         """
-        conn = self._get_connection()
-        cur = conn.cursor()
-        
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+
             cur.execute("""
             SELECT s.*, d.title
             FROM scheduled_items s
@@ -902,7 +1072,10 @@ class RotationSystemDAO:
                 return dict(result)
             
             return None
-            
+        except sqlite3.Error as e:
+            print(f"Error getting scheduled item: {e}")
+            return None
         finally:
-            cur.close()
-            conn.close()
+            if cur:
+                cur.close()
+                

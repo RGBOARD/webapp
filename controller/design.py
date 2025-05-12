@@ -4,7 +4,6 @@ from flask import jsonify
 
 from controller.user import User
 from model.design import DesignDAO
-from model.queue_item import QueueItemDAO
 
 MAX_USER_BYTES_MB = 1  # TODO: Select a realistic limit for production
 
@@ -28,11 +27,6 @@ def make_json(tuples):
 
 def make_json_one(t):
     return serialize_design(t)
-
-
-def is_scheduled(design_id):
-    queue_item_dao = QueueItemDAO()
-    return queue_item_dao.is_design_scheduled(design_id)
 
 
 class Design:
@@ -152,9 +146,6 @@ class Design:
         if design_id is None:
             return jsonify(error="No id provided."), 400
 
-        if is_scheduled(design_id):
-            return jsonify(error="Design  image can't be updated when already in queue."), 400
-
         if not pixel_data:
             return jsonify(error="No pixel data provided"), 400
 
@@ -173,6 +164,16 @@ class Design:
             return jsonify(error="Memory limit exceeded."), 507
 
         design_dao = DesignDAO()
+
+        scheduled_status = design_dao.is_scheduled(design_id)
+
+        if scheduled_status == -1:
+            # Database error occurred
+            return jsonify(error="Database error while checking schedule status."), 500
+        elif scheduled_status == 1:
+            # Design is scheduled
+            return jsonify(error="Design image can't be updated when already in queue."), 400
+        
         design_user_id = design_dao.get_user_id(design_id)
 
         if design_user_id == user_id or self.user.is_admin():

@@ -19,8 +19,6 @@ import AuthProvider from './auth/AuthProvider';
 import { useAuth } from './auth/authContext';
 import UploadToQueuePage from "./pages/UploadToQueuePage.jsx";
 import UploadHistoryPage from './pages/UploadHistoryPage';
-import FAQ from "./pages/FAQ.jsx";
-import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import ResetPassword from './pages/ResetPassword';
 
 
@@ -64,15 +62,7 @@ function AppContent() {
             path="/developers"
             element={ <Developers />}
           />
-          <Route
-            path="/faq"
-            element={ <FAQ />}
-          />
-          <Route
-            path="/privacy"
-            element={ <PrivacyPolicy />}
-          />
-          <Route
+          <Route 
             path="/signup" 
             element={isAuthenticated ? <Navigate to="/" /> : <SignUp />}
           />
@@ -96,7 +86,7 @@ function AppContent() {
             path="/reset"
             element={isAuthenticated ? <Navigate to="/"/> : <ResetPassword/>}
           />
-          <Route
+          <Route 
             path="/edit" 
             element={
               <RequireAuth>

@@ -37,7 +37,6 @@ export default function UploadPage() {
   const [pixels, setPixels] = useState({});
   const [isConverting, setIsConverting] = useState(false);
   const [pixelatedPreviewUrl, setPixelatedPreviewUrl] = useState(null);
-  const [stageWidth, setStageWidth] = useState(512);
 
   const { currentUser, upload } = useAuth();
   const userid = currentUser?.user_id;
@@ -51,20 +50,6 @@ export default function UploadPage() {
       if (pixelatedPreviewUrl) URL.revokeObjectURL(pixelatedPreviewUrl);
     };
   }, [previewUrl, pixelatedPreviewUrl]);
-
-useEffect(() => {
-  const updateStageWidth = () => {
-    const padding = 32; // Adjust as neededs
-    const maxStageWidth = 512;
-    const newWidth = Math.min(window.innerWidth - padding, maxStageWidth);
-    setStageWidth(newWidth);
-  };
-
-  updateStageWidth(); // 🟢 Run once on mount
-
-  window.addEventListener('resize', updateStageWidth);
-  return () => window.removeEventListener('resize', updateStageWidth);
-}, []);
 
   const showAlert = (message, callback = () => {}) => {
     setModalState({
@@ -159,7 +144,7 @@ useEffect(() => {
   const renderPixelPreview = () => (
     <div className="pixelated-preview">
       <h3 className="upload-text mb-4">64×64 Pixel Preview:</h3>
-      <Stage width={stageWidth} height={stageWidth} scale={{x: stageWidth / 512, y: stageWidth / 512,}} ref={stageRef}>
+      <Stage width={canvasSize.width} height={canvasSize.height} ref={stageRef}>
         <Layer>
           <Rect width={canvasSize.width} height={canvasSize.height} fill="black" />
         </Layer>

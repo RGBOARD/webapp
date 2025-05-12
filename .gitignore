@@ -1,3 +1,11 @@
+# Locust test results
+tests/performance/results/
+*.csv
+*_stats.csv
+*_failures.csv
+*_stats_history.csv
+*_exceptions.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,15 +1,12 @@
 import sqlite3
+from utilities.database import get_db_connection
 
 
 class UserDAO:
 
-    def __init__(self):
-        database_path = 'data.db'
-        self.conn = sqlite3.connect(database_path)
-        self.conn.execute("PRAGMA foreign_keys = ON")
-
     def get_all_users(self):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "select * from user;"
         cursor.execute(query)
         users = cursor.fetchall()
@@ -20,7 +17,8 @@ class UserDAO:
         return result
 
     def get_all_users_paginated(self, page, page_size):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         offset = (page - 1) * page_size
 
         try:
@@ -53,7 +51,8 @@ class UserDAO:
             }
 
     def get_user_by_id(self, user_id):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "select * from user where user_id = ?;"
         cursor.execute(query, (user_id,))
         result = cursor.fetchone()
@@ -61,7 +60,8 @@ class UserDAO:
         return result
 
     def get_password_by_email(self, email):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "SELECT password FROM user WHERE email = ?;"
 
         try:
@@ -76,7 +76,8 @@ class UserDAO:
             cursor.close()
 
     def get_admin_by_email(self, email):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "SELECT is_admin FROM user WHERE email = ?;"
 
         try:
@@ -91,7 +92,8 @@ class UserDAO:
             cursor.close()
 
     def get_userid_by_email(self, email):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "SELECT user_id FROM user WHERE email = ?;"
 
         try:
@@ -111,7 +113,8 @@ class UserDAO:
 
     def get_email_verification_by_email(self, email):
         status = 1
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "SELECT is_email_verified FROM user WHERE email = ?;"
 
         try:
@@ -127,12 +130,13 @@ class UserDAO:
 
     def set_user_email_verified_by_id(self, user_id: int, is_verified: int):
         status = 1
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "UPDATE user SET is_email_verified = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?;"
 
         try:
             cursor.execute(query, (is_verified, user_id))
-            self.conn.commit()
+            conn.commit()
             status = 0
 
         except sqlite3.Error:
@@ -144,11 +148,12 @@ class UserDAO:
 
     def set_user_password(self, user_id: int, password):
         status = 1
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "UPDATE user SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?;"
         try:
             cursor.execute(query, (password, user_id))
-            self.conn.commit()
+            conn.commit()
             status = 0
 
         except sqlite3.Error:
@@ -159,13 +164,13 @@ class UserDAO:
             return status
 
     def add_new_user(self, email, password):
-
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         query = "INSERT INTO user (email, password) VALUES (?, ?);"
 
         try:
             cursor.execute(query, (email, password))
-            self.conn.commit()
+            conn.commit()
             return 0
 
         except sqlite3.IntegrityError:
@@ -178,8 +183,8 @@ class UserDAO:
             cursor.close()
 
     def updateUserById(self, user_id, data):
-
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         for key, value in data.items():
             query = "update user set"
 
@@ -197,7 +202,7 @@ class UserDAO:
                 query += " password = ? where user_id = ?;"
             try:
                 cursor.execute(query, (value, user_id,))
-                self.conn.commit()
+                conn.commit()
 
             except sqlite3.IntegrityError:
                 return 2
@@ -209,7 +214,8 @@ class UserDAO:
         return 0
 
     def deleteUserById(self, user_id):
-        cursor = self.conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         select_query = "SELECT * FROM user WHERE user_id = ?"
         cursor.execute(select_query, (user_id,))
         user = cursor.fetchone()
@@ -222,7 +228,7 @@ class UserDAO:
             status = 0
             try:
                 cursor.execute(query, (user_id,))
-                self.conn.commit()
+                conn.commit()
             except sqlite3.Error:
                 status = 1
 
