@@ -49,25 +49,31 @@ const Developers = () => {
     <div className="developers-page">
       <h2 className="page-title">Our Developers</h2>
       <div className="page-desc">
-        <h3 className="font-semibold">A small peek at the developers who brought RGBoard to life.</h3>
-        <h3> From design decisions to backend logic and frontend polish, our team has tackled every corner of the
+        <h3 className="font-semibold">
+          A small peek at the developers who brought RGBoard to life.
+        </h3>
+        <p className="hidden sm:block">
+          From design decisions to backend logic and frontend polish, our team has tackled every corner of the
           project with care and creativity.
           Each developer contributed across the full stack, making this site not just functional, but something we're
           proud of.
-        </h3>
+        </p>
+        <p className="block sm:hidden">
+          Each developer worked across the full stack to bring RGBoard to life.
+        </p>
       </div>
       <div className="developers-wrapper card-animation">
         <div className="developers-container">
           {developers.map((developer, index) => (
-            <Developer
-              key={index}
-              name={developer.name}
-              degree={developer.degree}
-              excerpt={developer.excerpt}
-              photo={developer.photo}
-              linkedin={developer.linkedin}
-              borderColor={developer.borderColor}
-            />
+              <Developer
+                  key={index}
+                  name={developer.name}
+                  degree={developer.degree}
+                  excerpt={developer.excerpt}
+                  photo={developer.photo}
+                  linkedin={developer.linkedin}
+                  borderColor={developer.borderColor}
+              />
           ))}
         </div>
       </div>

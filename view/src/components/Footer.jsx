@@ -25,13 +25,13 @@ const Footer = () => {
             </a>
           </div>
         </div>
-        <div className="footer-item">
+        <div className="footer-item hover:text-red-700">
           <a href="/faq">FAQ</a>
         </div>
-        <div className="footer-item">
+        <div className="footer-item hover:text-green-700">
           <a href="/privacy">Privacy Policy</a>
         </div>
-        <div className="footer-item">
+        <div className="footer-item hover:text-blue-700">
           <a href="/developers">Our Developers</a>
         </div>
       </div>
